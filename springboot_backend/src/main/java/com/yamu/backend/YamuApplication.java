@@ -7,10 +7,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 public class YamuApplication {
 
 	public static void main(String[] args) {
-
-//		SpringApplication.run(YamuApplication.class, args);
-		System.out.println("Hello World");
-
+	SpringApplication.run(YamuApplication.class, args);
 	}
 
 }
