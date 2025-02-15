@@ -9,8 +9,7 @@ public class YamuApplication {
 
 	public static void main(String[] args) {
 		ApplicationContext context = SpringApplication.run(YamuApplication.class, args);
-		Devoloper dev = context.getBean(Devoloper.class);
-		dev.build();
+		
 	}
 
 }
