@@ -15,13 +15,14 @@ public class UserService {
         this.passwordEncoder = passwordEncoder;
     }
 
-    public User registerUser(String username, String password, String email, String phonenumber, String address) {
+    public User registerUser(String firstname, String lastname, String password, String email, String phonenumber, String address) {
         if (userRepository.findByEmail(email) != null) {
             throw new RuntimeException("Account already exists with this email");
         }
 
         User user = new User();
-        user.setUsername(username);
+        user.setFirstName(firstname);
+        user.setLastName(lastname);
         user.setPassword(passwordEncoder.encode(password));
         user.setEmail(email);
         user.setPhonenumber(phonenumber);

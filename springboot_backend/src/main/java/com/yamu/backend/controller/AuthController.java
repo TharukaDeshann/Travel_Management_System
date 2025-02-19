@@ -5,12 +5,15 @@ import com.yamu.backend.service.UserService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import jakarta.validation.Valid;
+import org.springframework.validation.annotation.Validated;
 
 import java.util.HashMap;
 import java.util.Map;
 
 @RestController
 @RequestMapping("/api/auth")
+@Validated
 public class AuthController {
     private final UserService userService;
 
@@ -19,11 +22,13 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<Map<String, String>> register(@RequestBody User user) {
+    public ResponseEntity<Map<String, String>> register(@Valid @RequestBody User user) {
         Map<String, String> response = new HashMap<>();
+        System.out.println("Received User Data: " + user);
         try {
             User registeredUser = userService.registerUser(
-                    user.getUsername(),
+                    user.getFirstName(),
+                    user.getLastName(),
                     user.getPassword(),
                     user.getEmail(),
                     user.getPhonenumber(),
