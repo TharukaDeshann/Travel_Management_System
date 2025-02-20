@@ -28,7 +28,7 @@ public class User {
     @Email(message = "Invalid email format")
     private String email;
 
-    @Column(nullable = false, unique = true, length = 20)
+    @Column(nullable = false, length = 20)
     @NotBlank(message = "Phone number is required")
     @Pattern(regexp = "^[0-9]{10,15}$", message = "Phone number must be 10 to 15 digits")
     private String phonenumber;

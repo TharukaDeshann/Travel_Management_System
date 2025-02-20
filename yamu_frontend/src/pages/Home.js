@@ -1,4 +1,4 @@
 const Home = () => {
-    return <h2>Welcome to the User Dashboard!</h2>;
+    return <h1>Welcome to the User Dashboard!</h1>;
 };
 export default Home;
