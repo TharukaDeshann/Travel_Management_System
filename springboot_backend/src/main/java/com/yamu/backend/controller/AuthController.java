@@ -27,8 +27,7 @@ public class AuthController {
         System.out.println("Received User Data: " + user);
         try {
             User registeredUser = userService.registerUser(
-                    user.getFirstName(),
-                    user.getLastName(),
+                    user.getUsername(),
                     user.getPassword(),
                     user.getEmail(),
                     user.getPhonenumber(),

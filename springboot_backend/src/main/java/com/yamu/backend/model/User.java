@@ -11,12 +11,10 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY) // Auto-increment ID
     private Long id;
 
-    @Column(nullable = false, length = 10)
-    @NotBlank(message = "Name is required")
-    private String firstname;
-
-    @Column( length = 10)
-    private String lastname;
+    @Column(nullable = false, unique = true, length = 50)
+    @NotBlank(message = "Username is required")
+    @Size(min = 3, max = 50, message = "Username must be between 3 and 50 characters")
+    private String username;
 
     @Column(nullable = false, length = 255) // Store hashed password
     @NotBlank(message = "Password is required")
@@ -30,7 +28,7 @@ public class User {
     @Email(message = "Invalid email format")
     private String email;
 
-    @Column(nullable = false, length = 20)
+    @Column(nullable = false, unique = true, length = 20)
     @NotBlank(message = "Phone number is required")
     @Pattern(regexp = "^[0-9]{10,15}$", message = "Phone number must be 10 to 15 digits")
     private String phonenumber;
@@ -43,11 +41,8 @@ public class User {
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
     
-    public String getFirstName() { return firstname; }
-    public void setFirstName(String firstname) { this.firstname = firstname; }
-
-    public String getLastName() { return lastname; }
-    public void setLastName(String lastname) { this.lastname = lastname; }
+    public String getUsername() { return username; }
+    public void setUsername(String username) { this.username = username; }
     
     public String getPassword() { return password; }
     public void setPassword(String password) { this.password = password; }

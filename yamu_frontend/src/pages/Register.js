@@ -3,14 +3,12 @@ import { useFormik } from "formik";
 import * as Yup from "yup";
 import { useNavigate } from "react-router-dom";
 import { register } from "../services/authService";
-import "../styles/Auth.css";
 
 const Register = () => {
   const navigate = useNavigate();
 
-  
   const validationSchema = Yup.object({
-    firstname: Yup.string().required("firstname is required"),
+    username: Yup.string().min(3, "Must be at least 3 characters").required("Username is required"),
     email: Yup.string().email("Invalid email format").required("Email is required"),
     password: Yup.string()
       .min(8, "Must be at least 8 characters")
@@ -23,7 +21,7 @@ const Register = () => {
   });
 
   const formik = useFormik({
-    initialValues: { firstname: "", lastname: "",  email: "", password: "", phonenumber: "", address: "" },
+    initialValues: { username: "", email: "", password: "", phonenumber: "", address: "" },
     validationSchema,
     onSubmit: async (values, { setSubmitting, setErrors }) => {
       try {
@@ -40,48 +38,36 @@ const Register = () => {
   });
 
   return (
-    <div className="auth-container">
-      <div className="auth-card">
-        <h2>Create an Account</h2>
-        <p>Join us to start planning your next adventure!</p>
-        {formik.errors.general && <p className="error-message">{formik.errors.general}</p>}
-        <form onSubmit={formik.handleSubmit}>
-          <div className="form-group">
-            <label htmlFor="firstname">First Name:</label>
-            <input type="text" id="firstname" {...formik.getFieldProps("firstname")} />
-            {formik.touched.firstname && formik.errors.firstname && <p className="error-message">{formik.errors.firstname}</p>}
-          </div>
-          <div className="form-group">
-            <label htmlFor="lastname">Last Name:</label>
-            <input type="text" id="lastname" {...formik.getFieldProps("lastname")} />
-
-          </div>
-          <div className="form-group">
-            <label htmlFor="email">Email:</label>
-            <input type="email" id="email" {...formik.getFieldProps("email")} />
-            {formik.touched.email && formik.errors.email && <p className="error-message">{formik.errors.email}</p>}
-          </div>
-          <div className="form-group">
-            <label htmlFor="password">Password:</label>
-            <input type="password" id="password" {...formik.getFieldProps("password")} />
-            {formik.touched.password && formik.errors.password && <p className="error-message">{formik.errors.password}</p>}
-          </div>
-          <div className="form-group">
-            <label htmlFor="phonenumber">Phone Number:</label>
-            <input type="text" id="phonenumber" {...formik.getFieldProps("phonenumber")} />
-            {formik.touched.phonenumber && formik.errors.phonenumber && <p className="error-message">{formik.errors.phonenumber}</p>}
-          </div>
-          <div className="form-group">
-            <label htmlFor="address">Address:</label>
-            <input type="text" id="address" {...formik.getFieldProps("address")} />
-            {formik.touched.address && formik.errors.address && <p className="error-message">{formik.errors.address}</p>}
-          </div>
-          <button type="submit" disabled={formik.isSubmitting} className="auth-button">
+    <div className="flex min-h-screen bg-gray justify-center items-center">
+      <div className="bg-white p-8 shadow-lg rounded-xl w-full max-w-md">
+        <h2 className="text-2xl font-bold text-gray-800 text-center mb-2">Create an Account</h2>
+        <p className="text-gray-500 text-center mb-6">Join us to start planning your next adventure!</p>
+        {formik.errors.general && <p className="text-red-500 text-sm text-center">{formik.errors.general}</p>}
+        <form onSubmit={formik.handleSubmit} className="space-y-4">
+          {[
+            { label: "Username", id: "username", type: "text" },
+            { label: "Email", id: "email", type: "email" },
+            { label: "Password", id: "password", type: "password" },
+            { label: "Phone Number", id: "phonenumber", type: "text" },
+            { label: "Address", id: "address", type: "text" },
+          ].map(({ label, id, type }) => (
+            <div key={id}>
+              <label className="block text-gray-700">{label}:</label>
+              <input
+                type={type}
+                id={id}
+                {...formik.getFieldProps(id)}
+                className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-400"
+              />
+              {formik.touched[id] && formik.errors[id] && <p className="text-red-500 text-sm">{formik.errors[id]}</p>}
+            </div>
+          ))}
+          <button type="submit" disabled={formik.isSubmitting} className="w-full bg-blue-600 hover:bg-blue-700 text-white p-2 rounded-lg">
             {formik.isSubmitting ? "Registering..." : "Register"}
           </button>
         </form>
-        <p className="auth-footer">
-          Already have an account? <a href="/login">Log in</a>
+        <p className="text-gray-600 text-sm text-center mt-4">
+          Already have an account? <a href="/login" className="text-blue-500 hover:underline">Log in</a>
         </p>
       </div>
     </div>
