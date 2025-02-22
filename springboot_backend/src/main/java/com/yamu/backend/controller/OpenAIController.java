@@ -16,7 +16,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/ai")
+@RequestMapping("api/auth")
 @RequiredArgsConstructor
 @Slf4j
 public class OpenAIController {
@@ -35,5 +35,9 @@ public class OpenAIController {
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(new ErrorResponse("Failed to generate response", e.getMessage()));
         }
+    }
+    @RequestMapping("/welcome")
+    public String greet(){
+        return "Welcome to Yamu-Travel!";
     }
 }
