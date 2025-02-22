@@ -16,6 +16,9 @@ const Register = () => {
       .min(8, "Must be at least 8 characters")
       .matches(/^(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])/, "Must contain 1 uppercase, 1 number, 1 special character")
       .required("Password is required"),
+    confirmPassword: Yup.string()
+      .oneOf([Yup.ref('password'), null], "Passwords must match")
+      .required("Confirm password is required"),
     phonenumber: Yup.string()
       .matches(/^[0-9]{10,15}$/, "Phone number must be 10 to 15 digits")
       .required("Phone number is required"),
@@ -23,7 +26,7 @@ const Register = () => {
   });
 
   const formik = useFormik({
-    initialValues: { username: "", email: "", password: "", phonenumber: "", address: "" },
+    initialValues: { username: "", email: "", password: "", confirmPassword: "", phonenumber: "", address: "" },
     validationSchema,
     onSubmit: async (values, { setSubmitting, setErrors }) => {
       try {
@@ -53,7 +56,7 @@ const Register = () => {
     >
       {/* Overlay */}
       <div 
-        className="absolute inset-0"
+        className="absolute inset-0 "
         style={{
           backgroundColor: 'rgba(0, 0, 0, 0.4)',
           backdropFilter: 'blur(1px)'
@@ -61,21 +64,22 @@ const Register = () => {
       />
 
       {/* Registration form container */}
-      <div className="relative z-10 bg-white/90 p-8 shadow-2xl rounded-2xl w-full max-w-lg mx-4 backdrop-blur-sm">
+      <div className="relative z-10 bg-white/90 p-8 shadow-2xl rounded-2xl w-full max-w-lg mx-4 backdrop-blur-sm ">
         <h2 className="text-3xl font-bold text-gray-800 text-center mb-2">Join YAMU Travel</h2>
         <p className="text-gray-600 text-center mb-8">Sign up and start your adventure today!</p>
 
         {formik.errors.general && (
-          <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg">
+          <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg ">
             {formik.errors.general}
           </div>
         )}
 
-        <form onSubmit={formik.handleSubmit} className="space-y-6">
+        <form onSubmit={formik.handleSubmit} className="space-y-6 ">
           {[
             { label: "Username", id: "username", type: "text", icon: <FaUser /> },
             { label: "Email", id: "email", type: "email", icon: <FaEnvelope /> },
             { label: "Password", id: "password", type: "password", icon: <FaLock /> },
+            { label: "Confirm Password", id: "confirmPassword", type: "password", icon: <FaLock /> },
             { label: "Phone Number", id: "phonenumber", type: "text", icon: <FaPhone /> },
             { label: "Address", id: "address", type: "text", icon: <FaMapMarkerAlt /> },
           ].map(({ label, id, type, icon }) => (
