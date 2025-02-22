@@ -1,5 +1,6 @@
 package com.yamu.backend.controller;
 
+import com.yamu.backend.dto.UserRegistrationRequest;
 import com.yamu.backend.model.User;
 import com.yamu.backend.service.UserService;
 import org.springframework.http.HttpStatus;
@@ -22,17 +23,10 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<Map<String, String>> register(@Valid @RequestBody User user) {
+    public ResponseEntity<Map<String, String>> register(@Valid @RequestBody UserRegistrationRequest request) {
         Map<String, String> response = new HashMap<>();
-        System.out.println("Received User Data: " + user);
         try {
-            User registeredUser = userService.registerUser(
-                    user.getUsername(),
-                    user.getPassword(),
-                    user.getEmail(),
-                    user.getPhonenumber(),
-                    user.getAddress()
-            );
+            User registeredUser = userService.registerUser(request);
             response.put("message", "User registered successfully");
             return ResponseEntity.status(HttpStatus.CREATED).body(response);
         } catch (RuntimeException e) {
@@ -42,9 +36,9 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<Map<String, String>> login(@RequestBody User user) {
+    public ResponseEntity<Map<String, String>> login(@RequestParam String email, @RequestParam String password) {
         Map<String, String> response = new HashMap<>();
-        User authenticatedUser = userService.authenticate(user.getEmail(), user.getPassword());
+        User authenticatedUser = userService.authenticate(email, password);
         
         if (authenticatedUser != null) {
             response.put("message", "Login successful");
