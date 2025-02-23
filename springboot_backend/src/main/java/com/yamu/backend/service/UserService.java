@@ -9,6 +9,7 @@ import com.yamu.backend.model.User;
 import com.yamu.backend.repository.UserRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class UserService {
@@ -40,9 +41,6 @@ public class UserService {
                 guide.setVehicleAvailability(request.getVehicleAvailability());
                 user = guide;
                 break;
-            case ADMIN:
-                user = new Admin();
-                break;
             default:
                 throw new IllegalArgumentException("Invalid user role");
         }
@@ -56,6 +54,23 @@ public class UserService {
         user.setAddress(request.getAddress());
         user.setRole(request.getRole());
 
+        return userRepository.save(user);
+    }
+
+    @Transactional
+    public User assignAdminRole(Long userId, User adminRequester) {
+        if (!adminRequester.getRole().equals(UserRole.ADMIN)) {
+            throw new SecurityException("Only admins can assign admin roles.");
+        }
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        if (user.getRole() == UserRole.ADMIN) {
+            throw new RuntimeException("User is already an admin.");
+        }
+
+        user.setRole(UserRole.ADMIN);
         return userRepository.save(user);
     }
 
