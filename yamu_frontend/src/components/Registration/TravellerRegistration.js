@@ -3,39 +3,21 @@ import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 import "./Registration.css";
-import travelImage from "../../assets/images/travelimage.png"; // Import background image
+import travelImage from "../../assets/images/travelimage.png"; // Background image
 
 // Validation Schema
 const schema = yup.object().shape({
-  name: yup
-    .string()
-    .matches(/^[A-Za-z\s]+$/, "Name can only contain letters")
-    .required("Name is required"),
-  nationality: yup
-    .string()
-    .matches(/^[A-Za-z\s]+$/, "Nationality can only contain letters")
-    .required("Nationality is required"),
-  contact: yup
-    .string()
-    .matches(/^[0-9]{10}$/, "Contact number must be 10 digits")
-    .required("Contact number is required"),
+  name: yup.string().matches(/^[A-Za-z\s]+$/, "Name can only contain letters").required("Name is required"),
+  nationality: yup.string().matches(/^[A-Za-z\s]+$/, "Nationality can only contain letters").required("Nationality is required"),
+  contact: yup.string().matches(/^[0-9]{10}$/, "Contact number must be 10 digits").required("Contact number is required"),
   address: yup.string().required("Address is required"),
   email: yup.string().email("Invalid email format").required("Email is required"),
   password: yup.string().min(6, "Password must be at least 6 characters").required("Password is required"),
-  confirmPassword: yup
-    .string()
-    .oneOf([yup.ref("password"), null], "Passwords must match")
-    .required("Confirm Password is required"),
+  confirmPassword: yup.string().oneOf([yup.ref("password"), null], "Passwords must match").required("Confirm Password is required"),
 });
 
 const TravellerRegistration = () => {
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm({
-    resolver: yupResolver(schema),
-  });
+  const { register, handleSubmit, formState: { errors } } = useForm({ resolver: yupResolver(schema) });
 
   const onSubmit = (data) => {
     console.log("Traveller Form Data:", data);
@@ -43,17 +25,9 @@ const TravellerRegistration = () => {
   };
 
   return (
-    <div
-      className="registration-container"
-      style={{
-        backgroundImage: `url(${travelImage})`,
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-        backgroundRepeat: "no-repeat",
-      }}
-    >
+    <div className="registration-container" style={{ backgroundImage: `url(${travelImage})`, backgroundSize: "cover" }}>
       <div className="registration-box">
-        <h2>Traveller Registration</h2>
+        
         <form className="registration-form" onSubmit={handleSubmit(onSubmit)}>
           <label>Name</label>
           <input type="text" {...register("name")} placeholder="Enter your name" />
@@ -83,7 +57,7 @@ const TravellerRegistration = () => {
           <input type="password" {...register("confirmPassword")} placeholder="Confirm your password" />
           <p className="error">{errors.confirmPassword?.message}</p>
 
-          <button type="submit" className="register-btn">Begin Journey</button>
+          <button type="submit" className="register-btn">Submit</button>
         </form>
       </div>
     </div>

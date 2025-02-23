@@ -54,7 +54,7 @@ const TourGuideRegistration = () => {
       }}
     >
       <div className="registration-box">
-        <h2>Tour Guide Registration</h2>
+        
         <form className="registration-form" onSubmit={handleSubmit(onSubmit)}>
           <label>Name</label>
           <input type="text" {...register("name")} placeholder="Enter your name" />
@@ -88,7 +88,7 @@ const TourGuideRegistration = () => {
           <input type="password" {...register("confirmPassword")} placeholder="Confirm your password" />
           <p className="error">{errors.confirmPassword?.message}</p>
 
-          <button type="submit" className="register-btn">Lead Tours</button>
+          <button type="submit" className="register-btn">Submit</button>
         </form>
       </div>
     </div>
