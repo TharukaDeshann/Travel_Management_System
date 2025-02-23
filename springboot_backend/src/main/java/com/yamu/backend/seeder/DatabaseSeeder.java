@@ -46,7 +46,7 @@ public class DatabaseSeeder {
                 admin.setLastName(name.split(" ")[1]);
                 admin.setEmail(email);
                 admin.setPassword(passwordEncoder.encode("Admin@123")); // 🔒 Set a strong default password
-                admin.setContactNumber("076234578");
+                admin.setContactNumber("07567890789");
                 admin.setAddress("Admin Office");
                 admin.setRole(UserRole.ADMIN);
                 userRepository.save(admin);
