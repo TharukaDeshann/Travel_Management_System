@@ -1,5 +1,6 @@
 package com.yamu.backend.controller;
 
+import com.yamu.backend.dto.UserLoginRequest;
 import com.yamu.backend.dto.UserRegistrationRequest;
 import com.yamu.backend.model.User;
 import com.yamu.backend.service.UserService;
@@ -22,7 +23,7 @@ public class AuthController {
     private final UserService userService;
     private final JwtUtil jwtUtil;
 
-    @Autowired  
+    @Autowired
     public AuthController(UserService userService, JwtUtil jwtUtil) {
         this.userService = userService;
         this.jwtUtil = jwtUtil;
@@ -42,17 +43,17 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-public ResponseEntity<Map<String, String>> login(@RequestParam String email, @RequestParam String password) {
-    Map<String, String> response = new HashMap<>();
-    User authenticatedUser = userService.authenticate(email, password);
+    public ResponseEntity<Map<String, String>> login(@Valid @RequestBody UserLoginRequest loginRequest) {
+        Map<String, String> response = new HashMap<>();
+        User authenticatedUser = userService.authenticate(loginRequest.getEmail(), loginRequest.getPassword());
 
-    if (authenticatedUser != null) {
-        String token = jwtUtil.generateToken(authenticatedUser.getEmail());
-        response.put("token", token);
-        return ResponseEntity.ok(response);
+        if (authenticatedUser != null) {
+            String token = jwtUtil.generateToken(authenticatedUser.getEmail());
+            response.put("token", token);
+            return ResponseEntity.ok(response);
+        }
+
+        response.put("error", "Invalid credentials");
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
     }
-
-    response.put("error", "Invalid credentials");
-    return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
-}
 }

@@ -1,32 +1,93 @@
-import React from "react";
+import React, { useState } from "react";
 import { useFormik } from "formik";
 import * as Yup from "yup";
 import { useNavigate } from "react-router-dom";
 import { register } from "../services/authService";
-import { FaUser, FaEnvelope, FaLock, FaPhone, FaMapMarkerAlt } from "react-icons/fa";
-import travelBg from '../images/travel-bg.jpeg'; // Use the same background as login
+import {
+  FaUser,
+  FaEnvelope,
+  FaLock,
+  FaPhone,
+  FaMapMarkerAlt,
+  FaGlobe,
+  FaCar,
+  FaInfoCircle,
+} from "react-icons/fa";
+import travelBg from "../images/travel-bg.jpeg";
 
 const Register = () => {
   const navigate = useNavigate();
+  const [userType, setUserType] = useState(""); // Track selected user type
 
   const validationSchema = Yup.object({
-    username: Yup.string().min(3, "Must be at least 3 characters").required("Username is required"),
-    email: Yup.string().email("Invalid email format").required("Email is required"),
+    firstName: Yup.string()
+      .min(3, "Must be at least 3 characters")
+      .required("First Name is required"),
+    lastName: Yup.string()
+      .min(3, "Must be at least 3 characters")
+      .required("Last Name is required"),
+    email: Yup.string()
+      .email("Invalid email format")
+      .required("Email is required"),
     password: Yup.string()
       .min(8, "Must be at least 8 characters")
-      .matches(/^(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])/, "Must contain 1 uppercase, 1 number, 1 special character")
+      .matches(
+        /^(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])/,
+        "Must contain 1 uppercase, 1 number, 1 special character"
+      )
       .required("Password is required"),
     confirmPassword: Yup.string()
-      .oneOf([Yup.ref('password'), null], "Passwords must match")
+      .oneOf([Yup.ref("password"), null], "Passwords must match")
       .required("Confirm password is required"),
     phonenumber: Yup.string()
       .matches(/^[0-9]{10,15}$/, "Phone number must be 10 to 15 digits")
       .required("Phone number is required"),
-    address: Yup.string().min(5, "Address must be at least 5 characters").required("Address is required"),
+    address: Yup.string()
+      .min(5, "Address must be at least 5 characters")
+      .required("Address is required"),
+    role: Yup.string().required("User Type is required"),
+
+    // Traveler-specific validation
+    nationality: Yup.string().when("role", {
+      is: "TRAVELER",
+      then: Yup.string().required("Nationality is required"),
+    }),
+
+    // Guide-specific validation
+    expertiseCityRegion: Yup.string().when("role", {
+      is: "GUIDE",
+      then: Yup.string().required("Expertise City/Region is required"),
+    }),
+    language: Yup.string().when("role", {
+      is: "GUIDE",
+      then: Yup.string().required("Language is required"),
+    }),
+    about: Yup.string().when("role", {
+      is: "GUIDE",
+      then: Yup.string().required("About section is required"),
+    }),
+    vehicleAvailability: Yup.string().when("role", {
+      is: "GUIDE",
+      then: Yup.string().required("Vehicle Availability is required"),
+    }),
   });
 
   const formik = useFormik({
-    initialValues: { username: "", email: "", password: "", confirmPassword: "", phonenumber: "", address: "" },
+    initialValues: {
+      firstName: "",
+      lastName: "",
+      email: "",
+      password: "",
+      confirmPassword: "",
+      phonenumber: "",
+      address: "",
+      role: "",
+      nationality: "",
+      expertiseCityRegion: "",
+      language: "",
+      about: "",
+      vehicleAvailability: "",
+    },
     validationSchema,
     onSubmit: async (values, { setSubmitting, setErrors }) => {
       try {
@@ -35,7 +96,9 @@ const Register = () => {
           navigate("/login");
         }
       } catch (err) {
-        setErrors({ general: err.response?.data?.error || "Registration failed. Try again." });
+        setErrors({
+          general: err.response?.data?.error || "Registration failed. Try again.",
+        });
       } finally {
         setSubmitting(false);
       }
@@ -43,83 +106,374 @@ const Register = () => {
   });
 
   return (
-    <div 
-      className="min-h-screen flex items-center justify-center bg-no-repeat bg-cover bg-center bg-fixed"
-      style={{ 
+    <div
+      className="min-h-screen flex items-center justify-center bg-cover bg-center"
+      style={{
         backgroundImage: `url(${travelBg})`,
-        backgroundSize: "100% 100%",
-        width: "100vw",
-        height: "100vh",
-        position: "relative",
-        overflow: "hidden"
+        backgroundSize: "cover",
       }}
     >
       {/* Overlay */}
-      <div 
-        className="absolute inset-0 "
-        style={{
-          backgroundColor: 'rgba(0, 0, 0, 0.4)',
-          backdropFilter: 'blur(1px)'
-        }}
-      />
+      <div className="absolute inset-0 bg-black bg-opacity-40"></div>
 
-      {/* Registration form container */}
-      <div className="relative z-10 bg-white/90 p-8 shadow-2xl rounded-2xl w-full max-w-lg mx-4 backdrop-blur-sm ">
-        <h2 className="text-3xl font-bold text-gray-800 text-center mb-2">Join YAMU Travel</h2>
-        <p className="text-gray-600 text-center mb-8">Sign up and start your adventure today!</p>
+      <div className="relative z-10 bg-white p-8 shadow-2xl rounded-2xl w-full max-w-xl mx-4 overflow-auto">
+        <h2 className="text-3xl font-bold text-gray-800 text-center mb-4">
+          Join YAMU Travel
+        </h2>
+        <p className="text-gray-600 text-center mb-6">
+          Sign up and start your adventure today!
+        </p>
 
         {formik.errors.general && (
-          <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg ">
+          <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg">
             {formik.errors.general}
           </div>
         )}
 
-        <form onSubmit={formik.handleSubmit} className="space-y-6 ">
-          {[
-            { label: "Username", id: "username", type: "text", icon: <FaUser /> },
-            { label: "Email", id: "email", type: "email", icon: <FaEnvelope /> },
-            { label: "Password", id: "password", type: "password", icon: <FaLock /> },
-            { label: "Confirm Password", id: "confirmPassword", type: "password", icon: <FaLock /> },
-            { label: "Phone Number", id: "phonenumber", type: "text", icon: <FaPhone /> },
-            { label: "Address", id: "address", type: "text", icon: <FaMapMarkerAlt /> },
-          ].map(({ label, id, type, icon }) => (
-            <div key={id} className="relative">
-              <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">{icon}</div>
+        <form onSubmit={formik.handleSubmit} className="space-y-4">
+          {/* First Name */}
+          <div>
+            <label
+              htmlFor="firstName"
+              className="block mb-1 text-gray-700 font-medium"
+            >
+              First Name
+            </label>
+            <div className="relative">
+              <FaUser className="absolute left-3 top-3 text-gray-400" />
               <input
-                type={type}
-                id={id}
-                {...formik.getFieldProps(id)}
-                placeholder={label}
-                className="w-full pl-10 p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                type="text"
+                id="firstName"
+                {...formik.getFieldProps("firstName")}
+                placeholder="First Name"
+                className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
-              {formik.touched[id] && formik.errors[id] && (
-                <p className="mt-1 text-red-500 text-sm">{formik.errors[id]}</p>
+            </div>
+            {formik.touched.firstName && formik.errors.firstName && (
+              <p className="text-red-500 text-sm mt-1">
+                {formik.errors.firstName}
+              </p>
+            )}
+          </div>
+
+          {/* Last Name */}
+          <div>
+            <label
+              htmlFor="lastName"
+              className="block mb-1 text-gray-700 font-medium"
+            >
+              Last Name
+            </label>
+            <div className="relative">
+              <FaUser className="absolute left-3 top-3 text-gray-400" />
+              <input
+                type="text"
+                id="lastName"
+                {...formik.getFieldProps("lastName")}
+                placeholder="Last Name"
+                className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
+            {formik.touched.lastName && formik.errors.lastName && (
+              <p className="text-red-500 text-sm mt-1">
+                {formik.errors.lastName}
+              </p>
+            )}
+          </div>
+
+          {/* Email */}
+          <div>
+            <label
+              htmlFor="email"
+              className="block mb-1 text-gray-700 font-medium"
+            >
+              Email
+            </label>
+            <div className="relative">
+              <FaEnvelope className="absolute left-3 top-3 text-gray-400" />
+              <input
+                type="email"
+                id="email"
+                {...formik.getFieldProps("email")}
+                placeholder="Email"
+                className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
+            {formik.touched.email && formik.errors.email && (
+              <p className="text-red-500 text-sm mt-1">{formik.errors.email}</p>
+            )}
+          </div>
+
+          {/* Password */}
+          <div>
+            <label
+              htmlFor="password"
+              className="block mb-1 text-gray-700 font-medium"
+            >
+              Password
+            </label>
+            <div className="relative">
+              <FaLock className="absolute left-3 top-3 text-gray-400" />
+              <input
+                type="password"
+                id="password"
+                {...formik.getFieldProps("password")}
+                placeholder="Password"
+                className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
+            {formik.touched.password && formik.errors.password && (
+              <p className="text-red-500 text-sm mt-1">
+                {formik.errors.password}
+              </p>
+            )}
+          </div>
+
+          {/* Confirm Password */}
+          <div>
+            <label
+              htmlFor="confirmPassword"
+              className="block mb-1 text-gray-700 font-medium"
+            >
+              Confirm Password
+            </label>
+            <div className="relative">
+              <FaLock className="absolute left-3 top-3 text-gray-400" />
+              <input
+                type="password"
+                id="confirmPassword"
+                {...formik.getFieldProps("confirmPassword")}
+                placeholder="Confirm Password"
+                className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
+            {formik.touched.confirmPassword && formik.errors.confirmPassword && (
+              <p className="text-red-500 text-sm mt-1">
+                {formik.errors.confirmPassword}
+              </p>
+            )}
+          </div>
+
+          {/* Phone Number */}
+          <div>
+            <label
+              htmlFor="phonenumber"
+              className="block mb-1 text-gray-700 font-medium"
+            >
+              Phone Number
+            </label>
+            <div className="relative">
+              <FaPhone className="absolute left-3 top-3 text-gray-400" />
+              <input
+                type="text"
+                id="phonenumber"
+                {...formik.getFieldProps("phonenumber")}
+                placeholder="Phone Number"
+                className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
+            {formik.touched.phonenumber && formik.errors.phonenumber && (
+              <p className="text-red-500 text-sm mt-1">
+                {formik.errors.phonenumber}
+              </p>
+            )}
+          </div>
+
+          {/* Address */}
+          <div>
+            <label
+              htmlFor="address"
+              className="block mb-1 text-gray-700 font-medium"
+            >
+              Address
+            </label>
+            <div className="relative">
+              <FaMapMarkerAlt className="absolute left-3 top-3 text-gray-400" />
+              <input
+                type="text"
+                id="address"
+                {...formik.getFieldProps("address")}
+                placeholder="Address"
+                className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
+            {formik.touched.address && formik.errors.address && (
+              <p className="text-red-500 text-sm mt-1">{formik.errors.address}</p>
+            )}
+          </div>
+
+          {/* User Role */}
+          <div>
+            <label
+              htmlFor="role"
+              className="block mb-1 text-gray-700 font-medium"
+            >
+              User Type
+            </label>
+            <select
+              id="role"
+              {...formik.getFieldProps("role")}
+              onChange={(e) => {
+                formik.handleChange(e);
+                setUserType(e.target.value); // Update user type state
+              }}
+              className="w-full p-2 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            >
+              <option value="">Select User Type</option>
+              <option value="TRAVELER">Traveler</option>
+              <option value="GUIDE">Guide</option>
+            </select>
+            {formik.touched.role && formik.errors.role && (
+              <p className="text-red-500 text-sm mt-1">{formik.errors.role}</p>
+            )}
+          </div>
+
+          {/* Traveler-Specific Field */}
+          {userType === "TRAVELER" && (
+            <div>
+              <label
+                htmlFor="nationality"
+                className="block mb-1 text-gray-700 font-medium"
+              >
+                Nationality
+              </label>
+              <div className="relative">
+                <FaGlobe className="absolute left-3 top-3 text-gray-400" />
+                <input
+                  type="text"
+                  id="nationality"
+                  {...formik.getFieldProps("nationality")}
+                  placeholder="Nationality"
+                  className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+              {formik.touched.nationality && formik.errors.nationality && (
+                <p className="text-red-500 text-sm mt-1">
+                  {formik.errors.nationality}
+                </p>
               )}
             </div>
-          ))}
+          )}
 
+          {/* Guide-Specific Fields */}
+          {userType === "GUIDE" && (
+            <>
+              <div>
+                <label
+                  htmlFor="expertiseCityRegion"
+                  className="block mb-1 text-gray-700 font-medium"
+                >
+                  Expertise City/Region
+                </label>
+                <div className="relative">
+                  <FaMapMarkerAlt className="absolute left-3 top-3 text-gray-400" />
+                  <input
+                    type="text"
+                    id="expertiseCityRegion"
+                    {...formik.getFieldProps("expertiseCityRegion")}
+                    placeholder="Expertise City/Region"
+                    className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                {formik.touched.expertiseCityRegion &&
+                  formik.errors.expertiseCityRegion && (
+                    <p className="text-red-500 text-sm mt-1">
+                      {formik.errors.expertiseCityRegion}
+                    </p>
+                  )}
+              </div>
+
+              <div>
+                <label
+                  htmlFor="language"
+                  className="block mb-1 text-gray-700 font-medium"
+                >
+                  Language
+                </label>
+                <div className="relative">
+                  <FaGlobe className="absolute left-3 top-3 text-gray-400" />
+                  <input
+                    type="text"
+                    id="language"
+                    {...formik.getFieldProps("language")}
+                    placeholder="Language"
+                    className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                {formik.touched.language && formik.errors.language && (
+                  <p className="text-red-500 text-sm mt-1">
+                    {formik.errors.language}
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <label
+                  htmlFor="about"
+                  className="block mb-1 text-gray-700 font-medium"
+                >
+                  About
+                </label>
+                <div className="relative">
+                  <FaInfoCircle className="absolute left-3 top-3 text-gray-400" />
+                  <input
+                    type="text"
+                    id="about"
+                    {...formik.getFieldProps("about")}
+                    placeholder="About"
+                    className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                {formik.touched.about && formik.errors.about && (
+                  <p className="text-red-500 text-sm mt-1">
+                    {formik.errors.about}
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <label
+                  htmlFor="vehicleAvailability"
+                  className="block mb-1 text-gray-700 font-medium"
+                >
+                  Vehicle Availability
+                </label>
+                <div className="relative">
+                  <FaCar className="absolute left-3 top-3 text-gray-400" />
+                  <input
+                    type="text"
+                    id="vehicleAvailability"
+                    {...formik.getFieldProps("vehicleAvailability")}
+                    placeholder="Yes/No"
+                    className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                {formik.touched.vehicleAvailability &&
+                  formik.errors.vehicleAvailability && (
+                    <p className="text-red-500 text-sm mt-1">
+                      {formik.errors.vehicleAvailability}
+                    </p>
+                  )}
+              </div>
+            </>
+          )}
+
+          {/* Submit Button */}
           <button
             type="submit"
             disabled={formik.isSubmitting}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white p-4 rounded-lg font-medium transition-colors duration-200 disabled:bg-blue-400"
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white p-3 rounded-lg font-medium transition-colors duration-200 disabled:bg-blue-400"
           >
-            {formik.isSubmitting ? (
-              <span className="flex items-center justify-center">
-                <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                Registering...
-              </span>
-            ) : (
-              "Register"
-            )}
+            {formik.isSubmitting ? "Registering..." : "Register"}
           </button>
         </form>
 
-        <p className="text-gray-600 text-sm text-center mt-6">
+        <p className="text-gray-600 text-sm text-center mt-4">
           Already have an account?{" "}
-          <a href="/login" className="text-blue-600 hover:text-blue-700 font-medium hover:underline transition-colors duration-200">
+          <a
+            href="/login"
+            className="text-blue-600 hover:text-blue-700 font-medium hover:underline transition-colors duration-200"
+          >
             Log in
           </a>
         </p>
