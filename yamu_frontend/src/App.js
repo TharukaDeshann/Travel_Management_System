@@ -4,12 +4,11 @@ import React from "react";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Home from "./pages/Home";
-import React from "react";
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 import TravellerRegistration from "./components/Registration/TravellerRegistration";
 import TourGuideRegistration from "./components/Registration/TourGuideRegistration";
 
-function App() {
+const App = () => {
   return (
     <Router>
       <Routes>
@@ -22,6 +21,6 @@ function App() {
       </Routes>
     </Router>
   );
-}
+};
 
 export default App;
