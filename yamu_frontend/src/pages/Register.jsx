@@ -18,6 +18,7 @@ import travelBg from "../images/travel-bg.jpeg";
 const Register = () => {
   const navigate = useNavigate();
   const [userType, setUserType] = useState(""); // Track selected user type
+  const [vehicleAvailability, setVehicleAvailability] = useState(0); // Toggle state for vehicle availability
 
   const validationSchema = Yup.object({
     firstName: Yup.string()
@@ -46,29 +47,25 @@ const Register = () => {
       .min(5, "Address must be at least 5 characters")
       .required("Address is required"),
     role: Yup.string().required("User Type is required"),
-
-    // Traveler-specific validation
     nationality: Yup.string().when("role", {
       is: "TRAVELER",
-      then: Yup.string().required("Nationality is required"),
+      then: (schema) => schema.required("Nationality is required"),
     }),
-
-    // Guide-specific validation
     expertiseCityRegion: Yup.string().when("role", {
       is: "GUIDE",
-      then: Yup.string().required("Expertise City/Region is required"),
+      then: (schema) => schema.required("Expertise City/Region is required"),
     }),
     language: Yup.string().when("role", {
       is: "GUIDE",
-      then: Yup.string().required("Language is required"),
+      then: (schema) => schema.required("Language is required"),
     }),
     about: Yup.string().when("role", {
       is: "GUIDE",
-      then: Yup.string().required("About section is required"),
+      then: (schema) => schema.required("About section is required"),
     }),
     vehicleAvailability: Yup.string().when("role", {
       is: "GUIDE",
-      then: Yup.string().required("Vehicle Availability is required"),
+      then: (schema) => schema.required("Vehicle Availability is required"),
     }),
   });
 
@@ -91,7 +88,28 @@ const Register = () => {
     validationSchema,
     onSubmit: async (values, { setSubmitting, setErrors }) => {
       try {
-        const response = await register(values);
+        // Create the payload object with renamed fields
+        const payload = {
+          firstName: values.firstName,
+          lastName: values.lastName,
+          email: values.email,
+          password: values.password,
+          contactNumber: values.phonenumber, // Rename to match backend expectation
+          address: values.address,
+          role: values.role,
+        };
+
+        // Add role-specific fields
+        if (values.role === "TRAVELER") {
+          payload.nationality = values.nationality;
+        } else if (values.role === "GUIDE") {
+          payload.expertiseCityRegion = values.expertiseCityRegion;
+          payload.language = values.language;
+          payload.about = values.about;
+          payload.vehicleAvailability = vehicleAvailability; // Use the toggle state value
+        }
+
+        const response = await register(payload);
         if (response.message) {
           navigate("/login");
         }
@@ -254,7 +272,7 @@ const Register = () => {
             )}
           </div>
 
-          {/* Phone Number */}
+          
           <div>
             <label
               htmlFor="phonenumber"
@@ -431,6 +449,7 @@ const Register = () => {
                 )}
               </div>
 
+              {/* Vehicle Availability Toggle */}
               <div>
                 <label
                   htmlFor="vehicleAvailability"
@@ -438,28 +457,40 @@ const Register = () => {
                 >
                   Vehicle Availability
                 </label>
-                <div className="relative">
-                  <FaCar className="absolute left-3 top-3 text-gray-400" />
-                  <input
-                    type="text"
-                    id="vehicleAvailability"
-                    {...formik.getFieldProps("vehicleAvailability")}
-                    placeholder="Yes/No"
-                    className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  />
-                </div>
-                {formik.touched.vehicleAvailability &&
-                  formik.errors.vehicleAvailability && (
-                    <p className="text-red-500 text-sm mt-1">
-                      {formik.errors.vehicleAvailability}
-                    </p>
-                  )}
+                <div className="flex space-x-4">
+  <button
+    type="button"
+    onClick={() => {
+      setVehicleAvailability(1);
+      formik.setFieldValue("vehicleAvailability", 1); // Update Formik state
+    }}
+    className={`flex-1 p-2 rounded-lg ${
+      vehicleAvailability === 1 ? "bg-blue-600 text-white" : "bg-gray-200 text-gray-700"
+    }`}
+  >
+    Yes
+  </button>
+  <button
+    type="button"
+    onClick={() => {
+      setVehicleAvailability(0);
+      formik.setFieldValue("vehicleAvailability", 0); // Update Formik state
+    }}
+    className={`flex-1 p-2 rounded-lg ${
+      vehicleAvailability === 0 ? "bg-blue-600 text-white" : "bg-gray-200 text-gray-700"
+    }`}
+  >
+    No
+  </button>
+</div>
+{formik.touched.vehicleAvailability && formik.errors.vehicleAvailability && (
+  <p className="text-red-500 text-sm mt-1">{formik.errors.vehicleAvailability}</p>
+)}
               </div>
             </>
           )}
-
-          {/* Submit Button */}
-          <button
+           {/* Submit Button */}
+           <button
             type="submit"
             disabled={formik.isSubmitting}
             className="w-full bg-blue-600 hover:bg-blue-700 text-white p-3 rounded-lg font-medium transition-colors duration-200 disabled:bg-blue-400"
