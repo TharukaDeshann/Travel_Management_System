@@ -2,9 +2,8 @@ import React from "react";
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
-import { useNavigate } from "react-router-dom";
 import "./Registration.css";
-import travelImage from "../../assets/images/travelimage.png"; // Background image
+import guideImage from "../../assets/images/guideimage.png"; // Use the same background image as the guide form
 
 // Validation Schema
 const schema = yup.object().shape({
@@ -15,26 +14,18 @@ const schema = yup.object().shape({
   email: yup.string().email("Invalid email format").required("Email is required"),
   password: yup.string().min(6, "Password must be at least 6 characters").required("Password is required"),
   confirmPassword: yup.string().oneOf([yup.ref("password"), null], "Passwords must match").required("Confirm Password is required"),
-  userType: yup.string().oneOf(["guide", "traveller"], "User type is required").required("User type is required"),
 });
 
-const TravellerRegistration = () => {
-  const navigate = useNavigate();
+const TravellerForm = () => {
   const { register, handleSubmit, formState: { errors } } = useForm({ resolver: yupResolver(schema) });
 
   const onSubmit = (data) => {
     console.log("Traveller Form Data:", data);
-    if (data.userType === "guide") {
-      navigate("/guide-register");
-    } else if (data.userType === "traveller") {
-      navigate("/traveller-form");
-    } else {
-      alert("Please select a valid user type.");
-    }
+    alert("Traveller Registration Successful!");
   };
 
   return (
-    <div className="registration-container" style={{ backgroundImage: `url(${travelImage})`, backgroundSize: "cover" }}>
+    <div className="registration-container" style={{ backgroundImage: `url(${guideImage})`, backgroundSize: "cover" }}>
       <div className="registration-box">
         
         <form className="registration-form" onSubmit={handleSubmit(onSubmit)}>
@@ -66,19 +57,11 @@ const TravellerRegistration = () => {
           <input type="password" {...register("confirmPassword")} placeholder="Confirm your password" />
           <p className="error">{errors.confirmPassword?.message}</p>
 
-          <label>User Type</label>
-          <select {...register("userType")}>
-            <option value="">Select user type</option>
-            <option value="guide">Guide</option>
-            <option value="traveller">Traveller</option>
-          </select>
-          <p className="error">{errors.userType?.message}</p>
-
-          <button type="submit" className="register-btn">Next</button>
+          <button type="submit" className="register-btn">Submit</button>
         </form>
       </div>
     </div>
   );
 };
 
-export default TravellerRegistration;
+export default TravellerForm;
