@@ -9,7 +9,7 @@ import travelImage from "../../assets/images/travelimage.png"; // Background ima
 const schema = yup.object().shape({
   name: yup.string().matches(/^[A-Za-z\s]+$/, "Name can only contain letters").required("Name is required"),
   nationality: yup.string().matches(/^[A-Za-z\s]+$/, "Nationality can only contain letters").required("Nationality is required"),
-  contact: yup.string().matches(/^[0-9]{10}$/, "Contact number must be 10 digits").required("Contact number is required"),
+  contact: yup.string().matches(/^[0-9]{1,15}$/, "Contact number must be between 1 and 15 digits").required("Contact number is required"),
   address: yup.string().required("Address is required"),
   email: yup.string().email("Invalid email format").required("Email is required"),
   password: yup.string().min(6, "Password must be at least 6 characters").required("Password is required"),

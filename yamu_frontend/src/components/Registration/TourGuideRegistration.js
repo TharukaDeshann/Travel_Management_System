@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
@@ -18,7 +18,7 @@ const schema = yup.object().shape({
   expertise: yup.string().required("Expertise is required"),
   contact: yup
     .string()
-    .matches(/^[0-9]{10}$/, "Contact number must be 10 digits")
+    .matches(/^[0-9]{1,15}$/, "Contact number must be between 1 and 15 digits")
     .required("Contact number is required"),
   address: yup.string().required("Address is required"),
   email: yup.string().email("Invalid email format").required("Email is required"),
@@ -27,9 +27,19 @@ const schema = yup.object().shape({
     .string()
     .oneOf([yup.ref("password"), null], "Passwords must match")
     .required("Confirm Password is required"),
+  about: yup.string().required("About is required"),
+  vehicleType: yup.string().when("vehicleAvailability", {
+    is: true,
+    then: yup.string().required("Vehicle type is required"),
+  }),
+  numberOfSeats: yup.number().when("vehicleAvailability", {
+    is: true,
+    then: yup.number().required("Number of seats is required").positive().integer(),
+  }),
 });
 
 const TourGuideRegistration = () => {
+  const [vehicleAvailability, setVehicleAvailability] = useState(false);
   const {
     register,
     handleSubmit,
@@ -64,21 +74,48 @@ const TourGuideRegistration = () => {
           <input type="text" {...register("language")} placeholder="Enter languages spoken" />
           <p className="error">{errors.language?.message}</p>
 
+          <label>E-mail</label>
+          <input type="email" {...register("email")} placeholder="Enter your email" />
+          <p className="error">{errors.email?.message}</p>
+
           <label>Expertise</label>
           <input type="text" {...register("expertise")} placeholder="Enter your expertise" />
           <p className="error">{errors.expertise?.message}</p>
+
+          <label>About</label>
+          <textarea {...register("about")} placeholder="Tell us about yourself" className="about-field" />
+          <p className="error">{errors.about?.message}</p>
 
           <label>Contact Number</label>
           <input type="text" {...register("contact")} placeholder="Enter your contact number" />
           <p className="error">{errors.contact?.message}</p>
 
+          <div className="vehicle-availability-container">
+            <label className="vehicle-availability-label">
+              Vehicle Availability
+              <input
+                type="checkbox"
+                {...register("vehicleAvailability")}
+                onChange={(e) => setVehicleAvailability(e.target.checked)}
+              />
+            </label>
+          </div>
+
+          {vehicleAvailability && (
+            <>
+              <label>Vehicle Type</label>
+              <input type="text" {...register("vehicleType")} placeholder="Enter vehicle type" />
+              <p className="error">{errors.vehicleType?.message}</p>
+
+              <label>Number of Seats</label>
+              <input type="number" {...register("numberOfSeats")} placeholder="Enter number of seats" />
+              <p className="error">{errors.numberOfSeats?.message}</p>
+            </>
+          )}
+
           <label>Address</label>
           <input type="text" {...register("address")} placeholder="Enter your address" />
           <p className="error">{errors.address?.message}</p>
-
-          <label>E-mail</label>
-          <input type="email" {...register("email")} placeholder="Enter your email" />
-          <p className="error">{errors.email?.message}</p>
 
           <label>Password</label>
           <input type="password" {...register("password")} placeholder="Enter your password" />

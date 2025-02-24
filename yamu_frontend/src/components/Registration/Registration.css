@@ -29,7 +29,8 @@
 }
 
 /* Input Fields */
-.registration-form input {
+.registration-form input,
+.registration-form textarea {
   width: 100%;
   padding: 12px;
   margin-bottom: 10px;
@@ -41,8 +42,16 @@
   transition: border-color 0.3s ease-in-out;
 }
 
+/* Placeholder Text */
+.registration-form input::placeholder,
+.registration-form textarea::placeholder {
+  color: rgba(255, 255, 255, 0.7); /* White text with slight transparency */
+  font-size: 14px; /* Same font size as input text */
+}
+
 /* Input Focus */
-.registration-form input:focus {
+.registration-form input:focus,
+.registration-form textarea:focus {
   border-color: #f4a742;
   outline: none;
   box-shadow: 0 0 5px rgba(244, 167, 66, 0.5);
@@ -73,4 +82,23 @@
 
 .register-btn:hover {
   background: #d98c2a;
+}
+
+/* Vehicle Availability Container */
+.vehicle-availability-container {
+  display: flex;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+/* Vehicle Availability Label */
+.vehicle-availability-label {
+  display: flex;
+  align-items: center;
+  margin-right: 10px;
+  white-space: nowrap; /* Ensure label words are on one line */
+}
+
+.vehicle-availability-label input {
+  margin-left: 5px; /* Adjust spacing between label and checkbox */
 }
