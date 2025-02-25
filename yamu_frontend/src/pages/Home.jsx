@@ -1,4 +1,12 @@
+import Navbar from "../components/Navbar"; 
+
 const Home = () => {
-    return <h1>Welcome to the User Dashboard!</h1>;
+    return (
+        <>
+            <Navbar />
+            <h1>Welcome to the User Dashboard!</h1>
+        </>
+    );
 };
+
 export default Home;
