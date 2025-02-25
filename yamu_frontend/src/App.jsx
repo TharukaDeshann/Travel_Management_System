@@ -6,8 +6,8 @@ import Register from "./pages/Register.jsx";
 import Home from "./pages/Home.jsx";
 import ProtectedRoute from './routes/ProtectedRoute.jsx';
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
-import TravellerRegistration from "./components/Registration/TravellerRegistration";
-import TourGuideRegistration from "./components/Registration/TourGuideRegistration";
+import TravellerRegistration from "./components/Registration/TravellerRegistration.jsx";
+import TourGuideRegistration from "./components/Registration/TourGuideRegistration.jsx";
 
 
 
