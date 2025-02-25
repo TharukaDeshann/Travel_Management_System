@@ -10,7 +10,7 @@ import java.util.function.Function;
 
 @Component
 public class JwtUtil {
-    private final String SECRET_KEY = "your-very-long-secret-key-should-be-kept-secure";
+    private final String SECRET_KEY = "N4SNgnrQcV2tosyyUt11w5ADMqlpyPBg+LE9NiaOH9k=";
 
     private Key getSigningKey() {
         return Keys.hmacShaKeyFor(SECRET_KEY.getBytes());
