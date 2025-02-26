@@ -8,11 +8,17 @@ const Navbar = () => {
         logoutUser();
         navigate("/login");
     };
+    
+    const handleGo = () => {
+        navigate("/go");
+    };
 
     return (
         <nav>
             <h2>YAMU Travel</h2>
             <button onClick={handleLogout}>Logout</button>
+            
+            <button onClick={handleGo}>Go</button>
         </nav>
     );
 };
