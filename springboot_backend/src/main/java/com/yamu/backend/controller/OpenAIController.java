@@ -1,16 +1,13 @@
 package com.yamu.backend.controller;
 
 
-import com.azure.core.annotation.Post;
 import com.yamu.backend.errorresponses.ErrorResponse;
-import com.yamu.backend.model.TravelQuery;
-import com.yamu.backend.model.TravelResponse;
+
 import com.yamu.backend.service.OpenAIService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
