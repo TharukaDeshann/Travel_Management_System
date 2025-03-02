@@ -250,7 +250,7 @@ export default function TravelerDashboard() {
           <div className="search-bar">
             <input 
               type="text" 
-              placeholder="Search destinations, hotels, or activities..." 
+              placeholder="Search destinations, hotels, or events..." 
               className="search-input"
             />
           </div>
