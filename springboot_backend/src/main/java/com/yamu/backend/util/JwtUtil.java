@@ -38,9 +38,7 @@ public class JwtUtil {
                 .compact();
     }
 
-    public String extractEmail(String token) {
-        return extractClaim(token, Claims::getSubject);
-    }
+    
 
     public <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
         Claims claims = Jwts.parserBuilder()
@@ -74,5 +72,9 @@ public class JwtUtil {
 
     public Date getExpirationDateFromToken(String token) {
         return extractClaim(token, Claims::getExpiration);
+    }
+
+    public String extractEmail(String token) {
+        return extractClaim(token, Claims::getSubject);
     }
 }
