@@ -3,12 +3,18 @@ import { ChevronRight } from "lucide-react";
 import './TravelerDashboard.css';  // Import the CSS file
 // Import images
 import yamuLogo from '../images/yamu-logo.png';  // Add your logo file
-import notificationIcon from '../images/notification.webp';  // Updated import name
+import notificationIcon from '../images/notification.png';  // Updated import name
 import profileIcon from '../images/profile.png';  // Updated import name
 
 import botImage from '../images/bot-image.png';  // Updated import name
 
-
+// Add currencies array at the top level
+const currencies = [
+  { code: 'USD', symbol: '$' },
+  { code: 'LKR', symbol: 'Rs.' },
+  { code: 'EUR', symbol: '€' },
+  { code: 'CHF', symbol: 'Fr.' }
+];
 
 const sections = [
   { 
@@ -24,28 +30,178 @@ const sections = [
       },
       {
         name: "Ambuluwawa",
-        image: "src/images/hiriketiya.jpg",
+        image: "src/images/ambuluwawa.jpg",
+      },
+      {
+        name: "Nagapooshani Amman Temple",
+        image: "src/images/amman_temple.jpg",
+      },
+      {
+        name: "Adams Peak",
+        image: "src/images/adams-peak.jpg",
       }
     ] 
   },
-  { title: "Discover Accommodations", items: ["Wild Coast Tented Lodge", "98 Acre Resort & Spa", "141 Key Anantara"] },
-  { title: "Discover Tour Guides", items: ["Tour Guide 1", "Tour Guide 2", "Tour Guide 3"] },
-  { title: "Event & Festival Highlights", items: ["Esala Perahera", "Nadagama 360", "Sinhala Tamil New Year"] },
-  { title: "Discover Packages", items: ["Package 1 - Rs.50,000", "Package 2 - Rs.60,000", "Package 3 - Rs.30,000"] }
-];
+  { 
+    title: "Discover Accommodations", 
+    items: [
+      {
+        name: "Wild Coast Tented Lodge",
+        image: "src/images/wild_coast.jpg",  
+      },
+      {
+        name: "98 Acre Resort & Spa",
+        image: "src/images/98_acre.jpg",
+      },
+      {
+        name: "Anantara Resort & Spa",
+        image: "src/images/anantaya.jpg",
+      },
+      {
+        name: "Jetwing Colombo Seven",
+        image: "src/images/jetwing.jpg",
+      },
+      {
+        name: "The Lake Forest Hotel",
+        image: "src/images/lake_forest.jpg",
+      },
+    ] 
+  },
+  { 
+    title: "Discover Tour Guides", 
+    items: [
+      {
+        name: "Rajam Chaitanya",
+        image: "src/images/rajam.jpeg",
+      },
+      {
+        name: "Duminda Jayasinghe",
+        image: "src/images/duminda.jpg",
+      },
+      {
+        name: "Selvam Vetri",
+        image: "src/images/selvam.webp",  // Add your image paths here
+      },
+      {
+        name: "Samantha Perera",
+        image: "src/images/samantha.webp",
+      },
+      {
+        name: "Jagath Karunathilake",
+        image: "src/images/jagath.jpeg",
+      }
+      
+    ] 
+  },
 
-// Add currencies array
-const currencies = [
-  { code: 'USD', symbol: '$' },
-  { code: 'LKR', symbol: 'Rs.' },
-  { code: 'CHF', symbol: '' },
-  { code: 'EUR', symbol: '€' }
+  { 
+    title: "Event & Festival Highlights", 
+    items: [
+      {
+        name: "Esala Perahera",
+        image: "src/images/asala_perahera.webp",  // Add your image paths here
+      },
+      {
+        name: "Nallur Kovil Festival",
+        image: "src/images/nallur_festival.jpg",
+      },
+      {
+        name: "Sinhala Tamil New Year",
+        image: "src/images/new_year.jpeg",
+      },
+      {
+        name: "Kuweni The Musical",
+        image: "src/images/kuweni.jpg",
+      },
+      {
+        name: "Whale Watching Season",
+        image: "src/images/whale_watching.jpg",
+      }   
+    ] 
+  },
+
+  { 
+    title: "Discover Packages", 
+    items: [
+      {
+        name: "Package 1 - Rs.50,000",
+        image: "src/images/sigiriya.jpg",  // Add your image paths here
+      },
+      {
+        name: "Package 2 - Rs.60,000",
+        image: "src/images/hiriketiya.jpg",
+      },
+      {
+        name: "Package 3 - Rs.30,000",
+        image: "src/images/hiriketiya.jpg",
+      }
+    ] 
+  }
+
 ];
 
 export default function TravelerDashboard() {
-  // Add state for currency and dropdown
   const [selectedCurrency, setSelectedCurrency] = useState('USD');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  // Add state for scroll buttons visibility
+  const [showLeftButton, setShowLeftButton] = useState({});
+
+  // Close dropdown when clicking outside
+  React.useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (!event.target.closest('.currency-dropdown')) {
+        setIsDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Handle scroll event for each container
+  const handleScroll = (e, sectionTitle) => {
+    const container = e.target;
+    setShowLeftButton(prev => ({
+      ...prev,
+      [sectionTitle]: container.scrollLeft > 0
+    }));
+  };
+
+  // Currency dropdown component
+  const CurrencyDropdown = () => (
+    <div className="currency-dropdown">
+      <button 
+        type="button"
+        className="currency-button"
+        onClick={(e) => {
+          e.stopPropagation();
+          setIsDropdownOpen(!isDropdownOpen);
+        }}
+      >
+        <span>{currencies.find(c => c.code === selectedCurrency)?.symbol}</span>
+        <span>{selectedCurrency}</span>
+        <span className={`dropdown-arrow ${isDropdownOpen ? 'open' : ''}`}>▼</span>
+      </button>
+      
+      {isDropdownOpen && (
+        <div className="dropdown-menu">
+          {currencies.map((currency) => (
+            <button
+              key={currency.code}
+              type="button"
+              className="currency-option"
+              onClick={() => {
+                setSelectedCurrency(currency.code);
+                setIsDropdownOpen(false);
+              }}
+            >
+              <span>{currency.symbol}</span> <span>{currency.code}</span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
 
   return (
     <div>
@@ -66,34 +222,7 @@ export default function TravelerDashboard() {
         </ul>
         <div className="flex items-center space-x-4">
           {/* Currency Dropdown */}
-          <div className="currency-dropdown">
-            <button 
-              className="currency-button"
-              onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-            >
-              {currencies.find(c => c.code === selectedCurrency)?.symbol}{selectedCurrency}
-              <span className={`dropdown-arrow ${isDropdownOpen ? 'open' : ''}`}>
-                ▼
-              </span>
-            </button>
-            
-            {isDropdownOpen && (
-              <div className="dropdown-menu">
-                {currencies.map((currency) => (
-                  <button
-                    key={currency.code}
-                    className="currency-option"
-                    onClick={() => {
-                      setSelectedCurrency(currency.code);
-                      setIsDropdownOpen(false);
-                    }}
-                  >
-                    {currency.symbol}{currency.code}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
+          <CurrencyDropdown />
           {/* Icons */}
           <div className="icon-container">
             <img 
@@ -121,7 +250,7 @@ export default function TravelerDashboard() {
           <div className="search-bar">
             <input 
               type="text" 
-              placeholder="   Search destinations, hotels, or activities..." 
+              placeholder="Search destinations, hotels, or events..." 
               className="search-input"
             />
           </div>
@@ -139,25 +268,49 @@ export default function TravelerDashboard() {
         
         {/* Sections */}
         {sections.map((section) => (
-          <div key={section.title} className="my-6">
+          <div key={section.title} className="section-container">
             <div className="flex justify-between items-center">
               <h2 className="text-lg font-bold">{section.title}</h2>
               <button className="text-blue-500">See more →</button>
             </div>
-            <div className="flex space-x-4 overflow-x-auto py-2">
-              {section.items.map((item) => (
-                <div key={item.name} className="card-container">
-                  <img 
-                    src={item.image} 
-                    alt={item.name}
-                    className="card-image"
-                  />
-                  <div className="card-overlay">
-                    <h3 className="card-title">{item.name}</h3>
+            <div className={`cards-scroll-container ${showLeftButton[section.title] ? 'scrolled' : ''}`}>
+              {showLeftButton[section.title] && (
+                <button 
+                  className="scroll-button left"
+                  onClick={(e) => {
+                    const container = e.target.closest('.cards-scroll-container').querySelector('.flex');
+                    container.scrollBy({ left: -(339 + 16), behavior: 'smooth' });
+                  }}
+                >
+                  ←
+                </button>
+              )}
+              <div 
+                className="flex space-x-4"
+                onScroll={(e) => handleScroll(e, section.title)}
+              >
+                {section.items.map((item) => (
+                  <div key={item.name} className="card-container">
+                    <img 
+                      src={item.image} 
+                      alt={item.name}
+                      className="card-image"
+                    />
+                    <div className="card-overlay">
+                      <h3 className="card-title">{item.name}</h3>
+                    </div>
                   </div>
-                </div>
-              ))}
-              <button className="p-2 bg-gray-200 rounded-full">→</button>
+                ))}
+              </div>
+              <button 
+                className="scroll-button right"
+                onClick={(e) => {
+                  const container = e.target.closest('.cards-scroll-container').querySelector('.flex');
+                  container.scrollBy({ left: 339 + 16, behavior: 'smooth' });
+                }}
+              >
+                →
+              </button>
             </div>
           </div>
         ))}
@@ -166,6 +319,7 @@ export default function TravelerDashboard() {
         <img 
           src={botImage}
           alt="Bot Assistant"
+          type="button"
           className="fixed-bottom-image"
         />
       </div>
