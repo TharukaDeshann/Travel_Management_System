@@ -236,7 +236,7 @@
     border-radius: 0.5rem;
     overflow: hidden;
     flex: 0 0 339px;  /* Prevent flex growing/shrinking */
-    margin-right: 1rem;  /* Consistent spacing */
+    
 }
 
 .card-container:hover {
