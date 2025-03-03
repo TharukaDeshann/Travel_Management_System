@@ -2,8 +2,6 @@
 package com.yamu.backend.service;
 
 import org.springframework.stereotype.Service;
-import java.util.HashSet;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;

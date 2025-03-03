@@ -1,22 +1,28 @@
 package com.yamu.backend.controller;
 
-import com.yamu.backend.dto.RefreshTokenRequest;
+
 import com.yamu.backend.dto.UserLoginRequest;
 import com.yamu.backend.dto.UserRegistrationRequest;
 import com.yamu.backend.model.User;
+import com.yamu.backend.repository.UserRepository;
 import com.yamu.backend.service.TokenBlacklistService;
 import com.yamu.backend.service.UserService;
 import com.yamu.backend.util.JwtUtil;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.validation.annotation.Validated;
 
 import java.util.HashMap;
 import java.util.Map;
+
+import jakarta.servlet.http.Cookie;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -25,9 +31,11 @@ public class AuthController {
     private final UserService userService;
     private final JwtUtil jwtUtil;
     private final TokenBlacklistService tokenBlacklistService;
+    private final UserRepository userRepository;
 
     @Autowired
-    public AuthController(UserService userService, JwtUtil jwtUtil, TokenBlacklistService tokenBlacklistService) {
+    public AuthController(UserService userService, JwtUtil jwtUtil, TokenBlacklistService tokenBlacklistService, UserRepository userRepository) {
+        this.userRepository = userRepository;
         this.userService = userService;
         this.jwtUtil = jwtUtil;
         this.tokenBlacklistService = tokenBlacklistService;
@@ -48,68 +56,153 @@ public class AuthController {
 
     @PostMapping("/login")
     public ResponseEntity<Map<String, String>> login(@Valid @RequestBody UserLoginRequest loginRequest) {
-        Map<String, String> response = new HashMap<>();
         User authenticatedUser = userService.authenticate(loginRequest.getEmail(), loginRequest.getPassword());
 
         if (authenticatedUser != null) {
             String accessToken = jwtUtil.generateAccessToken(authenticatedUser.getEmail());
             String refreshToken = jwtUtil.generateRefreshToken(authenticatedUser.getEmail());
 
-            response.put("accessToken", accessToken);
-            response.put("refreshToken", refreshToken);
+            // Create HTTP-only cookies
+            ResponseCookie accessTokenCookie = ResponseCookie.from("accessToken", accessToken)
+                    .httpOnly(true)
+                    .secure(true) // Set to true in production (requires HTTPS)
+                    .path("/")
+                    .maxAge(60) // 15 minutes for access token
+                    .sameSite("Strict")
+                    .build();
 
-            return ResponseEntity.ok(response);
+            ResponseCookie refreshTokenCookie = ResponseCookie.from("refreshToken", refreshToken)
+                    .httpOnly(true)
+                    .secure(true)
+                    .path("/")
+                    .maxAge(604800) // 7 days for refresh token
+                    .sameSite("Strict")
+                    .build();
+
+            return ResponseEntity.ok()
+                    .header("Set-Cookie", accessTokenCookie.toString())
+                    .header("Set-Cookie", refreshTokenCookie.toString())
+                    .body(Map.of("message", "Login successful"));
         }
 
-        response.put("error", "Invalid credentials");
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Invalid credentials"));
     }
 
     @PostMapping("/refresh-token")
-public ResponseEntity<?> refreshToken(@RequestBody Map<String, String> request) {
-    String refreshToken = request.get("refreshToken");
-
-    try {
-        String email = jwtUtil.extractEmail(refreshToken);
-
-        
-        if (tokenBlacklistService.isBlacklisted(refreshToken)) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Refresh token has been revoked"));
+    public ResponseEntity<?> refreshToken(@CookieValue(value = "refreshToken", required = false) String refreshToken) {
+        if (refreshToken == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Refresh token is missing"));
         }
 
-        
-        if (email != null && jwtUtil.validateToken(refreshToken, email)) {
-            // Generate new access token
-            String newAccessToken = jwtUtil.generateAccessToken(email);
-            return ResponseEntity.ok(Map.of("accessToken", newAccessToken));
+        try {
+            String email = jwtUtil.extractEmail(refreshToken);
+
+            if (tokenBlacklistService.isBlacklisted(refreshToken)) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(Map.of("error", "Refresh token has been revoked"));
+            }
+
+            if (email != null && jwtUtil.validateToken(refreshToken, email)) {
+                // Generate new access token
+                String newAccessToken = jwtUtil.generateAccessToken(email);
+
+                // Create HTTP-only cookie
+                ResponseCookie accessTokenCookie = ResponseCookie.from("accessToken", newAccessToken)
+                        .httpOnly(true)
+                        .secure(true) // Set to true in production (requires HTTPS)
+                        .path("/")
+                        .maxAge(900) // 15 minutes for access token
+                        .sameSite("Strict")
+                        .build();
+
+                return ResponseEntity.ok()
+                        .header("Set-Cookie", accessTokenCookie.toString())
+                        .body(Map.of("message", "Access token refreshed"));
+            }
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Invalid refresh token"));
         }
-    } catch (Exception e) {
+
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Invalid refresh token"));
     }
 
-    return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Invalid refresh token"));
-}
+    @PostMapping("/logout")
+    public ResponseEntity<?> logout(@CookieValue(value = "accessToken", required = false) String accessToken,
+            @CookieValue(value = "refreshToken", required = false) String refreshToken) {
 
+        if (accessToken != null) {
+            long accessTokenExpiry = jwtUtil.getExpirationDateFromToken(accessToken).getTime();
+            tokenBlacklistService.addToBlacklist(accessToken, accessTokenExpiry);
+        }
 
-@PostMapping("/logout")
-public ResponseEntity<?> logout(@RequestHeader("Authorization") String tokenHeader, @RequestBody RefreshTokenRequest request) {
-    if (tokenHeader != null && tokenHeader.startsWith("Bearer ")) {
-        String accessToken = tokenHeader.substring(7);
-        String refreshToken = request.getRefreshToken();
-        
-        System.out.println("Access token: " + accessToken);
-        System.out.println("Refresh token: " + refreshToken);
+        if (refreshToken != null) {
+            long refreshTokenExpiry = jwtUtil.getExpirationDateFromToken(refreshToken).getTime();
+            tokenBlacklistService.addToBlacklist(refreshToken, refreshTokenExpiry);
+        }
 
-        // Get expiration times from the tokens
-        long accessTokenExpiry = jwtUtil.getExpirationDateFromToken(accessToken).getTime();
-        long refreshTokenExpiry = jwtUtil.getExpirationDateFromToken(refreshToken).getTime();
+        // Claer cookies by setting expiration time to 0
+        ResponseCookie clearAccessToken = ResponseCookie.from("accessToken", "")
+                .httpOnly(true)
+                .secure(true)
+                .path("/")
+                .maxAge(0)
+                .sameSite("Strict")
+                .build();
 
-        tokenBlacklistService.addToBlacklist(accessToken, accessTokenExpiry);
-        tokenBlacklistService.addToBlacklist(refreshToken, refreshTokenExpiry);
-        
-        return ResponseEntity.ok(Map.of("message", "Logged out successfully"));
+        ResponseCookie clearRefreshToken = ResponseCookie.from("refreshToken", "")
+                .httpOnly(true)
+                .secure(true)
+                .path("/")
+                .maxAge(0)
+                .sameSite("Strict")
+                .build();
+
+        return ResponseEntity.ok()
+                .header("Set-Cookie", clearAccessToken.toString())
+                .header("Set-Cookie", clearRefreshToken.toString())
+                .body(Map.of("message", "Logged out successfully"));
     }
-    
-    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", "Invalid token format"));
-}
+
+    @GetMapping("/user")
+    public ResponseEntity<?> getUser(HttpServletRequest request) {
+        // Get token from cookies
+        String token = extractTokenFromCookie(request);
+        // Extract user email from token
+        String email = jwtUtil.extractEmail(token);
+        User user = userRepository.findByEmail(email);
+
+        
+        if (token == null || !jwtUtil.validateToken(token, email)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Invalid or expired session"));
+        }
+
+        
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "User not found"));
+        }
+
+        // Return user details (excluding password)
+        Map<String, Object> userInfo = new HashMap<>();
+        userInfo.put("email", user.getEmail());
+        userInfo.put("firstName", user.getFirstName());
+        userInfo.put("lastName", user.getLastName());
+        userInfo.put("role", user.getRole());
+
+        return ResponseEntity.ok(userInfo);
+    }
+
+
+
+
+    private String extractTokenFromCookie(HttpServletRequest request) {
+        if (request.getCookies() != null) {
+            for (Cookie cookie : request.getCookies()) {
+                if ("accessToken".equals(cookie.getName())) {
+                    return cookie.getValue();
+                }
+            }
+        }
+        return null;
+    }
+
 }

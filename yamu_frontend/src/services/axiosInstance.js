@@ -1,37 +1,33 @@
 import axios from "axios";
-import { getAccessToken, logoutUser, refreshToken } from "./authService";
+import { logoutUser, refreshToken } from "./authService";
 
 const apiClient = axios.create({
-    baseURL: "http://localhost:8080",
+  baseURL: "http://localhost:8080",
+  withCredentials: true, // Ensures cookies are sent automatically
 });
 
-// Attach token to all requests
-apiClient.interceptors.request.use((config) => {
-    const token = getAccessToken();
-    if (token) {
-        config.headers["Authorization"] = `Bearer ${token}`;
-    }
+// Remove manual token attachment since cookies handle authentication
+apiClient.interceptors.request.use(
+  (config) => {
     return config;
-}, (error) => {
-    return Promise.reject(error);
-});
+  },
+  (error) => Promise.reject(error)
+);
 
+// Handle 401 (Unauthorized) errors by attempting a token refresh
 apiClient.interceptors.response.use(
-    (response) => response,
-    async (error) => {
-      if (error.response.status === 401) {
-        const newToken = await refreshToken();
-  
-        if (newToken) {
-          error.config.headers["Authorization"] = `Bearer ${newToken}`;
-          return apiClient(error.config);
-        } else {
-          logoutUser();
-        }
+  (response) => response,
+  async (error) => {
+    if (error.response && error.response.status === 401) {
+      try {
+        await refreshToken(); // This will update the cookie automatically
+        return apiClient(error.config); // Retry the failed request
+      } catch (refreshError) {
+        logoutUser(); // If refresh fails, log the user out
       }
-  
-      return Promise.reject(error);
     }
-  );
+    return Promise.reject(error);
+  }
+);
 
 export default apiClient;
