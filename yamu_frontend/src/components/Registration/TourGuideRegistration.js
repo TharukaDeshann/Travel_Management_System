@@ -7,20 +7,12 @@ import guideImage from "../../assets/images/guideimage.png"; // Import backgroun
 
 // Validation Schema
 const schema = yup.object().shape({
-  language: yup
-    .string()
-    .matches(/^[A-Za-z\s]+$/, "Language can only contain letters")
-    .required("Language is required"),
+  language: yup.string().matches(/^[A-Za-z\s]+$/, "Language can only contain letters").required("Language is required"),
   expertise: yup.string().required("Expertise is required"),
   about: yup.string().required("About is required"),
-  vehicleType: yup.string().when("vehicleAvailability", {
-    is: true,
-    then: yup.string().required("Vehicle type is required"),
-  }),
-  numberOfSeats: yup.number().when("vehicleAvailability", {
-    is: true,
-    then: yup.number().required("Number of seats is required").positive().integer(),
-  }),
+  vehicleAvailability: yup.boolean(),
+  vehicleType: yup.string(),
+  numberOfSeats: yup.number().positive().integer(),
 });
 
 const TourGuideRegistration = () => {
@@ -29,13 +21,35 @@ const TourGuideRegistration = () => {
     register,
     handleSubmit,
     formState: { errors },
+    setError,
+    clearErrors,
   } = useForm({
     resolver: yupResolver(schema),
   });
 
   const onSubmit = (data) => {
+    if (vehicleAvailability) {
+      if (!data.vehicleType) {
+        setError("vehicleType", {
+          type: "manual",
+          message: "Vehicle type is required",
+        });
+        return;
+      }
+      if (!data.numberOfSeats) {
+        setError("numberOfSeats", {
+          type: "manual",
+          message: "Number of seats is required",
+        });
+        return;
+      }
+    } else {
+      clearErrors("vehicleType");
+      clearErrors("numberOfSeats");
+    }
+
     console.log("Tour Guide Form Data:", data);
-    alert("Tour Guide Registration Successful!");
+    alert("Guide registration is successful!");
   };
 
   return (
@@ -69,6 +83,7 @@ const TourGuideRegistration = () => {
               type="checkbox"
               {...register("vehicleAvailability")}
               onChange={(e) => setVehicleAvailability(e.target.checked)}
+              className="vehicle-availability-checkbox"
             />
           </div>
 

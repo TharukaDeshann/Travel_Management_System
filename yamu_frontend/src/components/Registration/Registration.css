@@ -6,6 +6,7 @@
   min-height: 100vh;
   width: 100%;
   padding: 20px; /* Prevents content from touching edges */
+  overflow: auto; /* Ensures dropdown has space to expand */
 }
 
 /* Form Box */
@@ -23,7 +24,7 @@
   font-weight: 600;
   font-size: 14px;
   display: block;
-  text-align: left; /* Left-aligned labels */
+  text-align: left;
   margin-bottom: 5px;
   color: black;
 }
@@ -38,8 +39,8 @@
   border: 1px solid #ddd;
   border-radius: 8px;
   font-size: 14px;
-  background: rgba(0, 0, 0, 0.7); /* Black transparent input with higher opacity */
-  color: white; /* White text */
+  background: rgba(0, 0, 0, 0.7);
+  color: white;
   transition: border-color 0.3s ease-in-out;
 }
 
@@ -47,9 +48,9 @@
 .registration-form input::placeholder,
 .registration-form textarea::placeholder,
 .registration-form select::placeholder {
-  color: rgba(255, 255, 255, 0.7); /* White text with slight transparency */
-  font-size: 14px; /* Same font size as input text */
-  font-weight: 400; /* Reduced font weight */
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 14px;
+  font-weight: 400;
 }
 
 /* Input Focus */
@@ -71,21 +72,49 @@
 
 /* Submit Button */
 .register-btn {
-  padding: 8px 16px; /* Smaller button */
-  background: #f4a742; /* Yellow background */
+  padding: 8px 16px;
+  background: #f4a742;
   border: none;
-  color: black; /* Black text */
+  color: black;
   font-size: 14px;
   font-weight: bold;
   border-radius: 8px;
   cursor: pointer;
   transition: background 0.3s;
   margin-top: 10px;
-  float: right; /* Right-aligned */
+  float: right;
 }
 
 .register-btn:hover {
   background: #d98c2a;
+}
+
+/* Dropdown */
+.dropdown {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 14px;
+  background: rgba(0, 0, 0, 0.7);
+  color: white;
+  appearance: none;
+  position: relative;
+  max-height: 100px; /* Adjust the max height to show 5 items */
+  overflow-y: auto; /* Enable vertical scrolling */
+}
+
+/* Force dropdown to always expand downward */
+.dropdown option {
+  background: white;
+  color: black;
+}
+
+/* Ensures dropdown opens downward */
+.dropdown:focus {
+  transform: translateY(0);
+  overflow-y: auto;
+  max-height: 200px;
 }
 
 /* Vehicle Availability Container */
@@ -99,4 +128,9 @@
 .vehicle-availability-label {
   margin-right: 10px;
   white-space: nowrap; /* Ensure label words are on one line */
+}
+
+/* Vehicle Availability Checkbox */
+.vehicle-availability-checkbox {
+  margin-left: 10px;
 }
