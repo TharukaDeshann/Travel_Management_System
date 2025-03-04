@@ -28,7 +28,10 @@ const App = () => {
         <Route path="/" element={<Login />} />
         <Route path="/traveller-register" element={<TravellerRegistration />} />
         <Route path="/guide-register" element={<TourGuideRegistration />} />
-        <Route path="/traveler-dashboard" element={<TravelerDashboard />} />
+        <Route element={<ProtectedRoute />}>
+          <Route path="/traveler-dashboard" element={<TravelerDashboard />} />
+        </Route>
+        
       </Routes>
     </Router>
   );
