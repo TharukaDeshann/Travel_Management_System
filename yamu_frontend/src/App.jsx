@@ -11,20 +11,15 @@ import TourGuideRegistration from "./components/Registration/TourGuideRegistrati
 import Go from './pages/Go.jsx';
 import TravelerDashboard from "./pages/TravelerDashboard.jsx";
 
-
-
 const App = () => {
   return (
     <Router>
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
-        <Route element={<ProtectedRoute />}>
-          <Route path="/home" element={<Home />} />
-        </Route>
-        <Route element={<ProtectedRoute />}>
-          <Route path="/go" element={<Go />} />
-        </Route>
+        {/* Temporarily remove ProtectedRoute for testing */}
+        <Route path="/home" element={<Home />} />
+        <Route path="/go" element={<Go />} />
         <Route path="/" element={<Login />} />
         <Route path="/traveller-register" element={<TravellerRegistration />} />
         <Route path="/guide-register" element={<TourGuideRegistration />} />
