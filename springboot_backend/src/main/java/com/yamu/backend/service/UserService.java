@@ -1,15 +1,13 @@
 package com.yamu.backend.service;
 
 import com.yamu.backend.dto.UserRegistrationRequest;
-import com.yamu.backend.enums.UserRole;
-import com.yamu.backend.model.Admin;
 import com.yamu.backend.model.Guide;
 import com.yamu.backend.model.Traveler;
 import com.yamu.backend.model.User;
 import com.yamu.backend.repository.UserRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+
 
 @Service
 public class UserService {

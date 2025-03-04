@@ -1,0 +1,363 @@
+/* Navigation styles */
+.nav-container {
+    position: fixed;  /* Make nav fixed */
+    top: 0;          /* Stick to top */
+    left: 0;         /* Stick to left */
+    right: 0;        /* Stick to right */
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    background-color: white;
+    z-index: 100;    /* Keep nav above other content */
+    
+}
+
+.logo-container {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;  /* Space between logo and text */
+}
+
+.nav-logo {
+    font-size: 1.5rem;
+    font-family:'Kaushan Script', cursive;
+    font-weight: bold;
+    margin: 0;  /* Remove any default margins */
+    padding: 0;  /* Remove any default padding */
+}
+
+.nav-logo-image {
+    height: 5rem;
+    width: auto;
+}
+
+.nav-links {
+    font-size: medium;
+    font-weight: 400;
+    display: flex;
+    gap: 2rem;
+}
+
+.nav-link {
+    cursor: pointer;
+}
+
+.nav-link:hover {
+    text-decoration: underline;
+}
+
+/* Currency dropdown styles */
+.currency-dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+.currency-button {
+    background-color: black;
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+    border: none;
+    cursor: pointer;
+    min-width: 90px;
+}
+
+.dropdown-menu {
+    position: fixed;  /* Change to fixed position */
+    margin-top: 40px;  /* Adjust based on your button height */
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    width: 120px;
+    max-height: 150px;
+    overflow-y: auto;
+    z-index: 1001;
+}
+
+.currency-option {
+    width: 100%;
+    padding: 8px 16px;
+    text-align: left;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: black;
+    font-size: 0.9rem;
+    display: block;
+}
+
+.currency-option:hover {
+    background-color: #f3f4f6;
+}
+
+/* Custom scrollbar for the dropdown */
+.dropdown-menu::-webkit-scrollbar {
+    width: 5px;
+}
+
+.dropdown-menu::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+.dropdown-menu::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 4px;
+}
+
+.dropdown-menu::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
+/* Ensure the icons container stays fixed */
+.flex.items-center.space-x-4 {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    position: static;  /* Change to static */
+}
+
+/* Icons and badges */
+.icon-container {
+    position: relative;
+    cursor: pointer;
+}
+
+.notification-badge {
+    position: absolute;
+    top: -0.25rem;
+    right: -0.25rem;
+    background-color: #ef4444;
+    color: white;
+    border-radius: 9999px;
+    width: 1rem;
+    height: 1rem;
+    font-size: 0.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.profile-image {
+    width: 2.8rem;
+    height: 2.8rem;
+    border-radius: 9999px;
+    object-fit: cover;
+}
+
+/* Search and Buttons styles */
+.search-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin: 2rem 0;
+}
+
+.search-bar {
+    width: 66.666667%;
+    margin-bottom: 1.5rem;
+}
+
+.search-input {
+    width: 100%;
+    padding: 0.75rem 1.5rem;  /* Increased left padding */
+    border-radius: 9999px;
+    border: 1px solid #D9D9D9;
+    background-color: #D9D9D9;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    transition: all 0.2s;
+}
+
+.search-input:focus {
+    outline: none;
+    border: 2px solid #3b82f6;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+.buttons-container {
+    display: flex;
+    flex-direction: row;
+    gap: 1rem;
+    justify-content: center;
+}
+
+.action-button {
+    padding: 0.75rem 1.5rem;
+    border-radius: 9999px;
+    font-weight: 500;
+    transition: background-color 0.2s;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.upcoming-trips-button {
+    background-color: #CDA049;
+}
+
+.upcoming-trips-button:hover {
+  transform: scale(1.02);
+}
+
+.start-planning-button {
+    background-color: #532321;
+    color: white;
+}
+
+.start-planning-button:hover {
+  transform: scale(1.02);
+}
+
+.fixed-bottom-image {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 100px;
+    height: auto;
+    z-index: 50;
+    cursor: pointer;
+    transition: transform 0.3s ease;  /* Add smooth transition */
+    filter: drop-shadow(0px 4px 20px rgba(255, 255, 255, 1));
+}
+
+.fixed-bottom-image:hover {
+    transform: scale(1.05);
+}
+
+/* Card styles */
+.card-container {
+    position: relative;
+    width: 339px !important;  /* Force fixed width */
+    height: 269px !important;  /* Force fixed height */
+    border-radius: 0.5rem;
+    overflow: hidden;
+    flex: 0 0 339px;  /* Prevent flex growing/shrinking */
+    
+}
+
+.card-container:hover {
+    transform: scale(1.01);
+    filter: brightness(120%);
+}
+
+.card-image {
+    width: 339px;
+    height: 269px;
+    object-fit: cover;
+}
+
+.card-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);  /* Dark overlay */
+    display: flex;
+    align-items: flex-end;  /* Changed from center to flex-end */
+    justify-content: flex-start;  /* Changed from center to flex-start */
+    padding: 1.5rem;  /* Added padding for spacing */
+}
+
+.card-title {
+    color: white;
+    font-size: 1.25rem;
+    font-weight: 700;  /* Bold text */
+    text-align: left;  /* Changed from center to left */
+}
+
+/* Add padding to the main content to prevent it from going under the fixed nav */
+.main-content {
+    padding-top: 5rem;  /* Adjust this value based on your nav height */
+    padding-left:40px;
+    padding-right:40px;
+}
+
+.scroll-button {
+    min-width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: #ffffff;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 10;
+    border: 1px solid #e5e7eb;
+    transition: all 0.3s ease;
+}
+
+.scroll-button.left {
+    left: 20px;  /* Overlap the button on content */
+}
+
+.scroll-button.right {
+    right: 20px;  /* Overlap the button on content */
+}
+
+.scroll-button:hover {
+    background-color: #f3f4f6;
+    transform: translateY(-50%) scale(1.1);  /* Slight grow effect on hover */
+}
+
+.cards-scroll-container {
+    position: relative;
+    width: 100%;
+    overflow: hidden;
+    padding: 0;  /* Remove padding since buttons will overlap */
+}
+
+.flex.space-x-4 {
+    display: flex;
+    gap: 0;
+    overflow-x: auto;
+    scroll-behavior: smooth;
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+    padding: 1rem 0;
+    position: relative;
+    margin: 0;  /* Remove margin since buttons will overlap */
+}
+
+/* Add gradient fade effects on the sides */
+.cards-scroll-container::before,
+.cards-scroll-container::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 50px;
+    z-index: 10;
+    pointer-events: none;
+}
+
+.cards-scroll-container::after {
+    right: 0;
+    
+}
+
+.cards-scroll-container::before {
+    left: 0;
+    
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+/* Show left gradient only when scrolled */
+.cards-scroll-container.scrolled::before {
+    opacity: 1;
+}
+
+.section-container {
+    position: relative;
+    margin: 2px;
+}
+  
