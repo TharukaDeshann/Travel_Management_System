@@ -1,4 +1,4 @@
-import Navbar from "../components/Navbar"; 
+
 import React from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
@@ -9,6 +9,7 @@ const HomePage = () => {
   const handleGetStartedClick = () => {
     navigate("/login");
   };
+  
 
   return (
     <div 

@@ -1,11 +1,13 @@
 package com.yamu.backend.service;
 
 import com.yamu.backend.dto.UserRegistrationRequest;
+import com.yamu.backend.dto.UserUpdateRequest;
 import com.yamu.backend.enums.UserRole;
 import com.yamu.backend.model.Guide;
 import com.yamu.backend.model.Traveler;
 import com.yamu.backend.model.User;
 import com.yamu.backend.repository.UserRepository;
+
 
 import java.util.List;
 import java.util.Optional;
@@ -77,47 +79,44 @@ public class UserService {
         return userRepository.findById(id);
     }
 
+
     // Get users by role
     public List<User> getUsersByRole(UserRole role) {
         return userRepository.findByRole(role);
-    }
-
-    // Update user details
-    public User updateUser(Long id, User updatedUser) {
-        Optional<User> existingUserOpt = userRepository.findById(id);
-        if (existingUserOpt.isPresent()) {
-            User existingUser = existingUserOpt.get();
-
-            // Update common fields
-            existingUser.setFirstName(updatedUser.getFirstName());
-            existingUser.setLastName(updatedUser.getLastName());
-            existingUser.setEmail(updatedUser.getEmail());
-            existingUser.setContactNumber(updatedUser.getContactNumber());
-            existingUser.setAddress(updatedUser.getAddress());
-
-            // Handle specific fields based on type
-            if (existingUser instanceof Traveler && updatedUser instanceof Traveler) {
-                ((Traveler) existingUser).setNationality(((Traveler) updatedUser).getNationality());
-            } else if (existingUser instanceof Guide && updatedUser instanceof Guide) {
-                Guide existingGuide = (Guide) existingUser;
-                Guide updatedGuide = (Guide) updatedUser;
-
-                existingGuide.setExpertiseCityRegion(updatedGuide.getExpertiseCityRegion());
-                existingGuide.setLanguage(updatedGuide.getLanguage());
-                existingGuide.setAbout(updatedGuide.getAbout());
-                existingGuide.setVehicleAvailability(updatedGuide.isVehicleAvailability());
-            }
-
-            return userRepository.save(existingUser);
-        } else {
-            throw new RuntimeException("User not found with id: " + id);
-        }
     }
 
     // Delete user (soft delete - recommended)
     public void deleteUser(Long id) {
         Optional<User> user = userRepository.findById(id);
         user.ifPresent(userRepository::delete);
+    }
+
+    public void updateUser(Long id, UserUpdateRequest updateRequest) {
+        Optional<User> optionalUser = userRepository.findById(id);
+        if (optionalUser.isEmpty()) {
+            throw new RuntimeException("User not found");
+        }
+
+        User user = optionalUser.get();
+
+        // Update common fields
+        if (updateRequest.getFirstName() != null) user.setFirstName(updateRequest.getFirstName());
+        if (updateRequest.getLastName() != null) user.setLastName(updateRequest.getLastName());
+        if (updateRequest.getContactNumber() != null) user.setContactNumber(updateRequest.getContactNumber());
+        if (updateRequest.getAddress() != null) user.setAddress(updateRequest.getAddress());
+
+        // Role-specific updates
+        if (user instanceof Traveler traveler && updateRequest.getNationality() != null) {
+            traveler.setNationality(updateRequest.getNationality());
+        }
+        if (user instanceof Guide guide) {
+            if (updateRequest.getExpertiseCityRegion() != null) guide.setExpertiseCityRegion(updateRequest.getExpertiseCityRegion());
+            if (updateRequest.getLanguage() != null) guide.setLanguage(updateRequest.getLanguage());
+            if (updateRequest.getAbout() != null) guide.setAbout(updateRequest.getAbout());
+            if (updateRequest.getVehicleAvailability() != null) guide.setVehicleAvailability(updateRequest.getVehicleAvailability());
+        }
+
+        userRepository.save(user);
     }
 
 }

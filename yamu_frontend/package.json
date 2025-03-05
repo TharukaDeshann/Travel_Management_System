@@ -12,7 +12,7 @@
     "autoprefixer": "^10.4.20",
     "axios": "^1.7.9",
     "formik": "^2.4.6",
-    "framer-motion": "^12.4.9",
+    "framer-motion": "^12.4.10",
     "lucide-react": "^0.475.0",
     "postcss": "^8.5.2",
     "react": "^19.0.0",

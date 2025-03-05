@@ -14,6 +14,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+
+import com.yamu.backend.dto.UserUpdateRequest;
 import com.yamu.backend.enums.UserRole;
 import com.yamu.backend.model.User;
 import com.yamu.backend.service.UserService;
@@ -46,22 +48,20 @@ public class UserController {
         return user.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
     }
 
+     // UPDATE USER
+    @PutMapping("/{id}")
+    public ResponseEntity<String> updateUser(@PathVariable Long id, @RequestBody UserUpdateRequest updateRequest) {
+        userService.updateUser(id, updateRequest);
+        return ResponseEntity.ok("User updated successfully");
+    }
+
     // 3. Get users by role
     @GetMapping("/role/{role}")
     public ResponseEntity<List<User>> getUsersByRole(@PathVariable UserRole role) {
         return ResponseEntity.ok(userService.getUsersByRole(role));
     }
 
-    // 4. Update user details
-    @PutMapping("/{id}")
-    public ResponseEntity<?> updateUser(@PathVariable Long id, @RequestBody User updatedUser) {
-        try {
-            User user = userService.updateUser(id, updatedUser);
-            return ResponseEntity.ok(user);
-        } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-        }
-    }
+    
 
     // 5. Delete user (soft delete)
     @DeleteMapping("/{id}")
