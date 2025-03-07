@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { ChevronRight } from "lucide-react";
-import './TravelerDashboard.css';  // Import the CSS file
+import '../styles/TravelerDashboard.css';  // Updated import path
 // Import images
 import yamuLogo from '../images/yamu-logo.png';  // Add your logo file
 import notificationIcon from '../images/notification.png';  // Updated import name
@@ -15,6 +15,8 @@ const currencies = [
   { code: 'EUR', symbol: '€' },
   { code: 'CHF', symbol: 'Fr.' }
 ];
+
+
 
 const sections = [
   { 
