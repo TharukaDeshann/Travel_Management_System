@@ -51,8 +51,8 @@ public class UserController {
      // UPDATE USER
     @PutMapping("/{id}")
     public ResponseEntity<String> updateUser(@PathVariable Long id, @RequestBody UserUpdateRequest updateRequest) {
-        userService.updateUser(id, updateRequest);
-        return ResponseEntity.ok("User updated successfully");
+        User user = userService.updateUser(id, updateRequest);
+        return ResponseEntity.ok(user + "User updated successfully");
     }
 
     // 3. Get users by role

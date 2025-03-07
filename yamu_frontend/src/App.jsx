@@ -10,7 +10,7 @@ import TravellerRegistration from "./components/Registration/TravellerRegistrati
 import TourGuideRegistration from "./components/Registration/TourGuideRegistration.jsx";
 import Go from './pages/Go.jsx';
 import TravelerDashboard from "./pages/TravelerDashboard.jsx";
-import UserManagement from './pages/UserManagement.jsx';
+
 
 const App = () => {
   return (
@@ -27,7 +27,8 @@ const App = () => {
         <Route element={<ProtectedRoute />}>
           <Route path="/traveler-dashboard" element={<TravelerDashboard />} />
         </Route>
-        <Route path="/user-management" element={ <UserManagement />} />
+        
+        
         
       </Routes>
     </Router>

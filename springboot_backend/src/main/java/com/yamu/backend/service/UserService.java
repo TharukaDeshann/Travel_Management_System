@@ -91,7 +91,7 @@ public class UserService {
         user.ifPresent(userRepository::delete);
     }
 
-    public void updateUser(Long id, UserUpdateRequest updateRequest) {
+    public User updateUser(Long id, UserUpdateRequest updateRequest) {
         Optional<User> optionalUser = userRepository.findById(id);
         if (optionalUser.isEmpty()) {
             throw new RuntimeException("User not found");
@@ -117,6 +117,7 @@ public class UserService {
         }
 
         userRepository.save(user);
+        return user;
     }
 
 }
