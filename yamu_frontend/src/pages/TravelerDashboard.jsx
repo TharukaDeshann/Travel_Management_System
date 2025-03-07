@@ -16,6 +16,8 @@ const currencies = [
   { code: 'CHF', symbol: 'Fr.' }
 ];
 
+
+
 const sections = [
   { 
     title: "Discover Places", 

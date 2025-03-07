@@ -19,7 +19,7 @@ const Login = () => {
     try {
       const response = await login({ email, password });
       if (response.status === 200) {
-        navigate("/home");
+        navigate("/traveler-dashboard");
       }
     } catch (err) {
       setError(err.response?.data?.error || "Invalid email or password.");
