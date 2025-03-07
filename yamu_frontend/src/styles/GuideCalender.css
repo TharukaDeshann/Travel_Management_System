@@ -1,0 +1,92 @@
+/* Container */
+.calendar-container {
+  width: calc(100% - 80px);
+  padding: 20px;
+  margin: 0 40px;
+  box-sizing: border-box;
+}
+
+/* Navbar */
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 20px;
+  background: white;
+  margin: 0 -40px;
+  width: calc(100% + 80px);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.logo-image {
+  width: 40px;
+  height: auto;
+}
+
+.nav-links {
+  display: flex;
+  gap: 40px;
+  justify-content: center;
+  flex: 1;
+  margin: 0 20px;
+}
+
+.nav-links a {
+  text-decoration: none;
+  color: black;
+  font-size: 16px;
+}
+
+/* Title */
+.title {
+  margin: 20px 0;
+}
+
+/* Calendar */
+.calendar {
+  background: white;
+  border-radius: 8px;
+  padding: 20px;
+  margin: 20px 0;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.calendar-header {
+  text-align: center;
+  font-weight: bold;
+  margin-bottom: 20px;
+}
+
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 10px;
+}
+
+.day {
+  padding: 10px;
+  text-align: center;
+  border: 1px solid #eee;
+  border-radius: 4px;
+}
+
+.event {
+  background-color: #007BFF;
+  color: white;
+}
+
+/* Chart */
+.chart-container {
+  background: white;
+  border-radius: 8px;
+  padding: 20px;
+  margin: 20px 0;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+  

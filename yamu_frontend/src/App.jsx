@@ -10,7 +10,9 @@ import TravellerRegistration from "./components/Registration/TravellerRegistrati
 import TourGuideRegistration from "./components/Registration/TourGuideRegistration.jsx";
 import Go from './pages/Go.jsx';
 import TravelerDashboard from "./pages/TravelerDashboard.jsx";
-
+import GuideDashboard from "./pages/GuideDashboard.jsx";
+import GuideReview from "./pages/GuideReview.jsx";
+import GuideCalender from "./pages/GuideCalender.jsx";
 
 
 const App = () => {
@@ -29,6 +31,9 @@ const App = () => {
         <Route path="/traveller-register" element={<TravellerRegistration />} />
         <Route path="/guide-register" element={<TourGuideRegistration />} />
         <Route path="/traveler-dashboard" element={<TravelerDashboard />} />
+        <Route path="/guide-dashboard" element={<GuideDashboard />} />
+        <Route path="/guide-review" element={<GuideReview />} />
+        <Route path="/guide-calendar" element={<GuideCalender />} />
       </Routes>
     </Router>
   );
