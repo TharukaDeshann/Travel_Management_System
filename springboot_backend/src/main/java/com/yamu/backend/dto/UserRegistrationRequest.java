@@ -32,12 +32,16 @@ public class UserRegistrationRequest {
     private UserRole role;
 
     // Specialized fields for Traveler
+    @NotNull(message = "Nationality is required")
     private String nationality;
 
     // Specialized fields for Guide
+    @NotNull(message = "Expertise city/region is required")
     private String expertiseCityRegion;
+    @NotNull(message = "Language is required")
     private String language;
     private String about;
+    @NotNull(message = "Vehicle availability is required")
     private Boolean vehicleAvailability;
 
     // Getters and Setters

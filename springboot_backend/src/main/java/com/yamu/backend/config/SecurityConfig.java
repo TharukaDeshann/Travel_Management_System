@@ -48,13 +48,13 @@ public class SecurityConfig {
         http
             .csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/auth/login", "/api/auth/register", "/api/auth/refresh-token").permitAll()
+                .requestMatchers("/api/auth/login", "/api/auth/register", "/api/auth/refresh-token", "api/auth/user", "api/users/user").permitAll()
                 .requestMatchers(HttpMethod.PUT, "/api/users/{id}").authenticated()
                 .requestMatchers("/api/admin/**").hasRole("ADMIN") 
                 .requestMatchers("/api/guide/**").hasRole("GUIDE")
                 .requestMatchers("/api/traveler/**").hasRole("TRAVELER")
                 .anyRequest().authenticated()
-            )
+            )//
             .sessionManagement(sess -> sess
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
