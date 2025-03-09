@@ -35,7 +35,7 @@ public class UserService {
             case TRAVELER:
                 Traveler traveler = new Traveler();
                 traveler.setNationality(request.getNationality());
-                user = traveler;
+                user = traveler;  // Upcasting
                 break;
             case GUIDE:
                 Guide guide = new Guide();
@@ -43,7 +43,7 @@ public class UserService {
                 guide.setLanguage(request.getLanguage());
                 guide.setAbout(request.getAbout());
                 guide.setVehicleAvailability(request.getVehicleAvailability());
-                user = guide;
+                user = guide; // Upcasting
                 break;
             default:
                 throw new IllegalArgumentException("Invalid user role");
