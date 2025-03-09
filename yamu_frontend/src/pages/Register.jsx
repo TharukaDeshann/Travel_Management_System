@@ -122,8 +122,8 @@ const Register = () => {
         <div className="space-y-4">
           {/* Step Indicator */}
           <div className="flex justify-center mb-6">
-            <div className={`w-4 h-4 rounded-full mx-1 ${step === 1 ? "bg-blue-600" : "bg-gray-300"}`} />
-            <div className={`w-4 h-4 rounded-full mx-1 ${step === 2 ? "bg-blue-600" : "bg-gray-300"}`} />
+            <div className={`w-4 h-4 rounded-full mx-1 ${step === 1 ? "bg-[#D4AF37]" : "bg-gray-200"}`} />
+            <div className={`w-4 h-4 rounded-full mx-1 ${step === 2 ? "bg-[#D4AF37]" : "bg-gray-200"}`} />
           </div>
 
           {step === 1 && commonFields.map((field) => (
@@ -138,7 +138,7 @@ const Register = () => {
           {step === 2 && (
             <>
               <div className="mb-4">
-                <label className="block mb-2 font-medium">You are joining as:</label>
+                <label className="block mb-2 font-medium text-[#1A365D]">You are joining as:</label>
                 <div className="grid grid-cols-2 gap-4">
                   {["TRAVELER", "GUIDE"].map((role) => (
                     <button
@@ -150,11 +150,13 @@ const Register = () => {
                       }}
                       className={`p-4 rounded-lg border-2 ${
                         userType === role
-                          ? "border-blue-600 bg-blue-50"
-                          : "border-gray-200 hover:border-blue-400"
+                          ? "border-[#D4AF37] bg-[#F8F4E3]"
+                          : "border-gray-200 hover:border-[#D4AF37]"
                       }`}
                     >
-                      {role.charAt(0) + role.slice(1).toLowerCase()}
+                      <span className={userType === role ? "text-[#1A365D] font-semibold" : "text-[#333333]"}>
+                        {role.charAt(0) + role.slice(1).toLowerCase()}
+                      </span>
                     </button>
                   ))}
                 </div>
@@ -192,31 +194,31 @@ const Register = () => {
             <button
               type="button"
               onClick={() => setStep(1)}
-              className="px-6 py-2 text-gray-600 hover:text-gray-800 font-medium"
+              className="px-6 py-2 text-[#1A365D] hover:text-[#122744] font-medium"
             >
               Back
             </button>
           )}
           <button
-  type="submit"
-  disabled={formik.isSubmitting}
-  className="w-full bg-blue-600 hover:bg-blue-700 text-white p-3 rounded-lg font-medium transition-colors duration-200 disabled:bg-blue-400 flex items-center justify-center"
->
-  {formik.isSubmitting ? (
-    <div className="flex items-center">
-      <div className="spinner"></div>
-      <span className="ml-2">Registering...</span>
-    </div>
-  ) : (
-    "Register"
-  )}
-</button>
+            type="submit"
+            disabled={formik.isSubmitting}
+            className="w-full bg-[#1A365D] hover:bg-[#122744] text-white p-3 rounded-lg font-medium transition-colors duration-200 disabled:bg-[#1A365D]/70 flex items-center justify-center"
+          >
+            {formik.isSubmitting ? (
+              <div className="flex items-center">
+                <div className="spinner border-2 border-t-2 border-[#D4AF37] border-t-transparent w-5 h-5 rounded-full animate-spin"></div>
+                <span className="ml-2">Registering...</span>
+              </div>
+            ) : (
+              step === 1 ? "Continue" : "Register"
+            )}
+          </button>
         </div>
       </form>
 
-      <p className="text-center mt-6">
+      <p className="text-center mt-6 text-[#333333]">
         Already have an account?{" "}
-        <a href="/login" className="text-blue-600 hover:underline">
+        <a href="/login" className="text-[#1A365D] hover:text-[#D4AF37] transition-colors duration-200 font-medium">
           Log in
         </a>
       </p>

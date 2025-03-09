@@ -10,6 +10,9 @@ import TravellerRegistration from "./components/Registration/TravellerRegistrati
 import TourGuideRegistration from "./components/Registration/TourGuideRegistration.jsx";
 
 import TravelerDashboard from "./pages/TravelerDashboard.jsx";
+import GuideDashboard from "./pages/GuideDashboard.jsx";
+import GuideReview from "./pages/GuideReview.jsx";
+import GuideCalender from "./components/GuideCalender.jsx";
 
 
 const App = () => {
@@ -27,6 +30,9 @@ const App = () => {
         <Route element={<ProtectedRoute />}>
           <Route path="/traveler-dashboard" element={<TravelerDashboard />} />
         </Route>
+        <Route path="/guide-dashboard" element={<GuideDashboard />} />
+        <Route path="/guide-review" element={<GuideReview />} />
+        <Route path="/guide-calendar" element={<GuideCalender />} />
         
         
         
