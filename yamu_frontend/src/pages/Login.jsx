@@ -18,8 +18,12 @@ const Login = () => {
 
     try {
       const response = await login({ email, password });
-      if (response.status === 200) {
-        navigate("/home");
+      console.log(response.data?.role);
+      if (response.status === 200 && response.data?.role === "TRAVELER") {
+        navigate("/traveler-dashboard");
+      }
+      if(response.status === 200 && response.data?.role === "GUIDE") {
+        navigate("/guide-dashboard");
       }
     } catch (err) {
       setError(err.response?.data?.error || "Invalid email or password.");

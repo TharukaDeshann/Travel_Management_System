@@ -55,7 +55,7 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<Map<String, String>> login(@Valid @RequestBody UserLoginRequest loginRequest) {
+    public ResponseEntity<Map<String, Object>> login(@Valid @RequestBody UserLoginRequest loginRequest) {
         User authenticatedUser = userService.authenticate(loginRequest.getEmail(), loginRequest.getPassword());
 
         if (authenticatedUser != null) {
@@ -67,7 +67,7 @@ public class AuthController {
                     .httpOnly(true)
                     .secure(true) // Set to true in production (requires HTTPS)
                     .path("/")
-                    .maxAge(60) // 15 minutes for access token
+                    .maxAge(60) // 1 minutes for access token
                     .sameSite("Strict")
                     .build();
 
@@ -79,10 +79,14 @@ public class AuthController {
                     .sameSite("Strict")
                     .build();
 
+            Map<String, Object> response = new HashMap<>();
+            response.put("message", "Login successful");
+            response.put("role" , authenticatedUser.getRole());
+
             return ResponseEntity.ok()
                     .header("Set-Cookie", accessTokenCookie.toString())
                     .header("Set-Cookie", refreshTokenCookie.toString())
-                    .body(Map.of("message", "Login successful"));
+                    .body(response);
         }
 
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Invalid credentials"));
@@ -111,7 +115,7 @@ public class AuthController {
                         .httpOnly(true)
                         .secure(true) // Set to true in production (requires HTTPS)
                         .path("/")
-                        .maxAge(900) // 15 minutes for access token
+                        .maxAge(60) // 1 minutes for access token
                         .sameSite("Strict")
                         .build();
 

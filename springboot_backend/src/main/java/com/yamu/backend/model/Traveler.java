@@ -1,6 +1,7 @@
 package com.yamu.backend.model;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotNull;
 
 @Entity
 @Table(name = "travelers")
@@ -8,6 +9,7 @@ import jakarta.persistence.*;
 public class Traveler extends User {
 
     @Column(nullable = false, length = 50)
+    @NotNull(message = "Nationality is required")
     private String nationality;
 
     // Getters and Setters
