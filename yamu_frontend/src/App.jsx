@@ -33,8 +33,9 @@ const App = () => {
           <Route path="/guide-dashboard" element={<GuideDashboard />} />
         <Route path="/guide-review" element={<GuideReview />} />
         <Route path="/guide-calendar" element={<GuideCalender />} />
-        <Route path="/map" element={<Map />} />
+        
         </Route>
+        <Route path="/map" element={<Map />} />
         
         
         

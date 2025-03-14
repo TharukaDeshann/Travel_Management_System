@@ -8,27 +8,42 @@ import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 
 // Custom marker icon
 const customIcon = new L.Icon({
-  iconUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png",
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
+  iconUrl: "https://cdn-icons-png.flaticon.com/512/684/684908.png", // New custom icon
+  iconSize: [35, 35],
+  iconAnchor: [17, 35],
+  popupAnchor: [1, -30],
 });
 
-// Route optimization using Leaflet Routing Machine
+// Route optimization using OpenRouteService API
 const RoutingMachine = ({ locations }) => {
   const map = useMap();
 
   useEffect(() => {
     if (locations.length > 1) {
-      const waypoints = locations.map((loc) => L.latLng(loc.lat, loc.lon));
+      const fetchRoute = async () => {
+        try {
+          const coords = locations.map((loc) => [loc.lon, loc.lat]);
 
-      const routingControl = L.Routing.control({
-        waypoints,
-        routeWhileDragging: true,
-        show: false,
-      }).addTo(map);
+          const response = await fetch(
+            `https://api.openrouteservice.org/v2/directions/driving-car/geojson`,
+            {
+              method: "POST",
+              headers: {
+                "Authorization": "YOUR_ORS_API_KEY",
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({ coordinates: coords }),
+            }
+          );
 
-      return () => map.removeControl(routingControl);
+          const data = await response.json();
+          L.geoJSON(data, { color: "blue" }).addTo(map);
+        } catch (error) {
+          console.error("Error fetching route:", error);
+        }
+      };
+
+      fetchRoute();
     }
   }, [locations, map]);
 
@@ -138,8 +153,9 @@ const Map = () => {
       </DragDropContext>
 
       {/* Map */}
-      <MapContainer center={[6.9271, 79.8612]} zoom={8} style={{ height: "500px", width: "100%", marginTop: "20px" }}>
-        <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+      <MapContainer center={[6.9271, 79.8612]} zoom={12} style={{ height: "500px", width: "100%", marginTop: "20px" }}>
+        {/* Google Maps Tile Layer for a familiar look */}
+        <TileLayer url="https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}" subdomains={["mt0", "mt1", "mt2", "mt3"]} />
 
         {/* Add Markers */}
         {locations.map((location, index) => (
