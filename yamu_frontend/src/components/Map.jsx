@@ -15,7 +15,8 @@ const customIcon = new L.Icon({
 });
 
 // Route optimization using OpenRouteService API
-const RoutingMachine = ({ locations }) => {
+const RoutingMachine = ({ locations, travelMode }) => {
+  
   const map = useMap();
 
   useEffect(() => {
@@ -25,11 +26,11 @@ const RoutingMachine = ({ locations }) => {
           const coords = locations.map((loc) => [loc.lon, loc.lat]);
 
           const response = await fetch(
-            `https://api.openrouteservice.org/v2/directions/driving-car/geojson`,
+            `https://api.openrouteservice.org/v2/directions/${travelMode}/geojson`,
             {
               method: "POST",
               headers: {
-                "Authorization": "YOUR_ORS_API_KEY",
+                "Authorization": "5b3ce3597851110001cf6248a4fb779cca8e41479aadb5d5d341af06",
                 "Content-Type": "application/json",
               },
               body: JSON.stringify({ coordinates: coords }),
@@ -37,7 +38,15 @@ const RoutingMachine = ({ locations }) => {
           );
 
           const data = await response.json();
-          L.geoJSON(data, { color: "blue" }).addTo(map);
+
+          // Remove existing route before adding the new one
+          map.eachLayer((layer) => {
+            if(layer.options && layer.options.className === "route-layer") {
+              map.removeLayer(layer);
+            }
+          });
+
+          L.geoJSON(data, { color: "blue" , className: "route-layer"}).addTo(map);
         } catch (error) {
           console.error("Error fetching route:", error);
         }
@@ -45,7 +54,7 @@ const RoutingMachine = ({ locations }) => {
 
       fetchRoute();
     }
-  }, [locations, map]);
+  }, [locations, travelMode, map]);
 
   return null;
 };
@@ -54,6 +63,7 @@ const Map = () => {
   const [locations, setLocations] = useState([]); // List of selected locations
   const [searchTerm, setSearchTerm] = useState("");
   const [searchResults, setSearchResults] = useState([]); // Suggestions from API
+  const [travelMode, setTravelMode] = useState("driving-car"); //Default to car mode
 
   // Fetch locations from OpenStreetMap Nominatim API
   const handleSearch = async (query) => {
@@ -92,6 +102,21 @@ const Map = () => {
 
   return (
     <div style={{ padding: "20px" }}>
+
+      {/* Travel Mode Selector */}
+      <label style={{ fontWeight: "bold", marginRight: "10px" }}>Select Travel Mode:</label>
+      <select
+        value={travelMode}
+        onChange={(e) => setTravelMode(e.target.value)}
+        style={{ padding: "5px", marginBottom: "10px", border: "1px solid #ccc" }}
+      >
+        <option value="driving-car">🚗 Car</option>
+        <option value="cycling-regular">🚴‍♂️ Cycling</option>
+        <option value="foot-hiking">🥾 Hiking</option>
+        <option value="foot-walking">🚶‍♂️ Walking</option>
+        <option value="wheelchair">♿ Wheelchair</option>
+      </select>
+
       {/* Search Box */}
       <input
         type="text"
@@ -153,9 +178,13 @@ const Map = () => {
       </DragDropContext>
 
       {/* Map */}
-      <MapContainer center={[6.9271, 79.8612]} zoom={12} style={{ height: "500px", width: "100%", marginTop: "20px" }}>
+      <MapContainer center={[6.9271, 79.8612]} zoom={13} minZoom={10} maxZoom={18} style={{ height: "500px", width: "100%", marginTop: "20px" }}>
         {/* Google Maps Tile Layer for a familiar look */}
-        <TileLayer url="https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}" subdomains={["mt0", "mt1", "mt2", "mt3"]} />
+        <TileLayer 
+        url="https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}" 
+        subdomains={["mt0", "mt1", "mt2", "mt3"]} 
+        
+        />
 
         {/* Add Markers */}
         {locations.map((location, index) => (
@@ -165,7 +194,7 @@ const Map = () => {
         ))}
 
         {/* Draw Optimized Route */}
-        {locations.length > 1 && <RoutingMachine locations={locations} />}
+        {locations.length > 1 && <RoutingMachine locations={locations} travelMode={travelMode} />}
       </MapContainer>
     </div>
   );
