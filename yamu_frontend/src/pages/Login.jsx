@@ -18,7 +18,6 @@ const Login = () => {
 
     try {
       const response = await login({ email, password });
-      console.log(response.data?.role);
       if (response.status === 200 && response.data?.role === "TRAVELER") {
         navigate("/traveler-dashboard");
       }

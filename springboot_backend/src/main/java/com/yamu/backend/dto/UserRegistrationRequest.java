@@ -1,6 +1,8 @@
 package com.yamu.backend.dto;
 
 import com.yamu.backend.enums.UserRole;
+import com.yamu.backend.validation.GuideRegistration;
+import com.yamu.backend.validation.TravelerRegistration;
 import jakarta.validation.constraints.*;
 
 public class UserRegistrationRequest {
@@ -31,20 +33,23 @@ public class UserRegistrationRequest {
     @NotNull(message = "Role is required")
     private UserRole role;
 
-    // Specialized fields for Traveler
-    @NotNull(message = "Nationality is required")
+    // Specialized fields for Traveler - only validated for TRAVELER role
+    @NotNull(groups = TravelerRegistration.class, message = "Nationality is required for travelers")
     private String nationality;
 
-    // Specialized fields for Guide
-    @NotNull(message = "Expertise city/region is required")
+    // Specialized fields for Guide - only validated for GUIDE role
+    @NotNull(groups = GuideRegistration.class, message = "Expertise city/region is required for guides")
     private String expertiseCityRegion;
-    @NotNull(message = "Language is required")
+    
+    @NotNull(groups = GuideRegistration.class, message = "Language is required for guides")
     private String language;
+    
     private String about;
-    @NotNull(message = "Vehicle availability is required")
+    
+    @NotNull(groups = GuideRegistration.class, message = "Vehicle availability is required for guides")
     private Boolean vehicleAvailability;
 
-    // Getters and Setters
+    // Getters and Setters (unchanged)
     public String getFirstName() { return firstName; }
     public void setFirstName(String firstName) { this.firstName = firstName; }
 
