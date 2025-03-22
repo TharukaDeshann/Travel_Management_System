@@ -29,26 +29,49 @@ public class UserService {
         if (userRepository.findByEmail(request.getEmail()) != null) {
             throw new RuntimeException("Account already exists with this email");
         }
-
+    
         User user;
         switch (request.getRole()) {
             case TRAVELER:
                 Traveler traveler = new Traveler();
-                traveler.setNationality(request.getNationality());
-                user = traveler;  // Upcasting
+                if (request.getNationality() != null) {
+                    traveler.setNationality(request.getNationality());
+                } else {
+                    throw new RuntimeException("Nationality is required for travelers");
+                }
+                user = traveler;
                 break;
+                
             case GUIDE:
                 Guide guide = new Guide();
-                guide.setExpertiseCityRegion(request.getExpertiseCityRegion());
-                guide.setLanguage(request.getLanguage());
+                if (request.getExpertiseCityRegion() != null) {
+                    guide.setExpertiseCityRegion(request.getExpertiseCityRegion());
+                } else {
+                    throw new RuntimeException("Expertise city/region is required for guides");
+                }
+                
+                if (request.getLanguage() != null) {
+                    guide.setLanguage(request.getLanguage());
+                } else {
+                    throw new RuntimeException("Language is required for guides");
+                }
+                
                 guide.setAbout(request.getAbout());
-                guide.setVehicleAvailability(request.getVehicleAvailability());
-                user = guide; // Upcasting
+                
+                if (request.getVehicleAvailability() != null) {
+                    guide.setVehicleAvailability(request.getVehicleAvailability());
+                } else {
+                    throw new RuntimeException("Vehicle availability is required for guides");
+                }
+                user = guide;
                 break;
+                
+            
+                
             default:
                 throw new IllegalArgumentException("Invalid user role");
         }
-
+    
         // Set common attributes
         user.setFirstName(request.getFirstName());
         user.setLastName(request.getLastName());
@@ -57,10 +80,9 @@ public class UserService {
         user.setContactNumber(request.getContactNumber());
         user.setAddress(request.getAddress());
         user.setRole(request.getRole());
-
+    
         return userRepository.save(user);
     }
-
     public User authenticate(String email, String password) {
         User user = userRepository.findByEmail(email);
         if (user != null && passwordEncoder.matches(password, user.getPassword())) {
@@ -88,7 +110,10 @@ public class UserService {
     // Delete user (soft delete - recommended)
     public void deleteUser(Long id) {
         Optional<User> user = userRepository.findById(id);
-        user.ifPresent(userRepository::delete);
+        if (user.isEmpty()) {
+            throw new RuntimeException("User not found");
+        }
+        userRepository.delete(user.get());
     }
 
     public User updateUser(Long id, UserUpdateRequest updateRequest) {

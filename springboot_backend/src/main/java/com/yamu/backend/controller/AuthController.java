@@ -3,11 +3,14 @@ package com.yamu.backend.controller;
 
 import com.yamu.backend.dto.UserLoginRequest;
 import com.yamu.backend.dto.UserRegistrationRequest;
+import com.yamu.backend.enums.UserRole;
 import com.yamu.backend.model.User;
 import com.yamu.backend.repository.UserRepository;
 import com.yamu.backend.service.TokenBlacklistService;
 import com.yamu.backend.service.UserService;
 import com.yamu.backend.util.JwtUtil;
+import com.yamu.backend.validation.GuideRegistration;
+import com.yamu.backend.validation.TravelerRegistration;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -16,11 +19,18 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Valid;
+import jakarta.validation.Validator;
+
 import org.springframework.validation.annotation.Validated;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+
 
 import jakarta.servlet.http.Cookie;
 
@@ -34,6 +44,9 @@ public class AuthController {
     private final UserRepository userRepository;
 
     @Autowired
+    private Validator validator;
+
+    @Autowired
     public AuthController(UserService userService, JwtUtil jwtUtil, TokenBlacklistService tokenBlacklistService, UserRepository userRepository) {
         this.userRepository = userRepository;
         this.userService = userService;
@@ -42,8 +55,31 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<Map<String, String>> register(@Valid @RequestBody UserRegistrationRequest request) {
+    public ResponseEntity<Map<String, String>> register(@RequestBody UserRegistrationRequest request) {
         Map<String, String> response = new HashMap<>();
+        
+        // Validate common fields first (default validation)
+        Set<ConstraintViolation<UserRegistrationRequest>> violations = validator.validate(request);
+        
+        // Perform role-specific validation
+        if (violations.isEmpty()) {
+            if (request.getRole() == UserRole.TRAVELER) {
+                violations = validator.validate(request, TravelerRegistration.class);
+            } else if (request.getRole() == UserRole.GUIDE) {
+                violations = validator.validate(request, GuideRegistration.class);
+            }
+            // Add other roles as needed
+        }
+        
+        // If there are validation errors, return them
+        if (!violations.isEmpty()) {
+            String errorMsg = violations.stream()
+                    .map(ConstraintViolation::getMessage)
+                    .collect(Collectors.joining(", "));
+            response.put("error", errorMsg);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+        }
+        
         try {
             User registeredUser = userService.registerUser(request);
             response.put("message", "User registered successfully");
