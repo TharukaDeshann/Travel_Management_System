@@ -28,18 +28,10 @@ export const login = async (credentials) => {
   return response;
 };
 
-export const fetchOptimization = async (requestBody) => {
-  const response = await fetch("https://api.openrouteservice.org/optimization",
-  {
-    method: "POST",
-    headers: {
-      "Authorization": "5b3ce3597851110001cf6248a4fb779cca8e41479aadb5d5d341af06",
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify(requestBody)
-  });
-  return response;
-}
+
+
+
+
 
 export const refreshToken = async () => {
   try {
