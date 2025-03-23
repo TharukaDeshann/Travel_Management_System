@@ -1,11 +1,6 @@
 package com.yamu.backend.model;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
 import lombok.Setter;
@@ -16,7 +11,7 @@ import lombok.Setter;
 @Setter
 public class Location {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY) // Add this line to auto-generate IDs
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", nullable = false)
     private long id;
     
@@ -29,4 +24,20 @@ public class Location {
     
     @Column(name = "latitude", nullable = false)
     private double latitude;
+    
+    // New fields
+    @Column(name = "position_index")
+    private int positionIndex;
+    
+    @Column(name = "route_id")
+    private Long routeId;
+    
+    @Column(name = "place_id")
+    private String placeId;
+    
+    @Column(name = "address", length = 500)
+    private String address;
+    
+    @Column(name = "notes", length = 1000)
+    private String notes;
 }

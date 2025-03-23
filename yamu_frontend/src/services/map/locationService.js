@@ -2,12 +2,17 @@ import axios from "axios";
 
 // Search for locations using OpenStreetMap Nominatim API
 export const searchLocations = async (query) => {
+  
   if (query.length <= 2) return [];
   
   try {
     const response = await axios.get(
-      `https://nominatim.openstreetmap.org/search?format=json&q=${query}`,
+      `https://nominatim.openstreetmap.org/search`,
       {
+        params: {
+          format: 'json',
+          q: query
+        },
         headers: {
           'User-Agent': 'YourAppName/1.0'
         }
@@ -16,6 +21,30 @@ export const searchLocations = async (query) => {
     return response.data;
   } catch (error) {
     console.error("Error fetching locations:", error);
+    throw error;
+  }
+};
+
+// Backend api call to save route details
+
+
+export const saveRoute = async (routeData) => {
+  try {
+    const response = await fetch('http://localhost:8080/api/routes', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(routeData)
+    });
+    
+    if (!response.ok) {
+      throw new Error('Failed to save route');
+    }
+    
+    return await response.json();
+  } catch (error) {
+    console.error('Error saving route:', error);
     throw error;
   }
 };

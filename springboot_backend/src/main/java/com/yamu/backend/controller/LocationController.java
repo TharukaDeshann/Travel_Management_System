@@ -42,8 +42,8 @@ public class LocationController {
     }
 
     @PostMapping("/add")
-    public ResponseEntity<String> addLocation(@Valid @RequestBody LocationCreateRequest createRequest) {
-        locationService.addLocation(createRequest);
+    public ResponseEntity<String> addLocation(@Valid @RequestBody List<LocationCreateRequest> createRequests) {
+        locationService.addLocation(createRequests);
         return ResponseEntity.ok("Locations added successfully");
     }
 
