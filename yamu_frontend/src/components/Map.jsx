@@ -4,8 +4,7 @@ import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import "leaflet-routing-machine";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
-import { searchLocations } from "../services/map/locationService";
-import { calculateDistance } from "../services/map/locationService";
+import { searchLocations, calculateDistance, saveRoute } from "../services/map/locationService";
 import { fetchRoute, optimizeRoute, nearestNeighborOptimization } from "../services/map/routeService";
 
 // Custom marker icon
@@ -56,15 +55,15 @@ const RoutingMachine = ({ locations, travelMode }) => {
 const FitBoundsControl = ({ locations }) => {
   const map = useMap();
   
-  const handleFitBounds = () => {
-    if (locations.length > 0) {
-      const bounds = L.latLngBounds(locations.map(loc => [loc.lat, loc.lon]));
-      map.fitBounds(bounds, { padding: [50, 50] });
-    }
-  };
-
-  // Add a custom control to fit bounds
   useEffect(() => {
+    // Moved handleFitBounds inside the useEffect
+    const handleFitBounds = () => {
+      if (locations.length > 0) {
+        const bounds = L.latLngBounds(locations.map(loc => [loc.lat, loc.lon]));
+        map.fitBounds(bounds, { padding: [50, 50] });
+      }
+    };
+
     const fitBoundsControl = L.Control.extend({
       options: {
         position: 'topleft'
@@ -98,7 +97,7 @@ const FitBoundsControl = ({ locations }) => {
     return () => {
       // Cleanup if needed
     };
-  }, [map, handleFitBounds]);
+  }, [map, locations]); // Only depends on map and locations now
 
   return null;
 };
@@ -109,6 +108,7 @@ const Map = () => {
   const [searchResults, setSearchResults] = useState([]); // Suggestions from API
   const [travelMode, setTravelMode] = useState("driving-car");
   const [isOptimizing, setIsOptimizing] = useState(false);
+  const [isSaving, setIsSaving] =  useState(false);
 
   
   // Handle location search
@@ -171,6 +171,43 @@ const Map = () => {
     }
   };
 
+  // Handle saving the route
+  const handleSaveRoute = async () => {
+    try {
+      setIsSaving(true);
+      
+      // Prepare route data for saving
+      const routeData = {
+        name : "My Route",
+        travelMode : travelMode,
+        totalDistance : null,
+        estimatedTime : null,
+        locations : locations.map((loc, index) => ({
+          name : loc.name.split(",")[0], // Extract only the first part of the name
+          address : loc.name,
+          latitude : loc.lat,
+          longitude : loc.lon,
+          positionIndex : index,
+          placeId : loc.place_id || "",
+          notes : ""
+        }))
+      };
+
+      // save route 
+      const savedRoute = await saveRoute(routeData);
+      alert(`Route "${savedRoute.name}" saved successfully!`);
+    }
+    catch (error) {
+      console.error("Error saving route:", error);
+      alert("Error saving route. Please try again.");
+    }
+    finally {
+      setIsSaving(false);
+    }
+  }
+
+  
+
   return (
     <div style={{ padding: "20px" }}>
       {/* Travel Mode Selector */}
@@ -204,6 +241,23 @@ const Map = () => {
           }}
         >
           {isOptimizing ? "Optimizing..." : "Optimize Route"}
+        </button>
+
+        <button
+          onClick={handleSaveRoute}
+          disabled={locations.length < 1}
+          style={{
+            marginLeft: "10px",
+            padding: "5px 10px",
+            backgroundColor: "#1976D2",
+            color: "white",
+            border: "none",
+            borderRadius: "4px",
+            cursor: locations.length < 1 ? "not-allowed" : "pointer",
+            opacity: locations.length < 1 ? 0.6 : 1
+          }}
+        >
+          {isSaving ? "Saving..." : "Save"}
         </button>
       </div>
 

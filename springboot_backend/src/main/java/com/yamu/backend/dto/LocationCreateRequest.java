@@ -15,4 +15,9 @@ public class LocationCreateRequest {
 
     @NotNull(message = "Longitude is required")
     private Double longitude;
+
+    private int positionIndex;
+    private String placeId;
+    private String address;
+    private String notes;
 }
