@@ -1,17 +1,27 @@
 import React from "react";
+import { Form, Input } from "antd";
 
-export const FormInput = ({ formik, id, icon: Icon, placeholder, type = "text", error }) => (
-  <div>
-    <div className="relative">
-      <Icon className="absolute left-3 top-3 text-[#1A365D]" />
-      <input
-        id={id}
-        type={type}
-        {...formik.getFieldProps(id)}
+export const FormInput = ({ formik, id, icon: Icon, placeholder, type = "text", error }) => {
+  // Note: This component is no longer needed when using Ant Design
+  // It's included here for reference only, showing how it would be converted
+  
+  const InputComponent = type === "password" ? Input.Password : Input;
+  
+  return (
+    <Form.Item 
+      name={id}
+      validateStatus={error ? "error" : ""}
+      help={error}
+    >
+      <InputComponent
+        prefix={<Icon />}
         placeholder={placeholder}
-        className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#D4AF37] focus:border-[#D4AF37] outline-none transition-all duration-200 bg-[#FAFBFC] text-[#333333]"
+        size="large"
       />
-    </div>
-    {error && <p className="text-red-500 text-sm mt-1">{error}</p>}
-  </div>
-);
+    </Form.Item>
+  );
+};
+
+// NOTE: With Ant Design's Form component, you typically don't need this wrapper
+// component as Form.Item handles validation and input display.
+// This file is kept for reference only.
