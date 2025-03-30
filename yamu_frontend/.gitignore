@@ -21,3 +21,6 @@
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+src/assets/images/bell.png
+src/assets/images/womanbot.png
+src/assets/images/yamulogo.png
