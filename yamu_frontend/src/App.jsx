@@ -6,6 +6,7 @@ import Register from "./pages/Register.jsx";
 import Home from "./pages/Home.jsx";
 import ProtectedRoute from './routes/ProtectedRoute.jsx';
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
+import Go from './pages/Go.jsx';
 import TravellerRegistration from "./components/Registration/TravellerRegistration.jsx";
 import TourGuideRegistration from "./components/Registration/TourGuideRegistration.jsx";
 import WeatherPage from "./pages/WeatherPage.jsx";
@@ -19,28 +20,35 @@ import WeatherCard from "./components/WeatherCard.jsx";
 
 const App = () => {
   return (
-    <Router>
-      <Routes>
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        {/* Temporarily remove ProtectedRoute for testing */}
-        <Route path="/home" element={<Home />} />
-        
-        <Route path="/" element={<Home />} />
-        <Route path="/traveller-register" element={<TravellerRegistration />} />
-        <Route path="/guide-register" element={<TourGuideRegistration />} />
-        <Route element={<ProtectedRoute />}>
-          <Route path="/traveler-dashboard" element={<TravelerDashboard />} />
-          <Route path="/guide-dashboard" element={<GuideDashboard />} />
-          <Route path="/guide-review" element={<GuideReview />} />
-          <Route path="/guide-calendar" element={<GuideCalender />} />
-        </Route>
-        <Route path="/map" element={<Map />} />
-        <Route path="/weather" element={<WeatherPage />} />
-        <Route path="/weather-details" element={<Weather />} />
-        <Route path="/weather-card" element={<WeatherCard />} />
-      </Routes>
-    </Router>
+    <React.Fragment>
+      <Router>
+        <Routes>
+          {/* Public Routes */}
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/" element={<Login />} />
+          <Route path="/traveller-register" element={<TravellerRegistration />} />
+          <Route path="/guide-register" element={<TourGuideRegistration />} />
+          <Route path="/map" element={<Map />} />
+          <Route path="/weather" element={<WeatherPage />} />
+          <Route path="/weather-details" element={<Weather />} />
+          <Route path="/weather-card" element={<WeatherCard />} />
+          
+          {/* Protected Routes */}
+          <Route element={<ProtectedRoute />}>
+            <Route path="/home" element={<Home />} />
+            <Route path="/go" element={<Go />} />
+            <Route path="/traveler-dashboard" element={<TravelerDashboard />} />
+            <Route path="/guide-dashboard" element={<GuideDashboard />} />
+            <Route path="/guide-review" element={<GuideReview />} />
+            <Route path="/guide-calendar" element={<GuideCalender />} />
+          </Route>
+          
+          {/* Fallback Route */}
+          <Route path="*" element={<div>404 Not Found</div>} />
+        </Routes>
+      </Router>
+    </React.Fragment>
   );
 };
 
