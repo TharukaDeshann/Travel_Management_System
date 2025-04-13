@@ -50,12 +50,12 @@ public class SecurityConfig {
         http
             .csrf(csrf -> csrf.disable())
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-            .authorizeHttpRequests(authz -> authz
+            .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/weather/**").permitAll()
                 .requestMatchers("/h2-console/**").permitAll()
-                .requestMatchers("/api/auth/login", "/api/auth/register", "/api/auth/refresh-token", "api/auth/user", "api/users/user").permitAll()
+                .requestMatchers("/api/auth/login", "/api/auth/register", "/api/auth/refresh-token", "/api/auth/user", "/api/users/user", "/api/locations/**").permitAll()
                 .requestMatchers(HttpMethod.PUT, "/api/users/{id}").authenticated()
-                .requestMatchers("/api/admin/**").hasRole("ADMIN") 
+                .requestMatchers("/api/admin/**").hasRole("ADMIN")
                 .requestMatchers("/api/guide/**").hasRole("GUIDE")
                 .requestMatchers("/api/traveler/**").hasRole("TRAVELER")
                 .anyRequest().authenticated()
@@ -72,7 +72,7 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(Arrays.asList("http://localhost:5173"));
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         configuration.setAllowedHeaders(Arrays.asList("*"));
         configuration.setAllowCredentials(true);
         
