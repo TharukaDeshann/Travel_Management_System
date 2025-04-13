@@ -19,6 +19,8 @@ public class LocationService {
 
     private final LocationRepository locationRepository;
 
+    
+
     @Autowired
     public LocationService(LocationRepository locationRepository) {
         this.locationRepository = locationRepository;
@@ -59,11 +61,14 @@ public void deleteLocation(long id) {
         locationRepository.save(locationToUpdate);
     }
 
-    public void addLocation(LocationCreateRequest createRequest) {
-        Location location = new Location();
-        location.setName(createRequest.getName());
-        location.setLatitude(createRequest.getLatitude());
-        location.setLongitude(createRequest.getLongitude());
-        locationRepository.save(location);
+    public void addLocation(List<LocationCreateRequest> createRequests) {
+        for (LocationCreateRequest createRequest : createRequests) {
+            Location location = new Location();
+            location.setName(createRequest.getName());
+            location.setLongitude(createRequest.getLongitude());
+            location.setLatitude(createRequest.getLatitude());
+            locationRepository.save(location);
+        }
+       
     }
 }

@@ -8,13 +8,14 @@ import ProtectedRoute from './routes/ProtectedRoute.jsx';
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 import TravellerRegistration from "./components/Registration/TravellerRegistration.jsx";
 import TourGuideRegistration from "./components/Registration/TourGuideRegistration.jsx";
-
+import WeatherPage from "./pages/WeatherPage.jsx";
+import Weather from "./components/Weather.jsx";
 import TravelerDashboard from "./pages/TravelerDashboard.jsx";
 import GuideDashboard from "./pages/GuideDashboard.jsx";
 import GuideReview from "./pages/GuideReview.jsx";
 import GuideCalender from "./components/GuideCalender.jsx";
 import Map from './components/Map.jsx';
-
+import WeatherCard from "./components/WeatherCard.jsx";
 
 const App = () => {
   return (
@@ -31,14 +32,13 @@ const App = () => {
         <Route element={<ProtectedRoute />}>
           <Route path="/traveler-dashboard" element={<TravelerDashboard />} />
           <Route path="/guide-dashboard" element={<GuideDashboard />} />
-        <Route path="/guide-review" element={<GuideReview />} />
-        <Route path="/guide-calendar" element={<GuideCalender />} />
-        
+          <Route path="/guide-review" element={<GuideReview />} />
+          <Route path="/guide-calendar" element={<GuideCalender />} />
         </Route>
         <Route path="/map" element={<Map />} />
-        
-        
-        
+        <Route path="/weather" element={<WeatherPage />} />
+        <Route path="/weather-details" element={<Weather />} />
+        <Route path="/weather-card" element={<WeatherCard />} />
       </Routes>
     </Router>
   );

@@ -1,3 +1,6 @@
+import axios from "axios";
+import { calculateDistance } from "./locationService";
+
 // API key should ideally be an environment variable
 const API_KEY = "5b3ce3597851110001cf6248a4fb779cca8e41479aadb5d5d341af06";
 
@@ -6,19 +9,18 @@ export const fetchRoute = async (locations, travelMode) => {
   try {
     const coords = locations.map((loc) => [loc.lon, loc.lat]);
     
-    const response = await fetch(
+    const response = await axios.post(
       `https://api.openrouteservice.org/v2/directions/${travelMode}/geojson`,
+      { coordinates: coords },
       {
-        method: "POST",
         headers: {
           "Authorization": API_KEY,
           "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ coordinates: coords }),
+        }
       }
     );
     
-    return await response.json();
+    return response.data;
   } catch (error) {
     console.error("Error fetching route:", error);
     throw error;
@@ -54,19 +56,18 @@ export const optimizeRoute = async (locations, travelMode) => {
     };
     
     // Call the optimization API
-    const response = await fetch(
+    const response = await axios.post(
       "https://api.openrouteservice.org/optimization",
+      requestBody,
       {
-        method: "POST",
         headers: {
-          "Authorization": API_KEY,
+          "Authorization": "5b3ce3597851110001cf6248a4fb779cca8e41479aadb5d5d341af06",
           "Content-Type": "application/json"
-        },
-        body: JSON.stringify(requestBody)
+        }
       }
     );
     
-    const data = await response.json();
+    const data = response.data;
     
     if (data.routes && data.routes.length > 0) {
       // Extract the optimized order from the response
@@ -92,7 +93,7 @@ export const optimizeRoute = async (locations, travelMode) => {
 };
 
 // Fallback optimization using nearest neighbor algorithm
-export const nearestNeighborOptimization = (locations, calculateDistance) => {
+export const nearestNeighborOptimization = (locations) => {
   if (locations.length <= 2) return locations;
   
   const start = locations[0];

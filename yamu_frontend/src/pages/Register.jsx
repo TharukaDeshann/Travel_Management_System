@@ -1,227 +1,554 @@
-import React, { useState } from "react";
-import { useFormik } from "formik";
-import * as Yup from "yup";
+import React, { useState, useEffect } from "react";
+import { Form, Input, Button, Radio, Switch, Divider, Alert, Steps, Row, Col, Select, Spin, message } from "antd";
 import { useNavigate } from "react-router-dom";
 import { register } from "../services/authService";
 import { AuthLayout } from "../components/AuthLayout";
-import { FormInput } from "../components/FormInput";
-import { ToggleSwitch } from "../components/ToggleSwitch";
-
 import {
-  FaUser,
-  FaEnvelope,
-  FaLock,
-  FaPhone,
-  FaMapMarkerAlt,
-  FaGlobe,
-  FaInfoCircle,
-} from "react-icons/fa";
+  UserOutlined,
+  MailOutlined,
+  LockOutlined,
+  PhoneOutlined,
+  EnvironmentOutlined,
+  LoadingOutlined,
+} from "@ant-design/icons";
+
+// Import dropdown data services
+import { fetchCountries, fetchLanguages, fetchRegions } from "../services/dropdownService";
+
+const { Option } = Select;
 
 const Register = () => {
   const navigate = useNavigate();
-  const [step, setStep] = useState(1);
+  const [form] = Form.useForm();
+  const [step, setStep] = useState(0);
   const [userType, setUserType] = useState("");
-
-  const validationSchema = Yup.object({
-    // Common fields
-    ...(step === 1 && {
-      firstName: Yup.string().min(3, "Must be at least 3 characters").required("First Name is required"),
-      lastName: Yup.string().min(3, "Must be at least 3 characters").required("Last Name is required"),
-      email: Yup.string().email("Invalid email format").required("Email is required"),
-      password: Yup.string()
-        .min(8,  "Must be at least 8 characters")
-        .matches(/^(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])/, "Password Must contain 1 uppercase, 1 number, 1 special character")
-        .required("Password is required"),
-      confirmPassword: Yup.string()
-        .oneOf([Yup.ref("password"), null], "Passwords must match")
-        .required("Confirm password is required"),
-    }),
-    ...(step === 2 && {
-      phonenumber: Yup.string().matches(/^[0-9]{10,15}$/,  "Phone number must be 10 to 15 digits").required("Phone number is required"),
-      address: Yup.string().required("Address is required"),
-      role: Yup.string().required("User Type is required"),
-      ...(userType === "TRAVELER" && { nationality: Yup.string().required("Nationality is required") }),
-      ...(userType === "GUIDE" && {
-        expertiseCityRegion: Yup.string().required("Expertise City/Region is required"),
-        language: Yup.string().required("Language is required"),
-        about: Yup.string(),
-        vehicleAvailability: Yup.boolean().required("Vehicle Availability is required"),
-      }),
-    }),
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  
+  // Store form data from step 1
+  const [formData, setFormData] = useState({
+    firstName: "",
+    lastName: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
   });
+  
+  // State for dropdown data
+  const [countries, setCountries] = useState([]);
+  const [languages, setLanguages] = useState([]);
+  const [regions, setRegions] = useState([]);
+  
+  // Loading state for each dropdown
+  const [countriesLoading, setCountriesLoading] = useState(false);
+  const [languagesLoading, setLanguagesLoading] = useState(false);
+  const [regionsLoading, setRegionsLoading] = useState(false);
+  
+  // Selected country for cascading region dropdown
+  const [selectedCountry, setSelectedCountry] = useState(null);
 
-  const formik = useFormik({
-    initialValues: {
-      firstName: "",
-      lastName: "",
-      email: "",
-      password: "",
-      confirmPassword: "",
-      phonenumber: "",
-      address: "",
-      role: "",
-      nationality: "",
-      expertiseCityRegion: "",
-      language: "",
-      about: "",
-      vehicleAvailability: false,
-    },
-    validationSchema,
-    onSubmit: async (values , {setSubmitting}) => {
-      if (step === 1) return setStep(2);
-      
-      const payload = {
-        ...values,
-        contactNumber: values.phonenumber,
-        vehicleAvailability: values.vehicleAvailability ? 1 : 0,
-      };
-      
+  // Fetch countries data
+  useEffect(() => {
+    const loadCountries = async () => {
+      setCountriesLoading(true);
       try {
-        await register(payload);
-        navigate("/login");
-      } catch (err) {
-        formik.setErrors({ general: err.response?.data?.error || "Registration failed. Try again" });
+        const data = await fetchCountries();
+        setCountries(data);
+      } catch (error) {
+        message.error(`Failed to load countries: ${error.message}`);
+        setError("Unable to load country data. Please try again later.");
       } finally {
-        setSubmitting(false);
+        setCountriesLoading(false);
       }
-    },
-  });
+    };
+    
+    loadCountries();
+  }, []);
 
-  const commonFields = [
-    { id: "firstName", icon: FaUser, placeholder: "First Name" },
-    { id: "lastName", icon: FaUser, placeholder: "Last Name" },
-    { id: "email", icon: FaEnvelope, placeholder: "Email" },
-    { id: "password", icon: FaLock, placeholder: "Password", type: "password" },
-    { id: "confirmPassword", icon: FaLock, placeholder: "Confirm Password", type: "password" },
-  ];
+  // Fetch languages data
+  useEffect(() => {
+    const loadLanguages = async () => {
+      setLanguagesLoading(true);
+      try {
+        const data = await fetchLanguages();
+        setLanguages(data);
+      } catch (error) {
+        message.error(`Failed to load languages: ${error.message}`);
+        setError(prevError => {
+          return prevError 
+            ? `${prevError} Also unable to load language data.` 
+            : "Unable to load language data. Please try again later.";
+        });
+      } finally {
+        setLanguagesLoading(false);
+      }
+    };
+    
+    loadLanguages();
+  }, []);
 
-  const specificFields = [
-    { id: "phonenumber", icon: FaPhone, placeholder: "Phone Number" },
-    { id: "address", icon: FaMapMarkerAlt, placeholder: "Address" },
-    ...(userType === "TRAVELER"
-      ? [{ id: "nationality", icon: FaGlobe, placeholder: "Nationality" }]
-      : []),
-    ...(userType === "GUIDE"
-      ? [
-          { id: "expertiseCityRegion", icon: FaMapMarkerAlt, placeholder: "Expertise Region" },
-          { id: "language", icon: FaGlobe, placeholder: "Languages" },
-          { id: "about", icon: FaInfoCircle, placeholder: "About You" },
-        ]
-      : []),
-  ];
+  // Fetch regions data when country changes
+  useEffect(() => {
+    if (!selectedCountry || userType !== "GUIDE") return;
+    
+    const loadRegions = async () => {
+      setRegionsLoading(true);
+      try {
+        const data = await fetchRegions(selectedCountry);
+        setRegions(data);
+      } catch (error) {
+        message.error(`Failed to load regions: ${error.message}`);
+        setError(prevError => {
+          return prevError 
+            ? `${prevError} Also unable to load region data.` 
+            : "Unable to load region data. Please try again later.";
+        });
+      } finally {
+        setRegionsLoading(false);
+      }
+    };
+    
+    loadRegions();
+  }, [selectedCountry, userType]);
+
+  // Handle country selection change
+  const handleCountryChange = (value) => {
+    setSelectedCountry(value);
+    // Clear previously selected region when country changes
+    form.setFieldsValue({ expertiseCityRegion: undefined });
+  };
+
+  const onFinish = async (values) => {
+    if (step === 0) {
+      // Save step 1 data
+      const stepOneData = form.getFieldsValue([
+        "firstName",
+        "lastName",
+        "email",
+        "password",
+        "confirmPassword",
+      ]);
+      
+      setFormData(stepOneData);
+      setStep(1);
+      return;
+    }
+    
+    setLoading(true);
+    setError(""); // Clear any previous errors
+    
+    // Combine data from both steps
+    const payload = {
+      ...formData,  // Data from step 1
+      ...values,    // Data from step 2
+      // No need for conversion, use consistent naming
+      vehicleAvailability: values.vehicleAvailability ? 1 : 0,
+    };
+    
+    try {
+      await register(payload);
+      message.success("Registration successful!");
+      navigate("/login");
+    } catch (err) {
+      const errorMsg = err.response?.data?.error || "Registration failed. Please try again.";
+      setError(errorMsg);
+      message.error(errorMsg);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const nextStep = async () => {
+    try {
+      // Validate fields from step 1
+      const stepOneValues = await form.validateFields([
+        "firstName", 
+        "lastName", 
+        "email", 
+        "password", 
+        "confirmPassword"
+      ]);
+      
+      // Save validated values
+      setFormData(stepOneValues);
+      
+      // Move to next step
+      setStep(1);
+    } catch (error) {
+      // Form validation will show errors automatically
+    }
+  };
+
+  // Render loading indicator
+  const loadingIcon = <LoadingOutlined style={{ fontSize: 24 }} spin />;
 
   return (
     <AuthLayout title="Join YAMU Travel" subtitle="Start your adventure today!">
-      <form onSubmit={formik.handleSubmit} className="space-y-4">
-        {formik.errors.general && (
-          <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-lg">
-            {formik.errors.general}
-          </div>
+      {error && (
+        <Alert
+          message="Registration Error"
+          description={error}
+          type="error"
+          showIcon
+          closable
+          style={{ marginBottom: 16 }}
+          onClose={() => setError("")}
+        />
+      )}
+
+      <Steps
+        current={step}
+        items={[
+          { title: 'Account Details' },
+          { title: 'Personal Info' },
+        ]}
+        style={{ marginBottom: 24 }}
+      />
+
+      <Form
+        form={form}
+        name="register"
+        layout="vertical"
+        onFinish={onFinish}
+        autoComplete="off"
+        requiredMark={false}
+        initialValues={{
+          // Set initial values from stored data when returning to step 1
+          ...formData
+        }}
+      >
+        {step === 0 && (
+          <Row gutter={16}>
+            <Col xs={24} sm={12}>
+              <Form.Item
+                label="First Name" 
+                name="firstName"
+                rules={[
+                  { required: true, message: "First Name is required" },
+                  { min: 3, message: "Must be at least 3 characters" },
+                ]}
+              >
+                <Input 
+                  prefix={<UserOutlined />} 
+                  placeholder="First Name" 
+                  size="large" 
+                />
+              </Form.Item>
+            </Col>
+            
+            <Col xs={24} sm={12}>
+              <Form.Item
+                name="lastName"
+                label="Last Name" 
+                rules={[
+                  { required: true, message: "Last Name is required" },
+                  { min: 3, message: "Must be at least 3 characters" },
+                ]}
+              >
+                <Input 
+                  prefix={<UserOutlined />} 
+                  placeholder="Last Name" 
+                  size="large" 
+                />
+              </Form.Item>
+            </Col>
+            
+            <Col span={24}>
+              <Form.Item
+                name="email"
+                label="Email" 
+                rules={[
+                  { required: true, message: "Email is required" },
+                  { type: "email", message: "Invalid email format" },
+                ]}
+              >
+                <Input 
+                  prefix={<MailOutlined />} 
+                  placeholder="Email" 
+                  size="large" 
+                />
+              </Form.Item>
+            </Col>
+            
+            <Col xs={24} sm={12}>
+              <Form.Item
+                name="password"
+                label="Password" 
+                rules={[
+                  { required: true, message: "Password is required" },
+                  { min: 8, message: "Must be at least 8 characters" },
+                  {
+                    pattern: /^(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])/,
+                    message: "Password Must contain 1 uppercase, 1 number, 1 special character",
+                  },
+                ]}
+              >
+                <Input.Password 
+                  prefix={<LockOutlined />} 
+                  placeholder="Password" 
+                  size="large" 
+                />
+              </Form.Item>
+            </Col>
+            
+            <Col xs={24} sm={12}>
+              <Form.Item
+                name="confirmPassword"
+                label="Confirm Password"
+                dependencies={["password"]}
+                rules={[
+                  { required: true, message: "Confirm password is required" },
+                  ({ getFieldValue }) => ({
+                    validator(_, value) {
+                      if (!value || getFieldValue("password") === value) {
+                        return Promise.resolve();
+                      }
+                      return Promise.reject("Passwords must match");
+                    },
+                  }),
+                ]}
+              >
+                <Input.Password 
+                  prefix={<LockOutlined />} 
+                  placeholder="Confirm Password" 
+                  size="large" 
+                />
+              </Form.Item>
+            </Col>
+            
+            <Col span={24}>
+              <Form.Item>
+                <Button 
+                  type="primary" 
+                  onClick={nextStep}
+                  size="large" 
+                  block
+                >
+                  Continue
+                </Button>
+              </Form.Item>
+            </Col>
+          </Row>
         )}
 
-        <div className="space-y-4">
-          {/* Step Indicator */}
-          <div className="flex justify-center mb-6">
-            <div className={`w-4 h-4 rounded-full mx-1 ${step === 1 ? "bg-[#D4AF37]" : "bg-gray-200"}`} />
-            <div className={`w-4 h-4 rounded-full mx-1 ${step === 2 ? "bg-[#D4AF37]" : "bg-gray-200"}`} />
-          </div>
+        {step === 1 && (
+          <Row gutter={16}>
+            <Col span={24}>
+              <Form.Item
+                name="role"
+                label="You are joining as:"
+                rules={[{ required: true, message: "User Type is required" }]}
+              >
+                <Radio.Group 
+                  buttonStyle="solid" 
+                  onChange={(e) => setUserType(e.target.value)}
+                  size="large"
+                >
+                  <Radio.Button value="TRAVELER">Traveler</Radio.Button>
+                  <Radio.Button value="GUIDE">Guide</Radio.Button>
+                </Radio.Group>
+              </Form.Item>
+            </Col>
+            
+            <Col xs={24} sm={12}>
+              <Form.Item
+                name="contactNumber" 
+                label="Contact Number"
+                rules={[
+                  { required: true, message: "Contact number is required" },
+                  {
+                    pattern: /^[0-9]{10,15}$/,
+                    message: "Contact number must be 10 to 15 digits",
+                  },
+                ]}
+              >
+                <Input 
+                  prefix={<PhoneOutlined />} 
+                  placeholder="Contact Number" 
+                  size="large" 
+                />
+              </Form.Item>
+            </Col>
+            
+            <Col xs={24} sm={12}>
+              <Form.Item
+                name="address"
+                label="Address"
+                rules={[{ required: true, message: "Address is required" }]}
+              >
+                <Input 
+                  prefix={<EnvironmentOutlined />} 
+                  placeholder="Address" 
+                  size="large" 
+                />
+              </Form.Item>
+            </Col>
 
-          {step === 1 && commonFields.map((field) => (
-            <FormInput
-              key={field.id}
-              formik={formik}
-              {...field}
-              error={formik.touched[field.id] && formik.errors[field.id]}
-            />
-          ))}
-
-          {step === 2 && (
-            <>
-              <div className="mb-4">
-                <label className="block mb-2 font-medium text-[#1A365D]">You are joining as:</label>
-                <div className="grid grid-cols-2 gap-4">
-                  {["TRAVELER", "GUIDE"].map((role) => (
-                    <button
-                      key={role}
-                      type="button"
-                      onClick={() => {
-                        setUserType(role);
-                        formik.setFieldValue("role", role);
-                      }}
-                      className={`p-4 rounded-lg border-2 ${
-                        userType === role
-                          ? "border-[#D4AF37] bg-[#F8F4E3]"
-                          : "border-gray-200 hover:border-[#D4AF37]"
-                      }`}
-                    >
-                      <span className={userType === role ? "text-[#1A365D] font-semibold" : "text-[#333333]"}>
-                        {role.charAt(0) + role.slice(1).toLowerCase()}
-                      </span>
-                    </button>
-                  ))}
-                </div>
-                {formik.touched.role && formik.errors.role && (
-                  <p className="text-red-500 text-sm mt-1">{formik.errors.role}</p>
-                )}
-              </div>
-
-              {userType && (
-                <>
-                  {specificFields.map((field) => (
-                    <FormInput
-                      key={field.id}
-                      formik={formik}
-                      {...field}
-                      error={formik.touched[field.id] && formik.errors[field.id]}
-                    />
-                  ))}
-
-                  {userType === "GUIDE" && (
-                    <ToggleSwitch
-                      label="Vehicle Available"
-                      checked={formik.values.vehicleAvailability}
-                      onChange={(val) => formik.setFieldValue("vehicleAvailability", val)}
-                    />
-                  )}
-                </>
-              )}
-            </>
-          )}
-        </div>
-
-        <div className="flex justify-between mt-8">
-          {step === 2 && (
-            <button
-              type="button"
-              onClick={() => setStep(1)}
-              className="px-6 py-2 text-[#1A365D] hover:text-[#122744] font-medium"
-            >
-              Back
-            </button>
-          )}
-          <button
-            type="submit"
-            disabled={formik.isSubmitting}
-            className="w-full bg-[#1A365D] hover:bg-[#122744] text-white p-3 rounded-lg font-medium transition-colors duration-200 disabled:bg-[#1A365D]/70 flex items-center justify-center"
-          >
-            {formik.isSubmitting ? (
-              <div className="flex items-center">
-                <div className="spinner border-2 border-t-2 border-[#D4AF37] border-t-transparent w-5 h-5 rounded-full animate-spin"></div>
-                <span className="ml-2">Registering...</span>
-              </div>
-            ) : (
-              step === 1 ? "Continue" : "Register"
+            {userType === "TRAVELER" && (
+              <Col span={24}>
+                <Form.Item
+                  name="nationality"
+                  label="Nationality"
+                  rules={[{ required: true, message: "Nationality is required" }]}
+                >
+                  <Select
+                    showSearch
+                    placeholder={countriesLoading ? "Loading countries..." : "Select nationality"}
+                    optionFilterProp="children"
+                    loading={countriesLoading}
+                    size="large"
+                    notFoundContent={countriesLoading ? <Spin indicator={loadingIcon} /> : "No countries found"}
+                    filterOption={(input, option) =>
+                      option.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                    }
+                  >
+                    {countries.map(country => (
+                      <Option key={country.code} value={country.code}>
+                        {country.name}
+                      </Option>
+                    ))}
+                  </Select>
+                </Form.Item>
+              </Col>
             )}
-          </button>
-        </div>
-      </form>
 
-      <p className="text-center mt-6 text-[#333333]">
-        Already have an account?{" "}
-        <a href="/login" className="text-[#1A365D] hover:text-[#D4AF37] transition-colors duration-200 font-medium">
-          Log in
-        </a>
-      </p>
+            {userType === "GUIDE" && (
+              <>
+                <Col xs={24} sm={12}>
+                  <Form.Item
+                    name="country"
+                    label="Country"
+                    rules={[{ required: true, message: "Country is required" }]}
+                  >
+                    <Select
+                      showSearch
+                      placeholder={countriesLoading ? "Loading countries..." : "Select country"}
+                      optionFilterProp="children"
+                      loading={countriesLoading}
+                      size="large"
+                      notFoundContent={countriesLoading ? <Spin indicator={loadingIcon} /> : "No countries found"}
+                      filterOption={(input, option) =>
+                        option.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                      }
+                      onChange={handleCountryChange}
+                    >
+                      {countries.map(country => (
+                        <Option key={country.code} value={country.code}>
+                          {country.name}
+                        </Option>
+                      ))}
+                    </Select>
+                  </Form.Item>
+                </Col>
+                
+                <Col xs={24} sm={12}>
+                  <Form.Item
+                    name="expertiseCityRegion"
+                    label="Expertise City/Region"
+                    rules={[{ required: true, message: "Expertise City/Region is required" }]}
+                  >
+                    <Select
+                      showSearch
+                      placeholder={regionsLoading ? "Loading regions..." : selectedCountry ? "Select region" : "Select country first"}
+                      optionFilterProp="children"
+                      loading={regionsLoading}
+                      size="large"
+                      disabled={!selectedCountry}
+                      notFoundContent={regionsLoading ? <Spin indicator={loadingIcon} /> : "No regions found"}
+                      filterOption={(input, option) =>
+                        option.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                      }
+                    >
+                      {regions.map(region => (
+                        <Option key={region.id} value={region.id}>
+                          {region.name}
+                        </Option>
+                      ))}
+                    </Select>
+                  </Form.Item>
+                </Col>
+                
+                <Col xs={24} sm={12}>
+                  <Form.Item
+                    name="language"
+                    label="Languages Spoken"
+                    rules={[{ required: true, message: "At least one language is required" }]}
+                  >
+                    <Select
+                      mode="multiple"
+                      showSearch
+                      placeholder={languagesLoading ? "Loading languages..." : "Select languages"}
+                      optionFilterProp="children"
+                      loading={languagesLoading}
+                      size="large"
+                      notFoundContent={languagesLoading ? <Spin indicator={loadingIcon} /> : "No languages found"}
+                      filterOption={(input, option) =>
+                        option.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                      }
+                    >
+                      {languages.map(language => (
+                        <Option key={language.code} value={language.code}>
+                          {language.name}
+                        </Option>
+                      ))}
+                    </Select>
+                  </Form.Item>
+                </Col>
+                
+                <Col span={24}>
+                  <Form.Item 
+                    name="about"
+                    label="About You">
+                    <Input.TextArea 
+                      placeholder="Tell us about yourself" 
+                      size="large" 
+                      autoSize={{ minRows: 3 }}
+                    />
+                  </Form.Item>
+                </Col>
+                
+                <Col span={24}>
+                  <Form.Item 
+                    name="vehicleAvailability" 
+                    valuePropName="checked"
+                    style={{ marginBottom: 24 }}
+                  >
+                    <Switch 
+                      checkedChildren="Vehicle Available" 
+                      unCheckedChildren="No Vehicle" 
+                    />
+                  </Form.Item>
+                </Col>
+              </>
+            )}
+
+            <Col span={24}>
+              <Form.Item>
+                <div style={{ display: "flex", justifyContent: "space-between" }}>
+                  <Button onClick={() => setStep(0)}>Back</Button>
+                  <Button 
+                    type="primary" 
+                    htmlType="submit" 
+                    loading={loading}
+                    size="large" 
+                  >
+                    Register
+                  </Button>
+                </div>
+              </Form.Item>
+            </Col>
+          </Row>
+        )}
+      </Form>
+
+      <Divider>
+        <span style={{ color: "#666666", fontSize: "14px" }}>
+          Already have an account?{" "}
+          <a href="/login" style={{ color: "#1890ff" }}>
+            Log in
+          </a>
+        </span>
+      </Divider>
     </AuthLayout>
   );
 };
