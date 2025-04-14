@@ -10,6 +10,7 @@ import TravellerRegistration from "./components/Registration/TravellerRegistrati
 import TourGuideRegistration from "./components/Registration/TourGuideRegistration.jsx";
 import WeatherPage from "./pages/WeatherPage.jsx";
 import Weather from "./components/Weather.jsx";
+import VisitPlanPage from './pages/VisitPlanPage';
 import TravelerDashboard from "./pages/TravelerDashboard.jsx";
 import GuideDashboard from "./pages/GuideDashboard.jsx";
 import GuideReview from "./pages/GuideReview.jsx";
@@ -39,6 +40,7 @@ const App = () => {
         <Route path="/weather" element={<WeatherPage />} />
         <Route path="/weather-details" element={<Weather />} />
         <Route path="/weather-card" element={<WeatherCard />} />
+        <Route path="/visit-planner" element={<VisitPlanPage />} />
       </Routes>
     </Router>
   );
