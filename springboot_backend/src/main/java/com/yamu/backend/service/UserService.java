@@ -85,7 +85,7 @@ public class UserService {
         user.setTokenExpiry(LocalDateTime.now().plusHours(24)); // 24-hour expiry
         user.setVerified(false);
         return userRepository.save(user);
-
+        
     }
 
     public User authenticate(String email, String password) {
