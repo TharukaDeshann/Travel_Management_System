@@ -1,5 +1,7 @@
 package com.yamu.backend.model;
 
+import java.time.LocalDateTime;
+
 import com.yamu.backend.enums.UserRole;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
@@ -31,10 +33,19 @@ public abstract class User {
     @Email(message = "Invalid email format")
     private String email;
 
+    @Column(name = "is_verified")
+    private boolean isVerified = false;
+
+    @Column(name = "verification_token")
+    private String verificationToken;
+
+    @Column(name = "token_expiry")
+    private LocalDateTime tokenExpiry;
+
     @Column(nullable = false, length = 255) // Store hashed password
     @NotBlank(message = "Password is required")
     @Size(min = 8, message = "Password must be at least 8 characters long")
-   
+
     private String password;
 
     @Column(nullable = false, length = 20, name = "contact_number")
@@ -50,5 +61,4 @@ public abstract class User {
     @Column(nullable = false, updatable = false, insertable = false)
     private UserRole role; // Role defined by specialization
 
-    
 }

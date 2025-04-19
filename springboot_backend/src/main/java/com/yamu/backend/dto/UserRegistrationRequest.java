@@ -4,7 +4,11 @@ import com.yamu.backend.enums.UserRole;
 import com.yamu.backend.validation.GuideRegistration;
 import com.yamu.backend.validation.TravelerRegistration;
 import jakarta.validation.constraints.*;
+import lombok.Getter;
+import lombok.Setter;
 
+@Getter
+@Setter
 public class UserRegistrationRequest {
 
     @NotBlank(message = "Name is required")

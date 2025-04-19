@@ -8,9 +8,10 @@ import com.yamu.backend.model.Traveler;
 import com.yamu.backend.model.User;
 import com.yamu.backend.repository.UserRepository;
 
-
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -29,7 +30,7 @@ public class UserService {
         if (userRepository.findByEmail(request.getEmail()) != null) {
             throw new RuntimeException("Account already exists with this email");
         }
-    
+
         User user;
         switch (request.getRole()) {
             case TRAVELER:
@@ -41,7 +42,7 @@ public class UserService {
                 }
                 user = traveler;
                 break;
-                
+
             case GUIDE:
                 Guide guide = new Guide();
                 if (request.getExpertiseCityRegion() != null) {
@@ -49,15 +50,15 @@ public class UserService {
                 } else {
                     throw new RuntimeException("Expertise city/region is required for guides");
                 }
-                
+
                 if (request.getLanguage() != null) {
                     guide.setLanguage(request.getLanguage());
                 } else {
                     throw new RuntimeException("Language is required for guides");
                 }
-                
+
                 guide.setAbout(request.getAbout());
-                
+
                 if (request.getVehicleAvailability() != null) {
                     guide.setVehicleAvailability(request.getVehicleAvailability());
                 } else {
@@ -65,13 +66,11 @@ public class UserService {
                 }
                 user = guide;
                 break;
-                
-            
-                
+
             default:
                 throw new IllegalArgumentException("Invalid user role");
         }
-    
+
         // Set common attributes
         user.setFirstName(request.getFirstName());
         user.setLastName(request.getLastName());
@@ -80,9 +79,15 @@ public class UserService {
         user.setContactNumber(request.getContactNumber());
         user.setAddress(request.getAddress());
         user.setRole(request.getRole());
-    
+
+        String token = UUID.randomUUID().toString();
+        user.setVerificationToken(token);
+        user.setTokenExpiry(LocalDateTime.now().plusHours(24)); // 24-hour expiry
+        user.setVerified(false);
         return userRepository.save(user);
+
     }
+
     public User authenticate(String email, String password) {
         User user = userRepository.findByEmail(email);
         if (user != null && passwordEncoder.matches(password, user.getPassword())) {
@@ -100,7 +105,6 @@ public class UserService {
     public Optional<User> getUserById(Long id) {
         return userRepository.findById(id);
     }
-
 
     // Get users by role
     public List<User> getUsersByRole(UserRole role) {
@@ -125,20 +129,28 @@ public class UserService {
         User user = optionalUser.get();
 
         // Update common fields
-        if (updateRequest.getFirstName() != null) user.setFirstName(updateRequest.getFirstName());
-        if (updateRequest.getLastName() != null) user.setLastName(updateRequest.getLastName());
-        if (updateRequest.getContactNumber() != null) user.setContactNumber(updateRequest.getContactNumber());
-        if (updateRequest.getAddress() != null) user.setAddress(updateRequest.getAddress());
+        if (updateRequest.getFirstName() != null)
+            user.setFirstName(updateRequest.getFirstName());
+        if (updateRequest.getLastName() != null)
+            user.setLastName(updateRequest.getLastName());
+        if (updateRequest.getContactNumber() != null)
+            user.setContactNumber(updateRequest.getContactNumber());
+        if (updateRequest.getAddress() != null)
+            user.setAddress(updateRequest.getAddress());
 
         // Role-specific updates
         if (user instanceof Traveler traveler && updateRequest.getNationality() != null) {
             traveler.setNationality(updateRequest.getNationality());
         }
         if (user instanceof Guide guide) {
-            if (updateRequest.getExpertiseCityRegion() != null) guide.setExpertiseCityRegion(updateRequest.getExpertiseCityRegion());
-            if (updateRequest.getLanguage() != null) guide.setLanguage(updateRequest.getLanguage());
-            if (updateRequest.getAbout() != null) guide.setAbout(updateRequest.getAbout());
-            if (updateRequest.getVehicleAvailability() != null) guide.setVehicleAvailability(updateRequest.getVehicleAvailability());
+            if (updateRequest.getExpertiseCityRegion() != null)
+                guide.setExpertiseCityRegion(updateRequest.getExpertiseCityRegion());
+            if (updateRequest.getLanguage() != null)
+                guide.setLanguage(updateRequest.getLanguage());
+            if (updateRequest.getAbout() != null)
+                guide.setAbout(updateRequest.getAbout());
+            if (updateRequest.getVehicleAvailability() != null)
+                guide.setVehicleAvailability(updateRequest.getVehicleAvailability());
         }
 
         userRepository.save(user);

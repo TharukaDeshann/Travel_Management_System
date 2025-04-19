@@ -148,7 +148,9 @@ const Register = () => {
     try {
       await register(payload);
       message.success("Registration successful!");
-      navigate("/login");
+      navigate('/verify-email-pending'); // Page with "Check your inbox" message
+
+
     } catch (err) {
       const errorMsg = err.response?.data?.error || "Registration failed. Please try again.";
       setError(errorMsg);
