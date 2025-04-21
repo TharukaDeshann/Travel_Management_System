@@ -13,7 +13,7 @@ import java.util.function.Function;
 public class JwtUtil {
     private final String SECRET_KEY = "N4SNgnrQcV2tosyyUt11w5ADMqlpyPBg+LE9NiaOH9k=";
 
-    private final long ACCESS_TOKEN_EXPIRATION = 60 * 1000; // 15 min
+    private final long ACCESS_TOKEN_EXPIRATION = 60 * 1000; // 1 min
     private final long REFRESH_TOKEN_EXPIRATION = 7 * 24 * 60 * 60 * 1000; // 7 days
 
     private Key getSigningKey() {
