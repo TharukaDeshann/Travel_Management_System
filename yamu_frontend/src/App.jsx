@@ -16,6 +16,8 @@ import GuideCalender from "./components/GuideCalender.jsx";
 import Map from './components/Map.jsx';
 import WeatherCard from "./components/WeatherCard.jsx";
 
+import VerifyEmail from "./pages/VerifyEmail.jsx";
+
 const App = () => {
   return (
     <React.Fragment>
@@ -30,7 +32,9 @@ const App = () => {
           <Route path="/weather" element={<WeatherPage />} />
           <Route path="/weather-details" element={<Weather />} />
           <Route path="/weather-card" element={<WeatherCard />} />
-          
+          {/* Email verification */}
+          <Route path="/verify-email" element={<VerifyEmail />} />
+
           {/* Protected Routes */}
           <Route element={<ProtectedRoute />}>
             <Route path="/home" element={<Home />} />

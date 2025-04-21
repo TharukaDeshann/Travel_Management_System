@@ -87,7 +87,7 @@ public class AuthController {
 
         try {
             User registeredUser = userService.registerUser(request);
-            String link = "http://your-frontend-url/verify-email?token=" + registeredUser.getVerificationToken();
+            String link = "http://localhost:5173/verify-email?token=" + registeredUser.getVerificationToken();
             emailService.sendEmail(
                     registeredUser.getEmail(),
                     "Verify your email",
@@ -124,24 +124,37 @@ public class AuthController {
     }
 
     @PostMapping("/resend-verification")
-    public ResponseEntity<String> resendVerification(@RequestBody String email) {
-        User user = userRepository.findByEmail(email);
-        if (user == null)
-            return ResponseEntity.badRequest().body("User not found");
-
-        if (user.isVerified())
-            return ResponseEntity.badRequest().body("Email already verified");
-
-        String newToken = UUID.randomUUID().toString();
-        user.setVerificationToken(newToken);
-        user.setTokenExpiry(LocalDateTime.now().plusHours(24));
-        userRepository.save(user);
-
-        String link = "http://your-frontend-url/verify-email?token=" + newToken;
-        emailService.sendEmail(email, "Resend: Verify your email", "Click this link to verify: " + link);
-
-        return ResponseEntity.ok("Verification email resent");
+public ResponseEntity<?> resendVerification(@RequestBody Map<String, String> request) {
+    String email = request.get("email");
+    
+    if (email == null || email.isBlank()) {
+        return ResponseEntity.badRequest().body(Map.of("message", "Email is required."));
     }
+
+    User user = userRepository.findByEmail(email);
+    if (user == null) {
+        return ResponseEntity.badRequest().body(Map.of("message", "User not found."));
+    }
+
+    if (user.isVerified()) {
+        return ResponseEntity.badRequest().body(Map.of("message", "Email already verified."));
+    }
+
+    // Generate new verification token
+    String newToken = UUID.randomUUID().toString();
+    user.setVerificationToken(newToken);
+    user.setTokenExpiry(LocalDateTime.now().plusHours(24));
+    userRepository.save(user);
+
+    // Compose email
+    String link = "http://localhost:5173/verify-email?token=" + newToken;
+    String emailBody = "Click the following link to verify your email:\n\n" + link;
+
+    emailService.sendEmail(user.getEmail(), "Resend: Verify your email", emailBody);
+
+    return ResponseEntity.ok(Map.of("message", "Verification email resent successfully."));
+}
+
 
     @PostMapping("/login")
     public ResponseEntity<Map<String, Object>> login(@Valid @RequestBody UserLoginRequest loginRequest) {
