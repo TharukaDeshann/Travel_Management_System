@@ -9,6 +9,7 @@ import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 
 import WeatherPage from "./pages/WeatherPage.jsx";
 import Weather from "./components/Weather.jsx";
+import VisitPlanPage from './pages/VisitPlanPage';
 import TravelerDashboard from "./pages/TravelerDashboard.jsx";
 import GuideDashboard from "./pages/GuideDashboard.jsx";
 import GuideReview from "./pages/GuideReview.jsx";
