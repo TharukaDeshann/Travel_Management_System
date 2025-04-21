@@ -34,7 +34,7 @@ public abstract class User {
     private String email;
 
     @Column(name = "is_verified")
-    private boolean isVerified = false;
+    private Boolean isVerified = false;
 
     @Column(name = "verification_token")
     private String verificationToken;
@@ -61,4 +61,11 @@ public abstract class User {
     @Column(nullable = false, updatable = false, insertable = false)
     private UserRole role; // Role defined by specialization
 
+    public Boolean isVerified() {
+        return this.isVerified;
+    }
+    
+    public void setVerified(Boolean isVerified) {
+        this.isVerified = isVerified;
+    }
 }

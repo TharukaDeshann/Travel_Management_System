@@ -5,17 +5,20 @@ import com.yamu.backend.dto.UserRegistrationRequest;
 import com.yamu.backend.enums.UserRole;
 import com.yamu.backend.model.User;
 import com.yamu.backend.repository.UserRepository;
+import com.yamu.backend.service.EmailService;
 import com.yamu.backend.service.TokenBlacklistService;
 import com.yamu.backend.service.UserService;
 import com.yamu.backend.util.JwtUtil;
 import com.yamu.backend.validation.GuideRegistration;
 import com.yamu.backend.validation.TravelerRegistration;
 
+import java.util.UUID;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolation;
@@ -41,17 +44,19 @@ public class AuthController {
     private final JwtUtil jwtUtil;
     private final TokenBlacklistService tokenBlacklistService;
     private final UserRepository userRepository;
+    private final EmailService emailService; // Assuming you have an EmailService for sending emails
 
     @Autowired
     private Validator validator;
 
     @Autowired
     public AuthController(UserService userService, JwtUtil jwtUtil, TokenBlacklistService tokenBlacklistService,
-            UserRepository userRepository) {
-        this.userRepository = userRepository;
+            UserRepository userRepository, EmailService emailService) {
         this.userService = userService;
         this.jwtUtil = jwtUtil;
         this.tokenBlacklistService = tokenBlacklistService;
+        this.userRepository = userRepository;
+        this.emailService = emailService;
     }
 
     @PostMapping("/register")
@@ -82,9 +87,9 @@ public class AuthController {
 
         try {
             User registeredUser = userService.registerUser(request);
-            String link = "http://your-frontend-url/verify-email?token=" + registeredUser.verificationToken;
+            String link = "http://your-frontend-url/verify-email?token=" + registeredUser.getVerificationToken();
             emailService.sendEmail(
-                registeredUser.getEmail(),
+                    registeredUser.getEmail(),
                     "Verify your email",
                     "Click this link to verify your email: " + link);
             response.put("message", "Verify your email to acivate the account");
@@ -96,55 +101,57 @@ public class AuthController {
     }
 
     @GetMapping("/verify-email")
-public ResponseEntity<String> verifyEmail(@RequestParam("token") String token) {
-    Optional<User> userOpt = userRepository.findByVerificationToken(token);
+    public ResponseEntity<String> verifyEmail(@RequestParam("token") String token) {
+        Optional<User> userOpt = userRepository.findByVerificationToken(token);
 
-    if (userOpt.isEmpty()) return ResponseEntity.badRequest().body("Invalid token");
+        if (userOpt.isEmpty())
+            return ResponseEntity.badRequest().body("Invalid token");
 
-    User user = userOpt.get();
-    if (user.isVerified()) return ResponseEntity.badRequest().body("Email already verified");
+        User user = userOpt.get();
+        if (user.isVerified())
+            return ResponseEntity.badRequest().body("Email already verified");
 
-    if (user.getTokenExpiry().isBefore(LocalDateTime.now())) {
-        return ResponseEntity.status(HttpStatus.GONE).body("Token expired");
+        if (user.getTokenExpiry().isBefore(LocalDateTime.now())) {
+            return ResponseEntity.status(HttpStatus.GONE).body("Token expired");
+        }
+
+        user.setVerified(true);
+        user.setVerificationToken(null);
+        user.setTokenExpiry(null);
+        userRepository.save(user);
+
+        return ResponseEntity.ok("Email verified successfully");
     }
 
-    user.setVerified(true);
-    user.setVerificationToken(null);
-    user.setTokenExpiry(null);
-    userRepository.save(user);
+    @PostMapping("/resend-verification")
+    public ResponseEntity<String> resendVerification(@RequestBody String email) {
+        User user = userRepository.findByEmail(email);
+        if (user == null)
+            return ResponseEntity.badRequest().body("User not found");
 
-    return ResponseEntity.ok("Email verified successfully");
-}
-@PostMapping("/resend-verification")
-public ResponseEntity<String> resendVerification(@RequestBody String email) {
-    Optional<User> userOpt = userRepository.findByEmail(email);
-    if (userOpt.isEmpty()) return ResponseEntity.badRequest().body("User not found");
+        if (user.isVerified())
+            return ResponseEntity.badRequest().body("Email already verified");
 
-    User user = userOpt.get();
-    if (user.isVerified()) return ResponseEntity.badRequest().body("Email already verified");
+        String newToken = UUID.randomUUID().toString();
+        user.setVerificationToken(newToken);
+        user.setTokenExpiry(LocalDateTime.now().plusHours(24));
+        userRepository.save(user);
 
-    String newToken = UUID.randomUUID().toString();
-    user.setVerificationToken(newToken);
-    user.setTokenExpiry(LocalDateTime.now().plusHours(24));
-    userRepository.save(user);
+        String link = "http://your-frontend-url/verify-email?token=" + newToken;
+        emailService.sendEmail(email, "Resend: Verify your email", "Click this link to verify: " + link);
 
-    String link = "http://your-frontend-url/verify-email?token=" + newToken;
-    emailService.sendEmail(email, "Resend: Verify your email", "Click this link to verify: " + link);
-
-    return ResponseEntity.ok("Verification email resent");
-}
-
-
+        return ResponseEntity.ok("Verification email resent");
+    }
 
     @PostMapping("/login")
     public ResponseEntity<Map<String, Object>> login(@Valid @RequestBody UserLoginRequest loginRequest) {
-        
+
         User authenticatedUser = userService.authenticate(loginRequest.getEmail(), loginRequest.getPassword());
 
         if (!authenticatedUser.isVerified()) {
-            throw new UnauthorizedException("Please verify your email to login");
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Please verify your email to login");
         }
-        
+
         if (authenticatedUser != null) {
             String accessToken = jwtUtil.generateAccessToken(authenticatedUser.getEmail());
             String refreshToken = jwtUtil.generateRefreshToken(authenticatedUser.getEmail());
