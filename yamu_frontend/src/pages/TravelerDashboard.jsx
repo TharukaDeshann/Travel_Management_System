@@ -1,12 +1,12 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { ChevronRight } from "lucide-react";
-import '../styles/TravelerDashboard.css';  // Updated import path
-// Import images
-import yamuLogo from '../images/yamu-logo.png';  // Add your logo file
-import notificationIcon from '../images/notification.png';  // Updated import name
-import profileIcon from '../images/profile.png';  // Updated import name
-
-import botImage from '../images/bot-image.png';  // Updated import name
+import '../styles/TravelerDashboard.css';
+import WeatherCard from "../components/WeatherCard";
+import yamuLogo from '../images/yamu-logo.png';
+import notificationIcon from '../images/notification.png';
+import profileIcon from '../images/profile.png';
+import botImage from '../images/bot-image.png';
 
 // Add currencies array at the top level
 const currencies = [
@@ -16,31 +16,29 @@ const currencies = [
   { code: 'CHF', symbol: 'Fr.' }
 ];
 
-
-
 const sections = [
   { 
     title: "Discover Places", 
     items: [
       {
         name: "Sigiriya",
-        image: "src/images/sigiriya.jpg",  // Add your image paths here
+        image: "/src/images/sigiriya.jpg",
       },
       {
         name: "Hiriketiya",
-        image: "src/images/hiriketiya.jpg",
+        image: "/src/images/hiriketiya.jpg",
       },
       {
         name: "Ambuluwawa",
-        image: "src/images/ambuluwawa.jpg",
+        image: "/src/images/ambuluwawa.jpg",
       },
       {
         name: "Nagapooshani Amman Temple",
-        image: "src/images/amman_temple.jpg",
+        image: "/src/images/amman_temple.jpg",
       },
       {
         name: "Adams Peak",
-        image: "src/images/adams-peak.jpg",
+        image: "/src/images/adams-peak.jpg",
       }
     ] 
   },
@@ -49,23 +47,23 @@ const sections = [
     items: [
       {
         name: "Wild Coast Tented Lodge",
-        image: "src/images/wild_coast.jpg",  
+        image: "/src/images/wild_coast.jpg",  
       },
       {
         name: "98 Acre Resort & Spa",
-        image: "src/images/98_acre.jpg",
+        image: "/src/images/98_acre.jpg",
       },
       {
         name: "Anantara Resort & Spa",
-        image: "src/images/anantaya.jpg",
+        image: "/src/images/anantaya.jpg",
       },
       {
         name: "Jetwing Colombo Seven",
-        image: "src/images/jetwing.jpg",
+        image: "/src/images/jetwing.jpg",
       },
       {
         name: "The Lake Forest Hotel",
-        image: "src/images/lake_forest.jpg",
+        image: "/src/images/lake_forest.jpg",
       },
     ] 
   },
@@ -74,23 +72,23 @@ const sections = [
     items: [
       {
         name: "Rajam Chaitanya",
-        image: "src/images/rajam.jpeg",
+        image: "/src/images/rajam.jpeg",
       },
       {
         name: "Duminda Jayasinghe",
-        image: "src/images/duminda.jpg",
+        image: "/src/images/duminda.jpg",
       },
       {
         name: "Selvam Vetri",
-        image: "src/images/selvam.webp",  // Add your image paths here
+        image: "/src/images/selvam.webp",
       },
       {
         name: "Samantha Perera",
-        image: "src/images/samantha.webp",
+        image: "/src/images/samantha.webp",
       },
       {
         name: "Jagath Karunathilake",
-        image: "src/images/jagath.jpeg",
+        image: "/src/images/jagath.jpeg",
       }
       
     ] 
@@ -101,71 +99,94 @@ const sections = [
     items: [
       {
         name: "Esala Perahera",
-        image: "src/images/asala_perahera.webp",  // Add your image paths here
+        image: "/src/images/asala_perahera.webp",
       },
       {
         name: "Nallur Kovil Festival",
-        image: "src/images/nallur_festival.jpg",
+        image: "/src/images/nallur_festival.jpg",
       },
       {
         name: "Sinhala Tamil New Year",
-        image: "src/images/new_year.jpeg",
+        image: "/src/images/new_year.jpeg",
       },
       {
         name: "Kuweni The Musical",
-        image: "src/images/kuweni.jpg",
+        image: "/src/images/kuweni.jpg",
       },
       {
         name: "Whale Watching Season",
-        image: "src/images/whale_watching.jpg",
+        image: "/src/images/whale_watching.jpg",
       }   
     ] 
-  },
-
-  { 
-    title: "Discover Packages", 
-    items: [
-      {
-        name: "Package 1 - Rs.50,000",
-        image: "src/images/sigiriya.jpg",  // Add your image paths here
-      },
-      {
-        name: "Package 2 - Rs.60,000",
-        image: "src/images/hiriketiya.jpg",
-      },
-      {
-        name: "Package 3 - Rs.30,000",
-        image: "src/images/hiriketiya.jpg",
-      }
-    ] 
   }
+];
 
+// Packages with base prices in LKR
+const packages = [
+  { name: "Package 1", price: 50000, image: "/src/images/sigiriya.jpg", description: "3 Days Sigiriya Adventure" },
+  { name: "Package 2", price: 60000, image: "/src/images/hiriketiya.jpg", description: "5 Days Beach Getaway" },
+  { name: "Package 3", price: 30000, image: "/src/images/hiriketiya.jpg", description: "2 Days Quick Escape" }
 ];
 
 export default function TravelerDashboard() {
-  const [selectedCurrency, setSelectedCurrency] = useState('USD');
+  const navigate = useNavigate();
+  const [selectedCurrency, setSelectedCurrency] = useState('LKR');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  // Add state for scroll buttons visibility
+  const [exchangeRates, setExchangeRates] = useState({});
+
+  // Initialize convertedPackages with the base LKR prices
+  const [convertedPackages, setConvertedPackages] = useState(
+    packages.map(pkg => ({
+      ...pkg,
+      convertedPrice: pkg.price // Initially set to LKR price
+    }))
+  );
   const [showLeftButton, setShowLeftButton] = useState({});
 
-  // Close dropdown when clicking outside
-  React.useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (!event.target.closest('.currency-dropdown')) {
-        setIsDropdownOpen(false);
+  // Fetch exchange rates
+  useEffect(() => {
+    const fetchExchangeRates = async () => {
+      if (selectedCurrency === 'LKR') {
+        setConvertedPackages(packages.map(pkg => ({
+          ...pkg,
+          convertedPrice: pkg.price
+        })));
+        return;
+      }
+
+      try {
+        const response = await fetch(`https://v6.exchangerate-api.com/v6/ee302ff3be157ca6a021f6a0/pair/LKR/${selectedCurrency}`);
+        const data = await response.json();
+        
+        if (data && data.conversion_rate) {
+          const rate = data.conversion_rate;
+          console.log(`Conversion rate for ${selectedCurrency}: ${rate}`);
+          
+          const updatedPackages = packages.map(pkg => ({
+            ...pkg,
+            convertedPrice: Math.round((pkg.price * rate) * 100) / 100
+          }));
+          
+          setConvertedPackages(updatedPackages);
+        } else {
+          console.error('Invalid API response:', data);
+        }
+      } catch (error) {
+        console.error("Error fetching exchange rates:", error);
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+    fetchExchangeRates();
+    const intervalId = setInterval(fetchExchangeRates, 60000);
+    return () => clearInterval(intervalId);
+  }, [selectedCurrency]);
 
-  // Handle scroll event for each container
-  const handleScroll = (e, sectionTitle) => {
-    const container = e.target;
+  // Handle scroll for sections
+  const handleScroll = (e, title) => {
+    const { scrollLeft } = e.target;
     setShowLeftButton(prev => ({
       ...prev,
-      [sectionTitle]: container.scrollLeft > 0
+      [title]: scrollLeft > 0
     }));
   };
 
@@ -193,6 +214,7 @@ export default function TravelerDashboard() {
               type="button"
               className="currency-option"
               onClick={() => {
+                console.log(`Switching to currency: ${currency.code}`);
                 setSelectedCurrency(currency.code);
                 setIsDropdownOpen(false);
               }}
@@ -207,14 +229,9 @@ export default function TravelerDashboard() {
 
   return (
     <div>
-      {/* Fixed Navigation Bar */}
       <nav className="nav-container">
         <div className="logo-container">
-          <img 
-            src={yamuLogo} 
-            alt="YAMU Logo" 
-            className="nav-logo-image"
-          />
+          <img src={yamuLogo} alt="YAMU Logo" className="nav-logo-image" />
           <h1 className="nav-logo">YAMU</h1>
         </div>
         <ul className="nav-links">
@@ -223,32 +240,20 @@ export default function TravelerDashboard() {
           ))}
         </ul>
         <div className="flex items-center space-x-4">
-          {/* Currency Dropdown */}
           <CurrencyDropdown />
-          {/* Icons */}
+          <WeatherCard />
           <div className="icon-container">
-            <img 
-              src={notificationIcon} 
-              alt="Notifications" 
-              className="w-6 h-6"
-            />
+            <img src={notificationIcon} alt="Notifications" className="w-6 h-6" />
             <span className="notification-badge">3</span>
           </div>
           <div className="icon-container">
-            <img 
-              src={profileIcon} 
-              alt="Profile" 
-              className="profile-image"
-            />
+            <img src={profileIcon} alt="Profile" className="profile-image" />
           </div>
         </div>
       </nav>
 
-      {/* Main Content */}
       <div className="main-content">
-        {/* Search & Buttons */}
         <div className="search-container">
-          {/* Search Bar */}
           <div className="search-bar">
             <input 
               type="text" 
@@ -256,19 +261,20 @@ export default function TravelerDashboard() {
               className="search-input"
             />
           </div>
-          
-          {/* Buttons */}
           <div className="buttons-container">
             <button className="action-button upcoming-trips-button">
               Upcoming Trips
             </button>
-            <button className="action-button start-planning-button">
+            <button 
+              className="action-button start-planning-button"
+              onClick={() => navigate('/visit-planner')}
+            >
               Start Planning
             </button>
           </div>
         </div>
-        
-        {/* Sections */}
+
+        {/* Other Sections */}
         {sections.map((section) => (
           <div key={section.title} className="section-container">
             <div className="flex justify-between items-center">
@@ -281,7 +287,7 @@ export default function TravelerDashboard() {
                   className="scroll-button left"
                   onClick={(e) => {
                     const container = e.target.closest('.cards-scroll-container').querySelector('.flex');
-                    container.scrollBy({ left: -(339 + 16), behavior: 'smooth' });
+                    container.scrollBy({ left: -339 - 16, behavior: 'smooth' });
                   }}
                 >
                   ←
@@ -293,11 +299,7 @@ export default function TravelerDashboard() {
               >
                 {section.items.map((item) => (
                   <div key={item.name} className="card-container">
-                    <img 
-                      src={item.image} 
-                      alt={item.name}
-                      className="card-image"
-                    />
+                    <img src={item.image} alt={item.name} className="card-image" />
                     <div className="card-overlay">
                       <h3 className="card-title">{item.name}</h3>
                     </div>
@@ -316,8 +318,29 @@ export default function TravelerDashboard() {
             </div>
           </div>
         ))}
-        
-        {/* Bot Image */}
+
+        {/* Packages Section */}
+        <div className="section-container">
+          <h2 className="text-lg font-bold">Discover Packages</h2>
+          <div className="cards-scroll-container">
+            <div className="flex space-x-4">
+              {convertedPackages.map((pkg) => (
+                <div key={pkg.name} className="card-container">
+                  <img src={pkg.image} alt={pkg.name} className="card-image" />
+                  <div className="card-overlay">
+                    <h3 className="card-title">{pkg.name}</h3>
+                    <p className="text-white text-lg">
+                      {selectedCurrency === 'LKR' ? 'Rs. ' : currencies.find(c => c.code === selectedCurrency)?.symbol}
+                      {pkg.convertedPrice?.toLocaleString()}
+                    </p>
+                    <p className="text-white text-sm">{pkg.description}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
         <img 
           src={botImage}
           alt="Bot Assistant"
