@@ -18,6 +18,7 @@ export const register = async (userData) => {
 };
 
 export const login = async (credentials) => {
+  console.log("Logging in with credentials:", credentials);
   const response = await axios.post(`${API_URL}/login`, credentials, {
     withCredentials: true, // Ensures cookies are set
   });
