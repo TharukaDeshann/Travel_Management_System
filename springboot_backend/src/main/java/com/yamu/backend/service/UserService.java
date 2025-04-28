@@ -12,7 +12,9 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.Map;
 
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -20,8 +22,10 @@ import org.springframework.stereotype.Service;
 public class UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final EmailService emailService;
 
-    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
+    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder, EmailService emailService) {
+        this.emailService = emailService;
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
     }
@@ -85,7 +89,35 @@ public class UserService {
         user.setTokenExpiry(LocalDateTime.now().plusHours(24)); // 24-hour expiry
         user.setVerified(false);
         return userRepository.save(user);
-        
+
+    }
+
+    // Resend verification email
+    public ResponseEntity<?> resendVerificationEmail(String oldToken) {
+        Optional<User> userOpt = userRepository.findByVerificationToken(oldToken);
+
+        if (userOpt.isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Invalid token."));
+        }
+
+        User user = userOpt.get();
+        if (user.isVerified()) {
+            return ResponseEntity.ok(Map.of("message", "User already verified."));
+        }
+
+        // Generate new token and update
+        String newToken = UUID.randomUUID().toString();
+        user.setVerificationToken(newToken);
+        user.setTokenExpiry(LocalDateTime.now().plusHours(24)); // 24-hour expiry
+        userRepository.save(user);
+
+        String link = "http://localhost:5173/verify-email?token=" + newToken;
+        emailService.sendEmail(
+                user.getEmail(),
+                "Resend: Verify your email",
+                "Click this link to verify your email: " + link);
+
+        return ResponseEntity.ok(Map.of("message", "Verification email resent."));
     }
 
     public User authenticate(String email, String password) {

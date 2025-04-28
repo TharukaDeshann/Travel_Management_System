@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 
-const VerifyEmail = () => {
+const VerifyEmailPage = () => {
   const [searchParams] = useSearchParams();
   const [status, setStatus] = useState("loading"); // loading, success, error
   const [message, setMessage] = useState("Verifying...");
@@ -79,4 +79,4 @@ const VerifyEmail = () => {
   );
 };
 
-export default VerifyEmail;
+export default VerifyEmailPage;

@@ -141,13 +141,12 @@ const Register = () => {
     const payload = {
       ...formData,  // Data from step 1
       ...values,    // Data from step 2
-      // No need for conversion, use consistent naming
       vehicleAvailability: values.vehicleAvailability ? 1 : 0,
     };
     
     try {
       await register(payload);
-      message.success("Registration successful!");
+      message.success("Registration successful! Please check your email to verify your account.");
       navigate('/verify-email-pending'); // Page with "Check your inbox" message
 
 
