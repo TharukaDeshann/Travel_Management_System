@@ -1,6 +1,6 @@
 import "./App.css";
 import React from "react";
-import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
+
 import Login from "./pages/Login.jsx";
 import Register from "./pages/Register.jsx";
 import Home from "./pages/Home.jsx";
@@ -10,8 +10,6 @@ import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 import WeatherPage from "./pages/WeatherPage.jsx";
 import Weather from "./components/Weather.jsx";
 import VisitPlanPage from './pages/VisitPlanPage';
-import ProtectedRoute from "./routes/ProtectedRoute.jsx";
-import Go from "./pages/Go.jsx";
 import TravelerDashboard from "./pages/TravelerDashboard.jsx";
 import GuideDashboard from "./pages/GuideDashboard.jsx";
 import GuideReview from "./pages/GuideReview.jsx";

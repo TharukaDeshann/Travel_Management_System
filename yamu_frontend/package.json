@@ -19,27 +19,17 @@
     "leaflet": "^1.9.4",
     "leaflet-routing-machine": "^3.2.12",
     "lucide-react": "^0.475.0",
-<<<<<<< HEAD
     "microsoft-cognitiveservices-speech-sdk": "^1.21.0",
     "react": "^18.2.0",
     "react-datepicker": "^8.2.1",
     "react-dom": "^18.2.0",
     "react-hook-form": "^7.54.2",
     "react-icons": "^5.5.0",
-    "react-router-dom": "^6.22.3",
+    "react-leaflet": "^4.2.1",
+    "react-router-dom": "^6.30.0",
     "react-select": "^5.10.1",
     "react-to-print": "^3.0.5",
-=======
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0",
-    "react-hook-form": "^7.54.2",
-    "react-icons": "^5.5.0",
-    "react-leaflet": "^5.0.0",
-    "react-router-dom": "^7.2.0",
-    "react-scripts": "^3.0.1",
-    "recharts": "^2.15.1",
-    "web-vitals": "^2.1.4",
->>>>>>> 4028c58b8df5c22408d244d3c9a7deae8ba1ac6c
+    "recharts": "^2.15.3",
     "yup": "^1.6.1"
   },
   "scripts": {
