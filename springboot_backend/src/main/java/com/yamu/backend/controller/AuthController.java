@@ -12,7 +12,7 @@ import com.yamu.backend.util.JwtUtil;
 import com.yamu.backend.validation.GuideRegistration;
 import com.yamu.backend.validation.TravelerRegistration;
 
-import java.util.UUID;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
@@ -255,8 +255,10 @@ public class AuthController {
         String token = extractTokenFromCookie(request);
         // Extract user email from token
         String email = jwtUtil.extractEmail(token);
-        User user = userRepository.findByEmail(email);
+        Optional<User> optUser = userRepository.findByEmail(email);
+        User user = optUser.orElse(null);
 
+        // Validate token and user
         if (token == null || !jwtUtil.validateToken(token, email)) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Invalid or expired session"));
         }

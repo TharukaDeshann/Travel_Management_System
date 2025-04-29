@@ -91,8 +91,11 @@ public class UserService {
     /**
      * Get user by email
      */
-    public User getUserByEmail(String email) {
-        return userRepository.findByEmail(email);
+    public UserResponseDTO getUserByEmail(String email) {
+        return userRepository.findByEmail(email).stream()
+                .map(this::mapToUserDTO)
+                .findFirst()
+                .orElse(null);
     }
 
     /**

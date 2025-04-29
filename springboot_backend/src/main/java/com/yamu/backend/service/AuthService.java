@@ -95,7 +95,10 @@ public class AuthService {
      * Authenticate a user by email and password
      */
     public User authenticate(String email, String password) {
-        User user = userRepository.findByEmail(email);
+        Optional<User> optUser = userRepository.findByEmail(email);
+        User user = optUser.orElse(null);
+        
+        // Check if user exists and password matches
         if (user != null && passwordEncoder.matches(password, user.getPassword())) {
             return user;
         }
