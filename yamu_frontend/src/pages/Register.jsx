@@ -46,6 +46,11 @@ const Register = () => {
   
   // Selected country for cascading region dropdown
   const [selectedCountry, setSelectedCountry] = useState(null);
+  
+  // Store the full objects for transforming codes to names in final submission
+  const [countryMap, setCountryMap] = useState({});
+  const [regionMap, setRegionMap] = useState({});
+  const [languageMap, setLanguageMap] = useState({});
 
   // Fetch countries data
   useEffect(() => {
@@ -54,6 +59,13 @@ const Register = () => {
       try {
         const data = await fetchCountries();
         setCountries(data);
+        
+        // Create a map of country codes to names for easy lookup
+        const countryCodeToName = {};
+        data.forEach(country => {
+          countryCodeToName[country.code] = country.name;
+        });
+        setCountryMap(countryCodeToName);
       } catch (error) {
         message.error(`Failed to load countries: ${error.message}`);
         setError("Unable to load country data. Please try again later.");
@@ -72,6 +84,13 @@ const Register = () => {
       try {
         const data = await fetchLanguages();
         setLanguages(data);
+        
+        // Create a map of language codes to names for easy lookup
+        const languageCodeToName = {};
+        data.forEach(language => {
+          languageCodeToName[language.code] = language.name;
+        });
+        setLanguageMap(languageCodeToName);
       } catch (error) {
         message.error(`Failed to load languages: ${error.message}`);
         setError(prevError => {
@@ -96,6 +115,13 @@ const Register = () => {
       try {
         const data = await fetchRegions(selectedCountry);
         setRegions(data);
+        
+        // Create a map of region ids to names for easy lookup
+        const regionIdToName = {};
+        data.forEach(region => {
+          regionIdToName[region.id] = region.name;
+        });
+        setRegionMap(regionIdToName);
       } catch (error) {
         message.error(`Failed to load regions: ${error.message}`);
         setError(prevError => {
@@ -137,19 +163,54 @@ const Register = () => {
     setLoading(true);
     setError(""); // Clear any previous errors
     
+    // Transform codes to names for the backend
+    const transformedValues = { ...values };
+    
+    // For GUIDE role
+    if (values.role === "GUIDE") {
+      // Convert country code to name
+      if (values.country && countryMap[values.country]) {
+        transformedValues.country = countryMap[values.country];
+      }
+      
+      // Convert region ID to name
+      if (values.expertiseCityRegion && regionMap[values.expertiseCityRegion]) {
+        transformedValues.expertiseCityRegion = regionMap[values.expertiseCityRegion];
+      }
+      
+      // Convert language codes to names
+      if (values.language && Array.isArray(values.language)) {
+        transformedValues.language = values.language.map(code => {
+          return languageMap[code] || code;
+        }).join(", "); // Join multiple languages with comma and space
+      }
+      
+      // Convert vehicle availability to integer
+      transformedValues.vehicleAvailability = values.vehicleAvailability ? 1 : 0;
+    }
+    
+    // For TRAVELER role
+    else if (values.role === "TRAVELER") {
+      // Convert nationality code to name
+      if (values.nationality && countryMap[values.nationality]) {
+        transformedValues.nationality = countryMap[values.nationality];
+      }
+      
+      // Remove unnecessary vehicleAvailability for TRAVELER
+      delete transformedValues.vehicleAvailability;
+    }
+    
     // Combine data from both steps
     const payload = {
       ...formData,  // Data from step 1
-      ...values,    // Data from step 2
-      vehicleAvailability: values.vehicleAvailability ? 1 : 0,
+      ...transformedValues,  // Transformed data from step 2
     };
     
     try {
+      console.log("Registering user with payload:", payload);
       await register(payload);
       message.success("Registration successful! Please check your email to verify your account.");
       navigate('/verify-email-pending'); // Page with "Check your inbox" message
-
-
     } catch (err) {
       const errorMsg = err.response?.data?.error || "Registration failed. Please try again.";
       setError(errorMsg);
@@ -215,7 +276,8 @@ const Register = () => {
         requiredMark={false}
         initialValues={{
           // Set initial values from stored data when returning to step 1
-          ...formData
+          ...formData,
+          vehicleAvailability: false // Default value for switch
         }}
       >
         {step === 0 && (
