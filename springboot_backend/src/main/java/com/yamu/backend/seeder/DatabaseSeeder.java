@@ -24,12 +24,11 @@ public class DatabaseSeeder {
     public void seedAdminUsers() {
         // 🔹 Define 5 unique admin accounts
         Map<String, String> adminAccounts = Map.of(
-            "admin1@example.com", "Admin One",
-            "admin2@example.com", "Admin Two",
-            "admin3@example.com", "Admin Three",
-            "admin4@example.com", "Admin Four",
-            "admin5@example.com", "Admin Five"
-        );
+                "admin1@example.com", "Admin One",
+                "admin2@example.com", "Admin Two",
+                "admin3@example.com", "Admin Three",
+                "admin4@example.com", "Admin Four",
+                "admin5@example.com", "Admin Five");
 
         List<User> existingAdmins = userRepository.findByRole(UserRole.ADMIN);
 
@@ -49,6 +48,10 @@ public class DatabaseSeeder {
                 admin.setContactNumber("07567890789");
                 admin.setAddress("Admin Office");
                 admin.setRole(UserRole.ADMIN);
+                admin.setVerified(true);
+                admin.setVerificationToken(null);
+                admin.setTokenExpiry(null);
+
                 userRepository.save(admin);
                 System.out.println("✅ Created admin: " + email);
             } else {
