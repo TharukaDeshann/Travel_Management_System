@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { ChevronRight } from "lucide-react";
 import '../styles/TravelerDashboard.css';
 import WeatherCard from "../components/WeatherCard";
@@ -21,23 +22,23 @@ const sections = [
     items: [
       {
         name: "Sigiriya",
-        image: "src/images/sigiriya.jpg",
+        image: "/src/images/sigiriya.jpg",
       },
       {
         name: "Hiriketiya",
-        image: "src/images/hiriketiya.jpg",
+        image: "/src/images/hiriketiya.jpg",
       },
       {
         name: "Ambuluwawa",
-        image: "src/images/ambuluwawa.jpg",
+        image: "/src/images/ambuluwawa.jpg",
       },
       {
         name: "Nagapooshani Amman Temple",
-        image: "src/images/amman_temple.jpg",
+        image: "/src/images/amman_temple.jpg",
       },
       {
         name: "Adams Peak",
-        image: "src/images/adams-peak.jpg",
+        image: "/src/images/adams-peak.jpg",
       }
     ] 
   },
@@ -46,23 +47,23 @@ const sections = [
     items: [
       {
         name: "Wild Coast Tented Lodge",
-        image: "src/images/wild_coast.jpg",  
+        image: "/src/images/wild_coast.jpg",  
       },
       {
         name: "98 Acre Resort & Spa",
-        image: "src/images/98_acre.jpg",
+        image: "/src/images/98_acre.jpg",
       },
       {
         name: "Anantara Resort & Spa",
-        image: "src/images/anantaya.jpg",
+        image: "/src/images/anantaya.jpg",
       },
       {
         name: "Jetwing Colombo Seven",
-        image: "src/images/jetwing.jpg",
+        image: "/src/images/jetwing.jpg",
       },
       {
         name: "The Lake Forest Hotel",
-        image: "src/images/lake_forest.jpg",
+        image: "/src/images/lake_forest.jpg",
       },
     ] 
   },
@@ -71,23 +72,23 @@ const sections = [
     items: [
       {
         name: "Rajam Chaitanya",
-        image: "src/images/rajam.jpeg",
+        image: "/src/images/rajam.jpeg",
       },
       {
         name: "Duminda Jayasinghe",
-        image: "src/images/duminda.jpg",
+        image: "/src/images/duminda.jpg",
       },
       {
         name: "Selvam Vetri",
-        image: "src/images/selvam.webp",
+        image: "/src/images/selvam.webp",
       },
       {
         name: "Samantha Perera",
-        image: "src/images/samantha.webp",
+        image: "/src/images/samantha.webp",
       },
       {
         name: "Jagath Karunathilake",
-        image: "src/images/jagath.jpeg",
+        image: "/src/images/jagath.jpeg",
       }
       
     ] 
@@ -98,23 +99,23 @@ const sections = [
     items: [
       {
         name: "Esala Perahera",
-        image: "src/images/asala_perahera.webp",
+        image: "/src/images/asala_perahera.webp",
       },
       {
         name: "Nallur Kovil Festival",
-        image: "src/images/nallur_festival.jpg",
+        image: "/src/images/nallur_festival.jpg",
       },
       {
         name: "Sinhala Tamil New Year",
-        image: "src/images/new_year.jpeg",
+        image: "/src/images/new_year.jpeg",
       },
       {
         name: "Kuweni The Musical",
-        image: "src/images/kuweni.jpg",
+        image: "/src/images/kuweni.jpg",
       },
       {
         name: "Whale Watching Season",
-        image: "src/images/whale_watching.jpg",
+        image: "/src/images/whale_watching.jpg",
       }   
     ] 
   }
@@ -122,49 +123,63 @@ const sections = [
 
 // Packages with base prices in LKR
 const packages = [
-  { name: "Package 1", price: 50000, image: "src/images/sigiriya.jpg" },
-  { name: "Package 2", price: 60000, image: "src/images/hiriketiya.jpg" },
-  { name: "Package 3", price: 30000, image: "src/images/hiriketiya.jpg" }
+  { name: "Package 1", price: 50000, image: "/src/images/sigiriya.jpg", description: "3 Days Sigiriya Adventure" },
+  { name: "Package 2", price: 60000, image: "/src/images/hiriketiya.jpg", description: "5 Days Beach Getaway" },
+  { name: "Package 3", price: 30000, image: "/src/images/hiriketiya.jpg", description: "2 Days Quick Escape" }
 ];
 
 export default function TravelerDashboard() {
+  const navigate = useNavigate();
   const [selectedCurrency, setSelectedCurrency] = useState('LKR');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [exchangeRates, setExchangeRates] = useState({});
-  const [convertedPackages, setConvertedPackages] = useState(packages);
+
+  // Initialize convertedPackages with the base LKR prices
+  const [convertedPackages, setConvertedPackages] = useState(
+    packages.map(pkg => ({
+      ...pkg,
+      convertedPrice: pkg.price // Initially set to LKR price
+    }))
+  );
   const [showLeftButton, setShowLeftButton] = useState({});
 
   // Fetch exchange rates
   useEffect(() => {
     const fetchExchangeRates = async () => {
+      if (selectedCurrency === 'LKR') {
+        setConvertedPackages(packages.map(pkg => ({
+          ...pkg,
+          convertedPrice: pkg.price
+        })));
+        return;
+      }
+
       try {
-        const response = await fetch(
-          `https://v6.exchangerate-api.com/v6/ee302ff3be157ca6a021f6a0/latest/LKR`
-        );
+        const response = await fetch(`https://v6.exchangerate-api.com/v6/ee302ff3be157ca6a021f6a0/pair/LKR/${selectedCurrency}`);
         const data = await response.json();
-        setExchangeRates(data.conversion_rates);
+        
+        if (data && data.conversion_rate) {
+          const rate = data.conversion_rate;
+          console.log(`Conversion rate for ${selectedCurrency}: ${rate}`);
+          
+          const updatedPackages = packages.map(pkg => ({
+            ...pkg,
+            convertedPrice: Math.round((pkg.price * rate) * 100) / 100
+          }));
+          
+          setConvertedPackages(updatedPackages);
+        } else {
+          console.error('Invalid API response:', data);
+        }
       } catch (error) {
         console.error("Error fetching exchange rates:", error);
       }
     };
 
     fetchExchangeRates();
-    const interval = setInterval(fetchExchangeRates, 300000); // Refresh every 5 minutes
-
-    return () => clearInterval(interval); // Cleanup on component unmount
-  }, []);
-
-  // Update package prices
-  useEffect(() => {
-    if (exchangeRates[selectedCurrency]) {
-      const conversionRate = exchangeRates[selectedCurrency];
-      const updatedPackages = packages.map((pkg) => ({
-        ...pkg,
-        convertedPrice: Math.round(pkg.price * conversionRate)
-      }));
-      setConvertedPackages(updatedPackages);
-    }
-  }, [selectedCurrency, exchangeRates]);
+    const intervalId = setInterval(fetchExchangeRates, 60000);
+    return () => clearInterval(intervalId);
+  }, [selectedCurrency]);
 
   // Handle scroll for sections
   const handleScroll = (e, title) => {
@@ -199,6 +214,7 @@ export default function TravelerDashboard() {
               type="button"
               className="currency-option"
               onClick={() => {
+                console.log(`Switching to currency: ${currency.code}`);
                 setSelectedCurrency(currency.code);
                 setIsDropdownOpen(false);
               }}
@@ -249,7 +265,10 @@ export default function TravelerDashboard() {
             <button className="action-button upcoming-trips-button">
               Upcoming Trips
             </button>
-            <button className="action-button start-planning-button">
+            <button 
+              className="action-button start-planning-button"
+              onClick={() => navigate('/visit-planner')}
+            >
               Start Planning
             </button>
           </div>
@@ -310,10 +329,11 @@ export default function TravelerDashboard() {
                   <img src={pkg.image} alt={pkg.name} className="card-image" />
                   <div className="card-overlay">
                     <h3 className="card-title">{pkg.name}</h3>
-                    <p className="text-white">
-                      {currencies.find(c => c.code === selectedCurrency)?.symbol}
-                      {pkg.convertedPrice}
+                    <p className="text-white text-lg">
+                      {selectedCurrency === 'LKR' ? 'Rs. ' : currencies.find(c => c.code === selectedCurrency)?.symbol}
+                      {pkg.convertedPrice?.toLocaleString()}
                     </p>
+                    <p className="text-white text-sm">{pkg.description}</p>
                   </div>
                 </div>
               ))}

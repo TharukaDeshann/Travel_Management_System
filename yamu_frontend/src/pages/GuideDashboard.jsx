@@ -5,7 +5,7 @@ import yamuLogo from '../images/yamu-logo.png'; // Make sure to add your logo fi
 const GuideDashboard = () => {
   // Dummy data for tours
   const tours = [
-    { id: 1, name: "Devid Perera", country: "USA", image: "src/images/David.png" },
+    { id: 1, name: "Devid", country: "USA", image: "src/images/David.png" },
     { id: 2, name: "Govindu Bandara", country: "UK", image: "src/images/Govindu.png" },
     { id: 3, name: "Tharuka Deshan", country: "Germany", image: "src/images/Tharuka.png" },
   ];

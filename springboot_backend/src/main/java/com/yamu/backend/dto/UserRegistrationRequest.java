@@ -1,10 +1,16 @@
 package com.yamu.backend.dto;
 
+import java.time.LocalDateTime;
+
 import com.yamu.backend.enums.UserRole;
 import com.yamu.backend.validation.GuideRegistration;
 import com.yamu.backend.validation.TravelerRegistration;
 import jakarta.validation.constraints.*;
+import lombok.Getter;
+import lombok.Setter;
 
+@Getter
+@Setter
 public class UserRegistrationRequest {
 
     @NotBlank(message = "Name is required")
@@ -29,6 +35,10 @@ public class UserRegistrationRequest {
 
     @NotBlank(message = "Address is required")
     private String address;
+
+    private boolean isVerified = false;
+    private String verificationToken;
+    private LocalDateTime tokenExpiry;
 
     @NotNull(message = "Role is required")
     private UserRole role;
