@@ -1,6 +1,8 @@
 package com.yamu.backend.service;
 
-import com.yamu.backend.dto.UserRegistrationRequest;
+import com.yamu.backend.dto.GuideResponseDTO;
+import com.yamu.backend.dto.TravelerResponseDTO;
+import com.yamu.backend.dto.UserResponseDTO;
 import com.yamu.backend.dto.UserUpdateRequest;
 import com.yamu.backend.enums.UserRole;
 import com.yamu.backend.model.Guide;
@@ -8,150 +10,103 @@ import com.yamu.backend.model.Traveler;
 import com.yamu.backend.model.User;
 import com.yamu.backend.repository.UserRepository;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
-import java.util.Map;
+import java.util.stream.Collectors;
 
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 @Service
 public class UserService {
     private final UserRepository userRepository;
-    private final PasswordEncoder passwordEncoder;
-    private final EmailService emailService;
 
-    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder, EmailService emailService) {
-        this.emailService = emailService;
+    public UserService(UserRepository userRepository) {
         this.userRepository = userRepository;
-        this.passwordEncoder = passwordEncoder;
     }
 
-    public User registerUser(UserRegistrationRequest request) {
-        if (userRepository.findByEmail(request.getEmail()) != null) {
-            throw new RuntimeException("Account already exists with this email");
+    // Convert entity to correct dto based on role
+    public UserResponseDTO mapToUserDTO( User user ){
+        UserResponseDTO baseDto;
+
+        switch (user.getRole()) {
+            case TRAVELER -> {
+                // Traveler-specific mapping
+                Traveler traveler = (Traveler) user;
+                TravelerResponseDTO travelerDto = new TravelerResponseDTO();
+                travelerDto.setNationality(traveler.getNationality());
+                baseDto = travelerDto;
+            }
+
+            case GUIDE -> {
+                // Guide-specific mapping
+                Guide guide = (Guide) user;
+                GuideResponseDTO guideDto = new GuideResponseDTO();
+                guideDto.setExpertiseCityRegion(guide.getExpertiseCityRegion());
+                guideDto.setLanguage(guide.getLanguage());
+                guideDto.setAbout(guide.getAbout());
+                guideDto.setVehicleAvailability(guide.isVehicleAvailability());
+                baseDto = guideDto;
+            }
+            default -> baseDto = new UserResponseDTO();
         }
 
-        User user;
-        switch (request.getRole()) {
-            case TRAVELER:
-                Traveler traveler = new Traveler();
-                if (request.getNationality() != null) {
-                    traveler.setNationality(request.getNationality());
-                } else {
-                    throw new RuntimeException("Nationality is required for travelers");
-                }
-                user = traveler;
-                break;
+        // Common fields for all users
+        baseDto.setId(user.getId());
+        baseDto.setFirstName(user.getFirstName());
+        baseDto.setLastName(user.getLastName());
+        baseDto.setEmail(user.getEmail());
+        baseDto.setContactNumber(user.getContactNumber());
+        baseDto.setAddress(user.getAddress());
+        baseDto.setRole(user.getRole().name());
+        baseDto.setIsVerified(user.isVerified());
 
-            case GUIDE:
-                Guide guide = new Guide();
-                if (request.getExpertiseCityRegion() != null) {
-                    guide.setExpertiseCityRegion(request.getExpertiseCityRegion());
-                } else {
-                    throw new RuntimeException("Expertise city/region is required for guides");
-                }
+        return baseDto;
+    }
 
-                if (request.getLanguage() != null) {
-                    guide.setLanguage(request.getLanguage());
-                } else {
-                    throw new RuntimeException("Language is required for guides");
-                }
+   
 
-                guide.setAbout(request.getAbout());
+    
 
-                if (request.getVehicleAvailability() != null) {
-                    guide.setVehicleAvailability(request.getVehicleAvailability());
-                } else {
-                    throw new RuntimeException("Vehicle availability is required for guides");
-                }
-                user = guide;
-                break;
-
-            default:
-                throw new IllegalArgumentException("Invalid user role");
-        }
-
-        // Set common attributes
-        user.setFirstName(request.getFirstName());
-        user.setLastName(request.getLastName());
-        user.setEmail(request.getEmail());
-        user.setPassword(passwordEncoder.encode(request.getPassword()));
-        user.setContactNumber(request.getContactNumber());
-        user.setAddress(request.getAddress());
-        user.setRole(request.getRole());
-
-        String token = UUID.randomUUID().toString();
-        user.setVerificationToken(token);
-        user.setTokenExpiry(LocalDateTime.now().plusHours(24)); // 24-hour expiry
-        user.setVerified(false);
-        return userRepository.save(user);
+    /**
+     * Get all users
+     */
+    public List<UserResponseDTO> getAllUserDTOs() {
+        return userRepository.findAll().stream()
+                .map(this::mapToUserDTO)
+                .collect(Collectors.toList());
+    }
+    
+    /**
+     * Get user by ID
+     */
+    public Optional<UserResponseDTO> getUserById(Long id) {
+        return userRepository.findById(id).stream()
+                .map(this::mapToUserDTO)
+                .findFirst()
+                .map(Optional::ofNullable)
+                .orElse(Optional.empty());
 
     }
 
-    // Resend verification email
-    public ResponseEntity<?> resendVerificationEmail(String oldToken) {
-        Optional<User> userOpt = userRepository.findByVerificationToken(oldToken);
-
-        if (userOpt.isEmpty()) {
-            return ResponseEntity.badRequest().body(Map.of("message", "Invalid token."));
-        }
-
-        User user = userOpt.get();
-        if (user.isVerified()) {
-            return ResponseEntity.ok(Map.of("message", "User already verified."));
-        }
-
-        // Generate new token and update
-        String newToken = UUID.randomUUID().toString();
-        user.setVerificationToken(newToken);
-        user.setTokenExpiry(LocalDateTime.now().plusHours(24)); // 24-hour expiry
-        userRepository.save(user);
-
-        String link = "http://localhost:5173/verify-email?token=" + newToken;
-        emailService.sendEmail(
-                user.getEmail(),
-                "Resend: Verify your email",
-                "Click this link to verify your email: " + link);
-
-        return ResponseEntity.ok(Map.of("message", "Verification email resent."));
+    /**
+     * Get user by email
+     */
+    public User getUserByEmail(String email) {
+        return userRepository.findByEmail(email);
     }
 
-    public User authenticate(String email, String password) {
-        User user = userRepository.findByEmail(email);
-        if (user != null && passwordEncoder.matches(password, user.getPassword())) {
-            return user;
-        }
-        return null;
+    /**
+     * Get users by role
+     */
+    public List<UserResponseDTO> getUsersByRole(UserRole role) {
+        return userRepository.findByRole(role).stream()
+                .map(this::mapToUserDTO)
+                .collect(Collectors.toList());
     }
 
-    // Get all users
-    public List<User> getAllUsers() {
-        return userRepository.findAll();
-    }
-
-    // Get user by ID
-    public Optional<User> getUserById(Long id) {
-        return userRepository.findById(id);
-    }
-
-    // Get users by role
-    public List<User> getUsersByRole(UserRole role) {
-        return userRepository.findByRole(role);
-    }
-
-    // Delete user (soft delete - recommended)
-    public void deleteUser(Long id) {
-        Optional<User> user = userRepository.findById(id);
-        if (user.isEmpty()) {
-            throw new RuntimeException("User not found");
-        }
-        userRepository.delete(user.get());
-    }
-
+    /**
+     * Update user information
+     */
     public User updateUser(Long id, UserUpdateRequest updateRequest) {
         Optional<User> optionalUser = userRepository.findById(id);
         if (optionalUser.isEmpty()) {
@@ -185,8 +140,24 @@ public class UserService {
                 guide.setVehicleAvailability(updateRequest.getVehicleAvailability());
         }
 
-        userRepository.save(user);
-        return user;
+        return userRepository.save(user);
     }
 
+    /**
+     * Delete user (hard delete)
+     */
+    public void deleteUser(Long id) {
+        Optional<User> user = userRepository.findById(id);
+        if (user.isEmpty()) {
+            throw new RuntimeException("User not found");
+        }
+        userRepository.delete(user.get());
+    }
+    
+    /**
+     * Check if a user exists by email
+     */
+    public boolean existsByEmail(String email) {
+        return userRepository.findByEmail(email) != null;
+    }
 }
