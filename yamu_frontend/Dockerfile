@@ -7,8 +7,9 @@ WORKDIR /yamu_frontend
 # Copy package.json and package-lock.json
 COPY package*.json ./
 
-# Install dependencies
-RUN npm install
+# Install dependencies - using clean install to avoid optional dependency issues
+RUN rm -rf node_modules package-lock.json && \
+    npm install
 
 # Copy the rest of the project files
 COPY . .
@@ -22,7 +23,7 @@ FROM nginx:alpine
 # Copy the build output to Nginx's html directory
 COPY --from=build /yamu_frontend/dist /usr/share/nginx/html
 
-# Optional: Custom Nginx configuration to handle React Router
+# Custom Nginx configuration to handle React Router
 COPY <<EOF /etc/nginx/conf.d/default.conf
 server {
     listen 80;
