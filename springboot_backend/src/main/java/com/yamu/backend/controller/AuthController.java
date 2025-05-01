@@ -7,12 +7,12 @@ import com.yamu.backend.model.User;
 import com.yamu.backend.repository.UserRepository;
 import com.yamu.backend.service.EmailService;
 import com.yamu.backend.service.TokenBlacklistService;
-import com.yamu.backend.service.UserService;
+import com.yamu.backend.service.AuthService;
 import com.yamu.backend.util.JwtUtil;
 import com.yamu.backend.validation.GuideRegistration;
 import com.yamu.backend.validation.TravelerRegistration;
 
-import java.util.UUID;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
@@ -40,7 +40,7 @@ import jakarta.servlet.http.Cookie;
 @RequestMapping("/api/auth")
 @Validated
 public class AuthController {
-    private final UserService userService;
+    private final AuthService authService ;
     private final JwtUtil jwtUtil;
     private final TokenBlacklistService tokenBlacklistService;
     private final UserRepository userRepository;
@@ -50,9 +50,9 @@ public class AuthController {
     private Validator validator;
 
     @Autowired
-    public AuthController(UserService userService, JwtUtil jwtUtil, TokenBlacklistService tokenBlacklistService,
+    public AuthController(AuthService authService, JwtUtil jwtUtil, TokenBlacklistService tokenBlacklistService,
             UserRepository userRepository, EmailService emailService) {
-        this.userService = userService;
+        this.authService = authService;
         this.jwtUtil = jwtUtil;
         this.tokenBlacklistService = tokenBlacklistService;
         this.userRepository = userRepository;
@@ -86,7 +86,7 @@ public class AuthController {
         }
 
         try {
-            User registeredUser = userService.registerUser(request);
+            User registeredUser = authService.registerUser(request);
             String link = "http://localhost:5173/verify-email?token=" + registeredUser.getVerificationToken();
             emailService.sendEmail(
                     registeredUser.getEmail(),
@@ -128,13 +128,13 @@ public class AuthController {
     public ResponseEntity<?> resendVerification(@RequestBody Map<String, String> request) {
         String oldToken = request.get("token");
 
-        return userService.resendVerificationEmail(oldToken);
+        return authService.resendVerificationEmail(oldToken);
     }
 
     @PostMapping("/login")
     public ResponseEntity<Map<String, Object>> login(@Valid @RequestBody UserLoginRequest loginRequest) {
 
-        User authenticatedUser = userService.authenticate(loginRequest.getEmail(), loginRequest.getPassword());
+        User authenticatedUser = authService.authenticate(loginRequest.getEmail(), loginRequest.getPassword());
 
         if (!authenticatedUser.isVerified()) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Please verify your email to login");
@@ -255,8 +255,10 @@ public class AuthController {
         String token = extractTokenFromCookie(request);
         // Extract user email from token
         String email = jwtUtil.extractEmail(token);
-        User user = userRepository.findByEmail(email);
+        Optional<User> optUser = userRepository.findByEmail(email);
+        User user = optUser.orElse(null);
 
+        // Validate token and user
         if (token == null || !jwtUtil.validateToken(token, email)) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Invalid or expired session"));
         }
