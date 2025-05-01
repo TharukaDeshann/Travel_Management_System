@@ -1,6 +1,5 @@
 package com.yamu.backend.dto;
 
-import com.yamu.backend.enums.UserRole;
 import jakarta.validation.constraints.Size;
 import jakarta.validation.constraints.*;
 import lombok.Getter;
