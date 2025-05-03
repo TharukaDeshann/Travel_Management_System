@@ -22,7 +22,10 @@ const Login = () => {
       });
       
       if (response.status === 200) {
+        const userData = await fetchLoggedInUser(); // Fetch logged-in user
+    setUser(userData); // Set to context
         if (response.data?.role === "TRAVELER") {
+          
           navigate("/traveler-dashboard");
         } else if (response.data?.role === "GUIDE") {
           navigate("/guide-dashboard");

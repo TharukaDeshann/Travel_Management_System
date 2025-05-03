@@ -83,7 +83,7 @@ public class UserController {
     }
 
     // Update user email
-    @PutMapping("/{id}/email")
+    @PutMapping("/{id}/update-email")
     public ResponseEntity<Map<String, String>> updateEmail(@PathVariable Long id,
             @RequestBody @Valid EmailUpdateRequest request) {
         System.out.println("Updating email for user with ID: " + id);
@@ -130,7 +130,7 @@ public class UserController {
     }
 
     // Update user password
-    @PutMapping("/{id}/password")
+    @PutMapping("/{id}/update-password")
     public ResponseEntity<String> updatePassword(@PathVariable Long id,
             @RequestBody @Valid PasswordUpdateRequest passwordUpdateRequest) {
         // Add authorization check to ensure users can only update their own profiles
