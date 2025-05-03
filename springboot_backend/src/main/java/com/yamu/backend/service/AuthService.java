@@ -152,7 +152,7 @@ public class AuthService {
         }
         
         if (user.getTokenExpiry().isBefore(LocalDateTime.now())) {
-            return ResponseEntity.badRequest().body(Map.of("message", "Token has expired."));
+            return ResponseEntity.badRequest().body(Map.of("message", "Verification Token has expired."));
         }
         
         user.setVerified(true);

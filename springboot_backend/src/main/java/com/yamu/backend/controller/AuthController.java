@@ -44,7 +44,7 @@ public class AuthController {
     private final JwtUtil jwtUtil;
     private final TokenBlacklistService tokenBlacklistService;
     private final UserRepository userRepository;
-    private final EmailService emailService; // Assuming you have an EmailService for sending emails
+    private final EmailService emailService; 
 
     @Autowired
     private Validator validator;
@@ -101,27 +101,46 @@ public class AuthController {
     }
 
     @GetMapping("/verify-email")
-    public ResponseEntity<String> verifyEmail(@RequestParam("token") String token) {
-        Optional<User> userOpt = userRepository.findByVerificationToken(token);
-
-        if (userOpt.isEmpty())
-            return ResponseEntity.badRequest().body("Invalid token");
-
-        User user = userOpt.get();
-        if (user.isVerified())
-            return ResponseEntity.badRequest().body("Email already verified");
-
-        if (user.getTokenExpiry().isBefore(LocalDateTime.now())) {
-            return ResponseEntity.status(HttpStatus.GONE).body("Token expired");
+public ResponseEntity<Map<String, String>> verifyEmail(@RequestParam String token) {
+    Map<String, String> response = new HashMap<>();
+    
+    try {
+        // Find user by verification token
+        Optional<User> optionalUser = userRepository.findByVerificationToken(token);
+        
+        if (optionalUser.isEmpty()) {
+            response.put("error", "Invalid verification token");
+            return ResponseEntity.badRequest().body(response);
         }
-
+        
+        User user = optionalUser.get();
+        
+        // Check if token has expired
+        if (user.getTokenExpiry().isBefore(LocalDateTime.now())) {
+            response.put("error", "Verification token has expired");
+            return ResponseEntity.badRequest().body(response);
+        }
+        
+        // If this is an email update, update the email
+        if (user.getPendingEmail() != null && !user.getPendingEmail().isEmpty()) {
+            user.setEmail(user.getPendingEmail());
+            user.setPendingEmail(null);
+        }
+        
+        // Mark user as verified
         user.setVerified(true);
         user.setVerificationToken(null);
         user.setTokenExpiry(null);
+        
         userRepository.save(user);
-
-        return ResponseEntity.ok("Email verified successfully");
+        
+        response.put("message", "Email successfully verified");
+        return ResponseEntity.ok(response);
+    } catch (Exception e) {
+        response.put("error", e.getMessage());
+        return ResponseEntity.badRequest().body(response);
     }
+}
 
     // Resend verification email
     @PostMapping("/resend-verification")
