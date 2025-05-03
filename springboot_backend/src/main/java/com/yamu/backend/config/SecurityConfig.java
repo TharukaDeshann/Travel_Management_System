@@ -53,11 +53,13 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/weather/**").permitAll()
                 .requestMatchers("/h2-console/**").permitAll()
-                .requestMatchers("/api/auth/login", "/api/auth/register", "/api/auth/refresh-token", "/api/auth/user", "/api/users/user", "/api/locations/**" , "/api/auth/verify-email" 
-                , "api/auth/resend-verification").permitAll()
+                .requestMatchers("/api/auth/login", "/api/auth/register", 
+                "/api/auth/refresh-token", "/api/auth/user", "/api/users/user", "/api/locations/**" 
+                , "/api/auth/verify-email" , "api/auth/resend-verification").permitAll()
                 // Order matters! More specific patterns first
-                .requestMatchers(HttpMethod.PUT, "/api/users/{id}/email").authenticated()
                 .requestMatchers(HttpMethod.PUT, "/api/users/{id}").authenticated()
+                .requestMatchers(HttpMethod.PUT, "/api/users/{id}/email").authenticated()
+                .requestMatchers(HttpMethod.PUT, "/api/users/{id}/password").authenticated()
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
                 .requestMatchers("/api/guide/**").hasRole("GUIDE")
                 .requestMatchers("/api/traveler/**").hasRole("TRAVELER")

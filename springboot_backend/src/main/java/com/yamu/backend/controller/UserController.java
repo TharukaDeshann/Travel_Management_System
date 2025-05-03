@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.azure.core.annotation.Patch;
 import com.yamu.backend.dto.EmailUpdateRequest;
+import com.yamu.backend.dto.PasswordUpdateRequest;
 import com.yamu.backend.dto.UserResponseDTO;
 import com.yamu.backend.dto.UserUpdateRequest;
 import com.yamu.backend.enums.UserRole;
@@ -51,13 +52,13 @@ public class UserController {
         return "You are an authenticated user";
     }
 
-    // 1. Get all users
+    // Get all users
     @GetMapping
     public ResponseEntity<List<UserResponseDTO>> getAllUsers() {
         return ResponseEntity.ok(userService.getAllUserDTOs());
     }
 
-    // 2. Get user by ID
+    // Get user by ID
     @GetMapping("/{id}")
     public ResponseEntity<UserResponseDTO> getUserById(@PathVariable Long id) {
         Optional<UserResponseDTO> user = userService.getUserById(id);
@@ -81,7 +82,7 @@ public class UserController {
 
     }
 
-    // 4. Update user email
+    // Update user email
     @PutMapping("/{id}/email")
     public ResponseEntity<Map<String, String>> updateEmail(@PathVariable Long id,
             @RequestBody @Valid EmailUpdateRequest request) {
@@ -128,13 +129,33 @@ public class UserController {
         }
     }
 
-    // 3. Get users by role
+    // Update user password
+    @PutMapping("/{id}/password")
+    public ResponseEntity<String> updatePassword(@PathVariable Long id,
+            @RequestBody @Valid PasswordUpdateRequest passwordUpdateRequest) {
+        // Add authorization check to ensure users can only update their own profiles
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        UserResponseDTO currentUser = userService.getUserByEmail(authentication.getName());
+
+        if (currentUser != null && (currentUser.getId().equals(id))) {
+            userService.updatePassword(id, passwordUpdateRequest.getCurrentPassword(),
+                    passwordUpdateRequest.getNewPassword());
+            return ResponseEntity.ok("Password updated successfully");
+
+        } else {
+            return ResponseEntity.status(403).body("You are not authorized to update this user's password");
+        }
+
+    }
+
+
+    // Get users by role
     @GetMapping("/role/{role}")
     public ResponseEntity<List<UserResponseDTO>> getUsersByRole(@PathVariable UserRole role) {
         return ResponseEntity.ok(userService.getUsersByRole(role));
     }
 
-    // 5. Delete user (soft delete)
+    // Delete user (soft delete)
     @DeleteMapping("/{id}")
     public ResponseEntity<String> deleteUser(@PathVariable Long id) {
         userService.deleteUser(id);

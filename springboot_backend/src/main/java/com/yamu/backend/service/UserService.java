@@ -16,13 +16,16 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 @Service
 public class UserService {
     private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
 
-    public UserService(UserRepository userRepository) {
+    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
+        this.passwordEncoder = passwordEncoder;
         this.userRepository = userRepository;
     }
 
@@ -144,7 +147,9 @@ public class UserService {
         return userRepository.save(user);
     }
 
-    // Update user email
+    /**
+    * Update user email
+    */
     public User requestEmailUpdate(Long id, String newEmail) {
 
         User user = userRepository.findById(id)
@@ -170,6 +175,26 @@ public class UserService {
         return userRepository.save(user);
 
     }
+
+    /** 
+     * Update user password
+     */
+    public void updatePassword(Long id, String currentPassword, String newPassword) {
+        User user = userRepository.findById(id)
+        .orElseThrow(() -> new RuntimeException("User not found"));
+
+        // checks whether user provided the correct current password
+        if(!passwordEncoder.matches(currentPassword, user.getPassword())) {
+            throw new RuntimeException("Current password is incorrect");
+        }
+
+        user.setPassword(passwordEncoder.encode(newPassword)); // encode password before saving
+        userRepository.save(user);
+
+
+
+    }
+    
 
     /**
      * Delete user (hard delete)
