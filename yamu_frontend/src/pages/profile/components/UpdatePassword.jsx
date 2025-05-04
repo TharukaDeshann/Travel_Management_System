@@ -3,10 +3,13 @@ import React from "react";
 import { Form, Input, Button, Card, message } from "antd";
 import { useNavigate } from "react-router-dom";
 import apiClient from "../../../services/axiosInstance";
+import { updatePassword } from "../../../services/userService";
+import { useNotification } from "../../../hooks/useNotification";
 
 const UpdatePassword = () => {
   const [form] = Form.useForm();
   const navigate = useNavigate();
+  const { showSuccess, showError } = useNotification();
 
   const onFinish = async (values) => {
     if (values.newPassword !== values.confirmPassword) {
@@ -14,13 +17,13 @@ const UpdatePassword = () => {
     }
 
     try {
-      await apiClient.put("/api/users/update-password", {
-        currentPassword: values.currentPassword,
-        newPassword: values.newPassword,
-      });
-
-      message.success("Password updated successfully.");
-      navigate("/profile");
+        const response = await updatePassword({
+            currentPassword: values.currentPassword,
+            newPassword: values.newPassword,
+        });
+      
+        showSuccess("Password updated successfully.");
+        navigate("/profile"); //Redirect to profile page after successful update
     } catch (error) {
       message.error(
         error.response?.data?.message || "Failed to update password."

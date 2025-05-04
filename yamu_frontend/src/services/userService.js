@@ -1,4 +1,5 @@
 import axios from "./axiosInstance";
+import { fetchLoggedInUser } from "./authService";
 
 const API_URL = "http://localhost:8080/api/users";
 
@@ -13,12 +14,16 @@ export const deleteUser = async (id) => {
   return res.data;
 };
 
-export const updateEmail = async (id, data) => {
+export const updateEmail = async (data) => {
+  const user = await fetchLoggedInUser();
+  const id = user.id; 
   const res = await axios.put(`/api/users/${id}/update-email`, data);
-  return res.data;
+  return res;
 };
 
-export const updatePassword = async (id, data) => {
+export const updatePassword = async (data) => {
+  const user = await fetchLoggedInUser();
+  const id = user.id;
   const res = await axios.put(`/api/users/${id}/update-password`, data);
-  return res.data;
+  return res;
 };
