@@ -25,6 +25,8 @@ import FinalizeItinerary from "./pages/FinalizeItinerary.jsx"; // Import Finaliz
 import VerifyEmail from "./pages/VerifyEmail.jsx";
 import VerifyEmailPending from "./pages/VerifyEmailPending.jsx";
 import UserProfile from "./pages/profile/UserProfile.jsx";
+import UpdateEmail from "./pages/profile/components/UpdateEmail.jsx";
+import UpdatePassword from "./pages/profile/components/UpdatePassword.jsx";
 
 const App = () => {
   return (
@@ -61,9 +63,13 @@ const App = () => {
             <Route path="/guide-dashboard" element={<GuideDashboard />} />
             <Route path="/guide-review" element={<GuideReview />} />
             <Route path="/guide-calendar" element={<GuideCalender />} />
+            <Route path="/visit-plan" element={<VisitPlanPage />} />
+
+            {/* Profile Routes */}
             <Route path="/profile" element={<UserProfile />} />
+            <Route path="/profile/update-email" element={<UpdateEmail />} />
+            <Route path="/profile/update-password" element={<UpdatePassword />} />
           </Route>
-          <Route path="/visit-plan" element={<UserProvider />} />
 
           {/* Fallback Route */}
           <Route path="*" element={<div>404 Not Found</div>} />

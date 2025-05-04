@@ -18,6 +18,7 @@ export const register = async (userData) => {
 };
 
 export const login = async (credentials) => {
+  console.log("Credentials:", JSON.stringify(credentials));
   const response = await axios.post(`${API_URL}/login`, credentials, {
     withCredentials: true, 
   });
@@ -25,15 +26,17 @@ export const login = async (credentials) => {
   // Set token expiration time (60 seconds from now)
   setTokenExpirationTime(60);
   
-  return response.data;
+  return response;
 };
 
 export const fetchLoggedInUser = async () => {
-  const response = await axios.get(`${API_URL}/user`, {
+  const response = await axios.get(`${API_URL}/current-user`, {
     withCredentials: true,
   });
-  return response.data; // Return user object
+  return response.data;
+
 };
+
 
 
 
@@ -67,11 +70,11 @@ export const logoutUser = async () => {
     
     // Clear token expiration
     window.tokenExpirationTime = null;
+    setUser(null);
     
   } catch (error) {
     console.error("Logout error:", error);
   }
-  
   // Redirect to login page
   window.location.href = "/login";
 };

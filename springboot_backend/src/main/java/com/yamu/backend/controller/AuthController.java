@@ -2,16 +2,19 @@ package com.yamu.backend.controller;
 
 import com.yamu.backend.dto.UserLoginRequest;
 import com.yamu.backend.dto.UserRegistrationRequest;
+import com.yamu.backend.dto.UserResponseDTO;
 import com.yamu.backend.enums.UserRole;
+import com.yamu.backend.model.Guide;
+import com.yamu.backend.model.Traveler;
 import com.yamu.backend.model.User;
 import com.yamu.backend.repository.UserRepository;
 import com.yamu.backend.service.EmailService;
 import com.yamu.backend.service.TokenBlacklistService;
+import com.yamu.backend.service.UserService;
 import com.yamu.backend.service.AuthService;
 import com.yamu.backend.util.JwtUtil;
 import com.yamu.backend.validation.GuideRegistration;
 import com.yamu.backend.validation.TravelerRegistration;
-
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -40,18 +43,20 @@ import jakarta.servlet.http.Cookie;
 @RequestMapping("/api/auth")
 @Validated
 public class AuthController {
-    private final AuthService authService ;
+    private final AuthService authService;
     private final JwtUtil jwtUtil;
     private final TokenBlacklistService tokenBlacklistService;
     private final UserRepository userRepository;
-    private final EmailService emailService; 
+    private final EmailService emailService;
+    private final UserService userService;
 
     @Autowired
     private Validator validator;
 
     @Autowired
     public AuthController(AuthService authService, JwtUtil jwtUtil, TokenBlacklistService tokenBlacklistService,
-            UserRepository userRepository, EmailService emailService) {
+            UserRepository userRepository, EmailService emailService, UserService userService) {
+        this.userService = userService;
         this.authService = authService;
         this.jwtUtil = jwtUtil;
         this.tokenBlacklistService = tokenBlacklistService;
@@ -101,46 +106,46 @@ public class AuthController {
     }
 
     @GetMapping("/verify-email")
-public ResponseEntity<Map<String, String>> verifyEmail(@RequestParam String token) {
-    Map<String, String> response = new HashMap<>();
-    
-    try {
-        // Find user by verification token
-        Optional<User> optionalUser = userRepository.findByVerificationToken(token);
-        
-        if (optionalUser.isEmpty()) {
-            response.put("error", "Invalid verification token");
+    public ResponseEntity<Map<String, String>> verifyEmail(@RequestParam String token) {
+        Map<String, String> response = new HashMap<>();
+
+        try {
+            // Find user by verification token
+            Optional<User> optionalUser = userRepository.findByVerificationToken(token);
+
+            if (optionalUser.isEmpty()) {
+                response.put("error", "Invalid verification token");
+                return ResponseEntity.badRequest().body(response);
+            }
+
+            User user = optionalUser.get();
+
+            // Check if token has expired
+            if (user.getTokenExpiry().isBefore(LocalDateTime.now())) {
+                response.put("error", "Verification token has expired");
+                return ResponseEntity.badRequest().body(response);
+            }
+
+            // If this is an email update, update the email
+            if (user.getPendingEmail() != null && !user.getPendingEmail().isEmpty()) {
+                user.setEmail(user.getPendingEmail());
+                user.setPendingEmail(null);
+            }
+
+            // Mark user as verified
+            user.setVerified(true);
+            user.setVerificationToken(null);
+            user.setTokenExpiry(null);
+
+            userRepository.save(user);
+
+            response.put("message", "Email successfully verified");
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            response.put("error", e.getMessage());
             return ResponseEntity.badRequest().body(response);
         }
-        
-        User user = optionalUser.get();
-        
-        // Check if token has expired
-        if (user.getTokenExpiry().isBefore(LocalDateTime.now())) {
-            response.put("error", "Verification token has expired");
-            return ResponseEntity.badRequest().body(response);
-        }
-        
-        // If this is an email update, update the email
-        if (user.getPendingEmail() != null && !user.getPendingEmail().isEmpty()) {
-            user.setEmail(user.getPendingEmail());
-            user.setPendingEmail(null);
-        }
-        
-        // Mark user as verified
-        user.setVerified(true);
-        user.setVerificationToken(null);
-        user.setTokenExpiry(null);
-        
-        userRepository.save(user);
-        
-        response.put("message", "Email successfully verified");
-        return ResponseEntity.ok(response);
-    } catch (Exception e) {
-        response.put("error", e.getMessage());
-        return ResponseEntity.badRequest().body(response);
     }
-}
 
     // Resend verification email
     @PostMapping("/resend-verification")
@@ -294,6 +299,29 @@ public ResponseEntity<Map<String, String>> verifyEmail(@RequestParam String toke
         userInfo.put("role", user.getRole());
 
         return ResponseEntity.ok(userInfo);
+    }
+
+    @GetMapping("/current-user")
+    public ResponseEntity<?> getCurrentUser(@CookieValue(value = "accessToken", required = false) String accessToken) {
+        if (accessToken == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Access token is missing"));
+        }
+
+        try {
+            String email = jwtUtil.extractEmail(accessToken);
+            Optional<User> optUser = userRepository.findByEmail(email);
+            if (optUser.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "User not found"));
+            }
+
+            User user = optUser.get();
+
+            UserResponseDTO userResponseDTO = userService.mapToUserDTO(user);
+
+            return ResponseEntity.ok(userResponseDTO);
+        }  catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Invalid or expired token"));
+        }
     }
 
     private String extractTokenFromCookie(HttpServletRequest request) {

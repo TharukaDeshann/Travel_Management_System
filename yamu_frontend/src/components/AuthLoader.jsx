@@ -1,5 +1,6 @@
 import React, { useEffect } from "react";
-import { useUser } from "../context/UserContext";
+import { useUser } from "../context/UserContext.jsx";
+
 import { fetchLoggedInUser } from "../services/authService";
 
 const AuthLoader = ({ children }) => {

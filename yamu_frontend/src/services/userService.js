@@ -1,5 +1,8 @@
 import axios from "./axiosInstance";
 
+const API_URL = "http://localhost:8080/api/users";
+
+
 export const updateUser = async (id, data) => {
   const res = await axios.put(`/api/users/${id}`, data);
   return res.data;
