@@ -26,4 +26,6 @@ public class Guide extends User {
     @Column(nullable = false)
     @NotNull(message = "Vehicle Availability is required")
     private boolean vehicleAvailability;
+
+    
 }
