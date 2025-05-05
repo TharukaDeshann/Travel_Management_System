@@ -301,6 +301,8 @@ public class AuthController {
         return ResponseEntity.ok(userInfo);
     }
 
+    
+
     @GetMapping("/current-user")
     public ResponseEntity<?> getCurrentUser(@CookieValue(value = "accessToken", required = false) String accessToken) {
         if (accessToken == null) {

@@ -1,5 +1,5 @@
 import axios from "axios";
-
+import { useUser } from "../context/UserContext"; // Import setUser from UserContext
 const API_URL = "http://localhost:8080/api/auth";
 
 // Function to expose token expiration to other modules
