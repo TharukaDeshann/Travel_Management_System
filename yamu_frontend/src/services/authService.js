@@ -1,5 +1,5 @@
 import axios from "axios";
-
+import { useUser } from "../context/UserContext"; // Import setUser from UserContext
 const API_URL = "http://localhost:8080/api/auth";
 
 // Function to expose token expiration to other modules
@@ -18,14 +18,23 @@ export const register = async (userData) => {
 };
 
 export const login = async (credentials) => {
+  console.log("Credentials:", JSON.stringify(credentials));
   const response = await axios.post(`${API_URL}/login`, credentials, {
-    withCredentials: true, // Ensures cookies are set
+    withCredentials: true, 
   });
   
   // Set token expiration time (60 seconds from now)
   setTokenExpirationTime(60);
   
   return response;
+};
+
+export const fetchLoggedInUser = async () => {
+  const response = await axios.get(`${API_URL}/current-user`, {
+    withCredentials: true,
+  });
+  return response.data;
+
 };
 
 
@@ -61,11 +70,11 @@ export const logoutUser = async () => {
     
     // Clear token expiration
     window.tokenExpirationTime = null;
+    setUser(null);
     
   } catch (error) {
     console.error("Logout error:", error);
   }
-  
   // Redirect to login page
   window.location.href = "/login";
 };
