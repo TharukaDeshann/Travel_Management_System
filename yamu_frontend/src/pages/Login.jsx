@@ -82,7 +82,6 @@ const Login = () => {
       {
         try {
           const userData = await fetchLoggedInUser();
-          console.log("User data fetched successfully:", userData);
           setUser(userData);
           
           // Redirect based on role

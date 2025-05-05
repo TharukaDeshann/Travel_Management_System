@@ -1,7 +1,6 @@
 import axios from "./axiosInstance";
 import { fetchLoggedInUser } from "./authService";
 
-const API_URL = "http://localhost:8080/api/users";
 
 
 export const updateUser = async (id, data) => {
