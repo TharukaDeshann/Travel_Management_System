@@ -12,10 +12,10 @@ const GuideDashboard = () => {
 
   return (
     <div className="guide-dashboard">
-      {/* Navbar */}
+      /* Navbar */
       <nav className="navbar">
         <div className="logo">
-          <img src={yamuLogo} alt="Yamu Logo" className="logo-image"/>
+          <img src={yamuLogo} alt="Yamu Logo" className="logo-image" />
           YAMU
         </div>
         <div className="nav-links">
@@ -26,11 +26,18 @@ const GuideDashboard = () => {
         </div>
         <div className="user-section">
           <span className="notification">🔔</span>
-          <img className="user-avatar" src="src/images/profile.png" alt="User" />
+          <a href="/profile">
+            <img
+              className="user-avatar"
+              src="src/images/profile.png"
+              alt="User"
+              onClick={() => (window.location.href = "/profile")}
+            />
+          </a>
         </div>
       </nav>
 
-      {/* Content */}
+      /* Content */
       <div className="content">
         <h2>My Tours</h2>
         {tours.map((tour) => (

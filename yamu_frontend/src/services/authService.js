@@ -1,6 +1,7 @@
 import axios from "axios";
-import { useUser } from "../context/UserContext"; // Import setUser from UserContext
+import { useUser } from "../context/UserContext.jsx"; // Importing useUser from context
 const API_URL = "http://localhost:8080/api/auth";
+import apiClient from "./axiosInstance"; // Importing axios instance
 
 // Function to expose token expiration to other modules
 export const getTokenExpirationTime = () => {
@@ -30,7 +31,7 @@ export const login = async (credentials) => {
 };
 
 export const fetchLoggedInUser = async () => {
-  const response = await axios.get(`${API_URL}/current-user`, {
+  const response = await apiClient.get(`${API_URL}/current-user`, {
     withCredentials: true,
   });
   return response.data;
@@ -59,6 +60,8 @@ export const refreshToken = async () => {
 };
 
 export const logoutUser = async () => {
+  const { setUser } = useUser();
+
   try {
     await axios.post(
       `${API_URL}/logout`, 
