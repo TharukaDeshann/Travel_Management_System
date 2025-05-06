@@ -2,24 +2,20 @@ package com.yamu.backend.service;
 
 import java.util.List;
 import java.util.Optional;
+
 import com.yamu.backend.dto.LocationCreateRequest;
 import com.yamu.backend.dto.LocationUpdateRequest;
+import com.yamu.backend.model.Location;
+import com.yamu.backend.repository.LocationRepository;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.yamu.backend.model.Location;
-import com.yamu.backend.repository.LocationRepository;
-
-
-
 @Service
 public class LocationService {
 
     private final LocationRepository locationRepository;
-
-    
 
     @Autowired
     public LocationService(LocationRepository locationRepository) {
@@ -39,13 +35,13 @@ public class LocationService {
     }
 
     @Transactional
-public void deleteLocation(long id) {
-    Optional<Location> location = locationRepository.findById(id);
-    if (location.isEmpty()) {
-        throw new RuntimeException("Location not found");
+    public void deleteLocation(long id) {
+        Optional<Location> location = locationRepository.findById(id);
+        if (location.isEmpty()) {
+            throw new RuntimeException("Location not found");
+        }
+        locationRepository.deleteById(id);
     }
-    locationRepository.deleteById(id);
-}
 
     public void updateLocation(long id, LocationUpdateRequest updateRequest) {
         Optional<Location> location = locationRepository.findById(id);
@@ -69,6 +65,5 @@ public void deleteLocation(long id) {
             location.setLatitude(createRequest.getLatitude());
             locationRepository.save(location);
         }
-       
     }
 }
