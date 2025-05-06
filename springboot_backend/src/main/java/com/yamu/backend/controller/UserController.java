@@ -7,9 +7,12 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -18,6 +21,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
 
 import com.azure.core.annotation.Patch;
 import com.yamu.backend.dto.EmailUpdateRequest;
@@ -68,9 +72,8 @@ public class UserController {
     // UPDATE USER
     @PutMapping("/{id}")
     public ResponseEntity<String> updateUser(@PathVariable Long id, @RequestBody UserUpdateRequest updateRequest) {
-        // Add authorization check to ensure users can only update their own profiles
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        UserResponseDTO currentUser = userService.getUserByEmail(authentication.getName());
+
+        User currentUser = getCurrentUser();
 
         if (currentUser != null && (currentUser.getId().equals(id))) {
             User user = userService.updateUser(id, updateRequest);
@@ -91,19 +94,10 @@ public class UserController {
         Map<String, String> response = new HashMap<>();
 
         try {
-            // Get the authenticated user
-            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-            String currentUsername = authentication.getName(); // This is typically the email
+            
 
-            // Get the user from the database to check permissions
-            Optional<User> optionalCurrentUser = userRepository.findByEmail(currentUsername);
+            User currentUser = getCurrentUser();
 
-            if (optionalCurrentUser.isEmpty()) {
-                response.put("error", "Authentication error");
-                return ResponseEntity.status(401).body(response);
-            }
-
-            User currentUser = optionalCurrentUser.get();
 
             // Check if the user is updating their own email or is an admin
             if (!currentUser.getId().equals(id) && !currentUser.getRole().equals(UserRole.ADMIN)) {
@@ -133,9 +127,8 @@ public class UserController {
     @PutMapping("/{id}/update-password")
     public ResponseEntity<String> updatePassword(@PathVariable Long id,
             @RequestBody @Valid PasswordUpdateRequest passwordUpdateRequest) {
-        // Add authorization check to ensure users can only update their own profiles
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        UserResponseDTO currentUser = userService.getUserByEmail(authentication.getName());
+
+        User currentUser = getCurrentUser();
 
         if (currentUser != null && (currentUser.getId().equals(id))) {
             userService.updatePassword(id, passwordUpdateRequest.getCurrentPassword(),
@@ -148,10 +141,17 @@ public class UserController {
 
     }
 
-
-    // Get users by role
+    // Get normal users by role
     @GetMapping("/role/{role}")
     public ResponseEntity<List<UserResponseDTO>> getUsersByRole(@PathVariable UserRole role) {
+        if (role == UserRole.ADMIN) {
+            User currentUser = getCurrentUser(); // your utility method
+
+            if (currentUser.getRole() != UserRole.ADMIN) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only admins can view admin users");
+            }
+        }
+
         return ResponseEntity.ok(userService.getUsersByRole(role));
     }
 
@@ -160,6 +160,12 @@ public class UserController {
     public ResponseEntity<String> deleteUser(@PathVariable Long id) {
         userService.deleteUser(id);
         return ResponseEntity.ok("User deleted successfully");
+    }
+
+    public User getCurrentUser() {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
     }
 
 }

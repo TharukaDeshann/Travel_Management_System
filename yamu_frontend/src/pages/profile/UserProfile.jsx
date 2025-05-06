@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useUser } from "../../context/UserContext";
-import { fetchLoggedInUser } from "../../services/authService";
+import { fetchLoggedInUser, logoutUser } from "../../services/authService";
 import { useNotification } from "../../hooks/useNotification.jsx";
 import styled from "styled-components";
 
@@ -107,6 +107,17 @@ const UserProfile = () => {
   const handleUpdatePassword = () => {
     navigate("/profile/update-password");
   };
+
+  const handleLogout = async () => {
+    try {
+      await logoutUser();
+      setUser(null); // Safe to use here
+      navigate("/login");
+    } catch (error) {
+      showError("Logout failed. Please try again.");
+    }
+  };
+  
 
   const getUserInitials = () => {
     if (!user) return "";
@@ -242,6 +253,20 @@ const UserProfile = () => {
           </Button>
           <Button onClick={handleUpdatePassword}>
             Update Password
+          </Button>
+          <Button 
+            onClick={handleLogout} 
+            style={{
+              backgroundColor: "#d9534f",
+              color: "#fff",
+              border: "none",
+              padding: "10px 20px",
+              borderRadius: "4px",
+              cursor: "pointer"
+            }}
+          >
+            <i className="fas fa-sign-out-alt"></i> 
+            Log Out
           </Button>
         </FlexContainer>
       </Card>
