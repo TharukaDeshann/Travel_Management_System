@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { FaUserCircle, FaSpinner } from "react-icons/fa";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 
 const ItineraryPlanner = () => {
-  const navigate = useNavigate();
+    const navigate = useNavigate();
   const [startDate, setStartDate] = useState(null);
   const [endDate, setEndDate] = useState(null);
   const [budget, setBudget] = useState("");
@@ -13,28 +12,11 @@ const ItineraryPlanner = () => {
   const [tripTitle, setTripTitle] = useState("");
   const [error, setError] = useState("");
 
-  // Load draft from localStorage
-  useEffect(() => {
-    const draft = localStorage.getItem('itineraryDraft');
-    if (draft) {
-      const { start, end, budget, currency } = JSON.parse(draft);
-      setStartDate(new Date(start));
-      setEndDate(new Date(end));
-      setBudget(budget);
-      setCurrency(currency);
+  const validateInputs = () => {
+    if (!tripTitle) {
+      setError("Please enter a trip title");
+      return false;
     }
-  }, []);
-
-  const saveDraft = () => {
-    localStorage.setItem('itineraryDraft', JSON.stringify({
-      start: startDate,
-      end: endDate,
-      budget,
-      currency
-    }));
-  };
-
-  const validateDates = () => {
     if (!startDate || !endDate) {
       setError("Please select both start and end dates");
       return false;
@@ -47,25 +29,28 @@ const ItineraryPlanner = () => {
       setError("Maximum trip duration is 30 days");
       return false;
     }
+    if (!budget || budget <= 0) {
+      setError("Please enter a valid budget");
+      return false;
+    }
     return true;
   };
 
   const handleStartPlanning = () => {
-    if (!validateDates()) return;
+    if (!validateInputs()) return;
 
     const dates = [];
     let currentDate = new Date(startDate);
     while (currentDate <= endDate) {
-      dates.push(currentDate.toISOString().split('T')[0]);
+      dates.push(currentDate.toISOString().split("T")[0]);
       currentDate.setDate(currentDate.getDate() + 1);
     }
 
-    saveDraft();
-    navigate(`/itinerary-selection?dates=${JSON.stringify(dates)}`);
-  };
+    navigate(`/itinerary-selection?dates=${JSON.stringify(dates)}&title=${tripTitle}&budget=${budget}&currency=${currency}`);
+    };
 
-  return (
-    <div className="container mx-auto p-6 max-w-2xl">
+    return (
+        <div className="container mx-auto p-6 max-w-2xl">
       <h1 className="text-3xl font-bold text-blue-600 mb-8 text-center">
         Plan Your Journey with Yamu
       </h1>
@@ -146,8 +131,8 @@ const ItineraryPlanner = () => {
           Start Planning Your Trip
         </button>
       </div>
-    </div>
-  );
+        </div>
+    );
 };
 
 export default ItineraryPlanner;
