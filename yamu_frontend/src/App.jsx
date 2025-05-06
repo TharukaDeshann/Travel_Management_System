@@ -15,8 +15,9 @@ import VisitPlanPage from "./pages/VisitPlanPage";
 import TravelerDashboard from "./pages/TravelerDashboard.jsx";
 import GuideDashboard from "./pages/GuideDashboard.jsx";
 import GuideReview from "./pages/GuideReview.jsx";
-import GuideCalender from "./components/GuideCalender.jsx";
+import GuideCalendar from "./components/GuideCalendar.jsx";
 import Map from "./components/Map.jsx";
+import GuidesPage from "./pages/GuidesPage.jsx";         
 import WeatherCard from "./components/WeatherCard.jsx";
 import ItineraryPlanner from "./pages/ItineraryPlanner.jsx";
 import ItinerarySelection from "./pages/ItinerarySelection.jsx";
@@ -64,14 +65,18 @@ const App = () => {
             <Route path="/guide-dashboard" element={<GuideDashboard />} />
             <Route path="/admin-dashboard" element={<AdminDashboard />} />
             <Route path="/guide-review" element={<GuideReview />} />
-            <Route path="/guide-calendar" element={<GuideCalender />} />
+            <Route path="/guide-calendar" element={<GuideCalendar />} />
             <Route path="/visit-plan" element={<VisitPlanPage />} />
+            <Route path="/guides-page" element={<GuidesPage />} />
+
 
             {/* Profile Routes */}
             <Route path="/profile" element={<UserProfile />} />
             <Route path="/profile/update-email" element={<UpdateEmail />} />
             <Route path="/profile/update-password" element={<UpdatePassword />} />
           </Route>
+
+          
 
           {/* Fallback Route */}
           <Route path="*" element={<div>404 Not Found</div>} />
