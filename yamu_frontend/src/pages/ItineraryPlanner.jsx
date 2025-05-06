@@ -1,196 +1,151 @@
-import React, { useState } from "react";
-import { FaMicrophone, FaImage, FaUserCircle } from "react-icons/fa";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import * as SpeechSDK from "microsoft-cognitiveservices-speech-sdk";
+import { FaUserCircle, FaSpinner } from "react-icons/fa";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 
 const ItineraryPlanner = () => {
   const navigate = useNavigate();
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
+  const [startDate, setStartDate] = useState(null);
+  const [endDate, setEndDate] = useState(null);
   const [budget, setBudget] = useState("");
-  const [currency, setCurrency] = useState("USD");
-  const [showImageMenu, setShowImageMenu] = useState(false);
-  const [showTravelHistory, setShowTravelHistory] = useState(false);
-  const [speechResult, setSpeechResult] = useState("");
+  const [currency, setCurrency] = useState("LKR");
+  const [tripTitle, setTripTitle] = useState("");
+  const [error, setError] = useState("");
 
-  const travelHistory = [
-    { destination: "Trip ID 001", date: "2025-03-01" },
-    { destination: "Trip ID 002", date: "2025-02-15" },
-    { destination: "Trip ID 003", date: "2025-01-20" },
-  ];
-
-  const getDateRange = (start, end) => {
-    let dates = [];
-    let currentDate = new Date(start);
-    let lastDate = new Date(end);
-
-    while (currentDate <= lastDate) {
-      dates.push(currentDate.toISOString().split("T")[0]);
-      currentDate.setDate(currentDate.getDate() + 1);
+  // Load draft from localStorage
+  useEffect(() => {
+    const draft = localStorage.getItem('itineraryDraft');
+    if (draft) {
+      const { start, end, budget, currency } = JSON.parse(draft);
+      setStartDate(new Date(start));
+      setEndDate(new Date(end));
+      setBudget(budget);
+      setCurrency(currency);
     }
-    return dates;
+  }, []);
+
+  const saveDraft = () => {
+    localStorage.setItem('itineraryDraft', JSON.stringify({
+      start: startDate,
+      end: endDate,
+      budget,
+      currency
+    }));
+  };
+
+  const validateDates = () => {
+    if (!startDate || !endDate) {
+      setError("Please select both start and end dates");
+      return false;
+    }
+    if (startDate > endDate) {
+      setError("End date cannot be before start date");
+      return false;
+    }
+    if (Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24)) > 30) {
+      setError("Maximum trip duration is 30 days");
+      return false;
+    }
+    return true;
   };
 
   const handleStartPlanning = () => {
-    if (!startDate || !endDate) {
-      alert("Please select a start and end date.");
-      return;
+    if (!validateDates()) return;
+
+    const dates = [];
+    let currentDate = new Date(startDate);
+    while (currentDate <= endDate) {
+      dates.push(currentDate.toISOString().split('T')[0]);
+      currentDate.setDate(currentDate.getDate() + 1);
     }
 
-    const dates = getDateRange(startDate, endDate);
+    saveDraft();
     navigate(`/itinerary-selection?dates=${JSON.stringify(dates)}`);
   };
 
-  const handleSpeechRecognition = () => {
-    const speechConfig = SpeechSDK.SpeechConfig.fromSubscription(
-      "DJD3J9eQ6hg3Q5qH3lVHk8mnf1ekE8tgJvuCFKT3IfxJcYtqjVtfJQQJ99BAACqBBLyXJ3w3AAAYACOG7y9y",
-      "southeastasia"
-    );
-    speechConfig.speechRecognitionLanguage = "en-US";
-
-    const audioConfig = SpeechSDK.AudioConfig.fromDefaultMicrophoneInput();
-    const recognizer = new SpeechSDK.SpeechRecognizer(speechConfig, audioConfig);
-
-    recognizer.recognizeOnceAsync(
-      (result) => {
-        if (result.reason === SpeechSDK.ResultReason.RecognizedSpeech) {
-          setSpeechResult(result.text);
-          alert(`Recognized: ${result.text}`);
-        } else {
-          alert("Speech recognition failed. Please try again.");
-          console.error("Speech recognition error:", result);
-        }
-      },
-      (err) => {
-        alert("An error occurred during speech recognition.");
-        console.error("Speech recognition error:", err);
-      }
-    );
-  };
-
-  const handleImageMenu = (action) => {
-    setShowImageMenu(false);
-    if (action === "attach") {
-      alert("Attach a photo functionality triggered.");
-    } else if (action === "take") {
-      alert("Take a photo functionality triggered.");
-    }
-  };
-
   return (
-    <div className="relative flex flex-col items-center justify-center min-h-screen bg-gray-100 p-6">
-      {/* Profile & Travel History Box - Aligned to Right */}
-      <div className="absolute top-4 right-4 flex items-center gap-4">
-        {/* Travel History */}
-        <div className="relative">
-          <button
-            className="px-4 py-2 bg-white text-blue-500 border border-blue-500 rounded hover:bg-blue-500 hover:text-white transition"
-            onClick={() => setShowTravelHistory(!showTravelHistory)}
-          >
-            Travel History
-          </button>
-          {showTravelHistory && (
-            <div className="absolute right-0 mt-2 bg-white shadow-md rounded p-2 w-48">
-              {travelHistory.map((item, index) => (
-                <div
-                  key={index}
-                  className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
-                >
-                  {item.destination} - {item.date}
-                </div>
-              ))}
-            </div>
-          )}
+    <div className="container mx-auto p-6 max-w-2xl">
+      <h1 className="text-3xl font-bold text-blue-600 mb-8 text-center">
+        Plan Your Journey with Yamu
+      </h1>
+
+      {error && (
+        <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-lg">{error}</div>
+      )}
+
+      <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+        {/* Trip Title Input */}
+        <div className="mb-6">
+          <label className="block text-gray-700 mb-2 font-medium">
+            Trip Title
+          </label>
+          <input
+            type="text"
+            placeholder="Give your trip a title (e.g., Trip to Galle)"
+            className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            value={tripTitle}
+            onChange={(e) => setTripTitle(e.target.value)}
+          />
         </div>
 
-        {/* User Profile Icon */}
-        <FaUserCircle className="text-3xl text-gray-600 cursor-pointer" />
-      </div>
-
-      <h1 className="text-3xl font-bold text-blue-600 mb-6">Plan a New Trip</h1>
-
-      {/* Destination Search Bar */}
-      <div className="w-full max-w-lg bg-white p-4 rounded shadow-md flex items-center space-x-2 border relative">
-        <input
-          type="text"
-          placeholder="Where to? e.g. Galle, Sigiriya, Kandy"
-          className="flex-1 p-2 outline-none"
-          value={speechResult}
-          onChange={(e) => setSpeechResult(e.target.value)}
-        />
-        <button
-          className="p-2 bg-gray-200 rounded"
-          onClick={handleSpeechRecognition}
-        >
-          <FaMicrophone />
-        </button>
-        <button
-          className="p-2 bg-gray-200 rounded"
-          onClick={() => setShowImageMenu(!showImageMenu)}
-        >
-          <FaImage />
-        </button>
-        {showImageMenu && (
-          <div className="absolute top-12 right-0 bg-white shadow-md rounded p-2">
-            <button
-              className="block w-full text-left px-4 py-2 hover:bg-gray-100"
-              onClick={() => handleImageMenu("attach")}
-            >
-              Attach a Photo
-            </button>
-            <button
-              className="block w-full text-left px-4 py-2 hover:bg-gray-100"
-              onClick={() => handleImageMenu("take")}
-            >
-              Take a Photo
-            </button>
+        {/* Travel Dates and Budget */}
+        <div className="grid md:grid-cols-2 gap-6 mb-6">
+          <div>
+            <label className="block text-gray-700 mb-2 font-medium">
+              Travel Dates
+            </label>
+            <div className="space-y-3">
+              <DatePicker
+                selected={startDate}
+                onChange={date => setStartDate(date)}
+                minDate={new Date()}
+                placeholderText="Select start date"
+                className="w-full p-3 border rounded-lg"
+              />
+              <DatePicker
+                selected={endDate}
+                onChange={date => setEndDate(date)}
+                minDate={startDate || new Date()}
+                placeholderText="Select end date"
+                className="w-full p-3 border rounded-lg"
+              />
+            </div>
           </div>
-        )}
-        <button className="p-2 bg-blue-500 text-white rounded">Search</button>
-      </div>
 
-      {/* Date Selection */}
-      <div className="w-full max-w-lg bg-white p-4 rounded shadow-md mt-4 flex items-center space-x-2 border">
-        <input
-          type="date"
-          className="flex-1 p-2 border rounded"
-          onChange={(e) => setStartDate(e.target.value)}
-        />
-        <input
-          type="date"
-          className="flex-1 p-2 border rounded"
-          onChange={(e) => setEndDate(e.target.value)}
-        />
-      </div>
+          <div>
+            <label className="block text-gray-700 mb-2 font-medium">
+              Budget Planning
+            </label>
+            <div className="flex gap-2">
+              <input
+                type="number"
+                placeholder="Enter budget"
+                className="flex-1 p-3 border rounded-lg"
+                value={budget}
+                onChange={(e) => setBudget(e.target.value)}
+                min="0"
+              />
+              <select
+                className="p-3 border rounded-lg bg-white"
+                value={currency}
+                onChange={(e) => setCurrency(e.target.value)}
+              >
+                <option value="LKR">LKR</option>
+                <option value="USD">USD</option>
+                <option value="EUR">EUR</option>
+              </select>
+            </div>
+          </div>
+        </div>
 
-      {/* Budget Input */}
-      <div className="w-full max-w-lg bg-white p-4 rounded shadow-md mt-4 flex items-center space-x-2 border">
-        <input
-          type="number"
-          placeholder="Enter your budget"
-          className="flex-1 p-2 outline-none"
-          value={budget}
-          onChange={(e) => setBudget(e.target.value)}
-        />
-        <select
-          className="p-2 border rounded"
-          value={currency}
-          onChange={(e) => setCurrency(e.target.value)}
+        <button
+          onClick={handleStartPlanning}
+          className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium"
         >
-          <option value="USD">USD</option>
-          <option value="LKR">LKR</option>
-          <option value="EUR">EUR</option>
-          <option value="GBP">GBP</option>
-        </select>
+          Start Planning Your Trip
+        </button>
       </div>
-
-      {/* Start Planning Button */}
-      <button
-        onClick={handleStartPlanning}
-        className="mt-6 px-6 py-3 bg-blue-500 text-white rounded text-lg font-semibold"
-      >
-        Start Planning
-      </button>
     </div>
   );
 };
