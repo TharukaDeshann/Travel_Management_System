@@ -1,17 +1,9 @@
 import axios from "./axiosInstance";
 import { fetchLoggedInUser } from "./authService";
+import { useUser } from "../context/UserContext.jsx";
 
 
 
-export const updateUser = async (id, data) => {
-  const res = await axios.put(`/api/users/${id}`, data);
-  return res.data;
-};
-
-export const deleteUser = async (id) => {
-  const res = await axios.delete(`/api/users/${id}`);
-  return res.data;
-};
 
 export const updateEmail = async (data) => {
   const user = await fetchLoggedInUser();
@@ -23,6 +15,7 @@ export const updateEmail = async (data) => {
 export const updatePassword = async (data) => {
   const user = await fetchLoggedInUser();
   const id = user.id;
+  console.log("User ID:", id); // Debugging line to check user ID
   const res = await axios.put(`/api/users/${id}/update-password`, data);
   return res;
 };

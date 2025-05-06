@@ -247,7 +247,7 @@ export default function TravelerDashboard() {
             <span className="notification-badge">3</span>
           </div>
           <div className="icon-container">
-            <img src={profileIcon} alt="Profile" className="profile-image" />
+            <img src={profileIcon} alt="Profile" className="profile-image" onClick={() => (window.location.href = "/profile")} />
           </div>
         </div>
       </nav>

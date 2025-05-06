@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import styled, { css } from 'styled-components';
 
 // Colors
-const colors = {
+export const colors = {
   primary: '#1976d2',
   primaryDark: '#004ba0',
   primaryLight: '#63a4ff',
@@ -149,13 +149,13 @@ export const LinkText = styled(Link)`
   }
 `;
 
-// Layout utils
+// Layout utils - refactored to correctly handle props
 export const FlexContainer = styled.div`
   display: flex;
   ${props => props.justifyContent && `justify-content: ${props.justifyContent};`}
   ${props => props.alignItems && `align-items: ${props.alignItems};`}
   ${props => props.direction && `flex-direction: ${props.direction};`}
-  ${props => props.gap && `gap: ${props.gap}px;`}
+  ${props => props.gap !== undefined && `gap: ${props.gap}px;`}
   margin-bottom: ${props => props.marginBottom || '16px'};
 `;
 
@@ -243,6 +243,7 @@ export const Text = styled.p`
   font-size: ${props => props.size || '16px'};
   font-weight: ${props => props.weight || 'normal'};
   margin-bottom: ${props => props.marginBottom || '16px'};
+  margin-top: ${props => props.marginTop || '0'};
 `;
 
 export const Title = styled.h1`
@@ -250,6 +251,7 @@ export const Title = styled.h1`
   font-weight: ${props => props.weight || '600'};
   color: ${props => props.color || colors.text};
   margin-bottom: ${props => props.marginBottom || '16px'};
+  margin-top: ${props => props.marginTop || '0'};
 `;
 
 export const Subtitle = styled.h2`
@@ -257,6 +259,7 @@ export const Subtitle = styled.h2`
   font-weight: ${props => props.weight || '500'};
   color: ${props => props.color || colors.textLight};
   margin-bottom: ${props => props.marginBottom || '24px'};
+  margin-top: ${props => props.marginTop || '0'};
 `;
 
 // Grid layout
