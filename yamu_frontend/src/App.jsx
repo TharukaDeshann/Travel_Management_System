@@ -29,7 +29,7 @@ import UserProfile from "./pages/profile/UserProfile.jsx";
 import UpdateEmail from "./pages/profile/components/UpdateEmail.jsx";
 import UpdatePassword from "./pages/profile/components/UpdatePassword.jsx";
 import AdminDashboard from "./pages/AdminDashboard.jsx";
-import UsersByRole from "./pages/UsersByRole.jsx";
+import UsersSocialPage from "./pages/UsersSocialPage.jsx";
 
 const App = () => {
   return (
@@ -69,7 +69,7 @@ const App = () => {
             <Route path="/guide-calendar" element={<GuideCalendar />} />
             <Route path="/visit-plan" element={<VisitPlanPage />} />
             <Route path="/guides-page" element={<GuidesPage />} />
-            <Route path="/users/users-by-role" element={<UsersByRole />} />
+            <Route path="/users/users-by-role" element={<UsersSocialPage />} />
 
             {/* Profile Routes */}
             <Route path="/profile" element={<UserProfile />} />
