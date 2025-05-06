@@ -52,6 +52,7 @@ const GuideDashboard = ({ currentUser }) => {
   });
 
   return (
+
     <div style={{
       minHeight: "100vh",
       backgroundColor: "#f5f5f5",
@@ -85,6 +86,8 @@ const GuideDashboard = ({ currentUser }) => {
             fontWeight: "bold",
             color: "#532321"
           }}>YAMU</span>
+
+
         </div>
         
         <div style={{
@@ -153,6 +156,7 @@ const GuideDashboard = ({ currentUser }) => {
             Inbox
           </button>
         </div>
+
         
         <div style={{
           display: "flex",
@@ -229,6 +233,8 @@ const GuideDashboard = ({ currentUser }) => {
               >
                 Past
               </button>
+
+        
             </div>
           </div>
           

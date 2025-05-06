@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useUser } from "../../context/UserContext";
 import { fetchLoggedInUser } from "../../services/authService";
 import { useNotification } from "../../hooks/useNotification.jsx";
+import styled from "styled-components";
 
 // Custom styled components
 import {
@@ -19,20 +20,52 @@ import {
   SectionTitle
 } from "../../components/StyledComponents";
 
-// Profile Detail Item
+// Profile Detail Item - Styled component approach instead of inline styles
+const DetailLabel = styled(Text)`
+  font-size: 14px;
+  font-weight: 500;
+  color: #666;
+  margin-bottom: 4px;
+`;
+
+const DetailContainer = styled.div`
+  margin-bottom: 16px;
+`;
+
+const IconWrapper = styled.span`
+  margin-right: 8px;
+`;
+
+const DetailValue = styled(Text)`
+  margin-bottom: 0;
+`;
+
+const NotProvidedText = styled.span`
+  color: #999;
+  font-style: italic;
+`;
+
+// Profile Detail Item component
 const ProfileDetailItem = ({ label, value, icon }) => (
-  <div style={{ marginBottom: "16px" }}>
-    <Text size="14px" weight="500" color="#666" marginBottom="4px">
-      {label}
-    </Text>
-    <FlexContainer alignItems="center" gap={8} marginBottom="0">
-      {icon && <span className="profile-icon">{icon}</span>}
-      <Text marginBottom="0">
-        {value || <span style={{ color: "#999", fontStyle: "italic" }}>Not provided</span>}
-      </Text>
+  <DetailContainer>
+    <DetailLabel>{label}</DetailLabel>
+    <FlexContainer gap={8}>
+      {icon && <IconWrapper className="profile-icon">{icon}</IconWrapper>}
+      <DetailValue>
+        {value || <NotProvidedText>Not provided</NotProvidedText>}
+      </DetailValue>
     </FlexContainer>
-  </div>
+  </DetailContainer>
 );
+
+const LoadingContainer = styled.div`
+  text-align: center;
+  padding: 100px 0;
+`;
+
+const BadgeContainer = styled.div`
+  margin-bottom: 16px;
+`;
 
 const UserProfile = () => {
   const { user, setUser } = useUser();
@@ -83,10 +116,10 @@ const UserProfile = () => {
   if (loading) {
     return (
       <Container>
-        <div style={{ textAlign: "center", padding: "100px 0" }}>
+        <LoadingContainer>
           <div className="loading-spinner"></div>
-          <Text size="16px" marginTop="16px">Loading your profile...</Text>
-        </div>
+          <Text size="16px">Loading your profile...</Text>
+        </LoadingContainer>
       </Container>
     );
   }
@@ -94,13 +127,13 @@ const UserProfile = () => {
   if (!user) {
     return (
       <Container>
-        <div style={{ textAlign: "center", padding: "100px 0" }}>
+        <LoadingContainer>
           <Title>User profile not available</Title>
           <Text>Please log in to view your profile</Text>
-          <Button onClick={() => navigate("/login")} style={{ marginTop: "24px" }}>
+          <Button onClick={() => navigate("/login")}>
             Login
           </Button>
-        </div>
+        </LoadingContainer>
       </Container>
     );
   }
@@ -111,17 +144,17 @@ const UserProfile = () => {
       
       <Card>
         <Grid columns={2}>
-          <div style={{ textAlign: "center" }}>
+          <div>
             <Avatar size="120px" src={user.profileImage}>
               {getUserInitials()}
             </Avatar>
-            <Title size="20px" marginTop="16px">
+            <Title size="20px">
               {`${user.firstName} ${user.lastName}`}
             </Title>
             <Badge variant={user.verified ? "success" : "warning"}>
               {user.verified ? "Verified" : "Unverified"}
             </Badge>
-            <Text size="16px" color="#666" marginTop="8px">
+            <Text size="16px" color="#666">
               {user.role}
             </Text>
           </div>
@@ -161,20 +194,18 @@ const UserProfile = () => {
               icon="📝" 
             />
             
-            <Text size="14px" weight="500" color="#666" marginBottom="4px">
-              Languages
-            </Text>
-            <div style={{ marginBottom: "16px" }}>
-              {user.languages ? (
-                user.languages.split(',').map(lang => (
+            <DetailLabel>Languages</DetailLabel>
+            <BadgeContainer>
+              {user.language ? (
+                user.language.split(',').map(lang => (
                   <Badge key={lang.trim()}>
                     {lang.trim()}
                   </Badge>
                 ))
               ) : (
-                <Text color="#999" style={{ fontStyle: "italic" }}>No languages specified</Text>
+                <NotProvidedText>No languages specified</NotProvidedText>
               )}
-            </div>
+            </BadgeContainer>
             
             <ProfileDetailItem 
               label="Vehicle Availability" 
@@ -202,7 +233,7 @@ const UserProfile = () => {
         
         <Separator />
         
-        <FlexContainer justifyContent="flex-end" gap={16}>
+        <FlexContainer gap={16}>
           <Button onClick={handleUpdateProfile}>
             Update Profile
           </Button>
