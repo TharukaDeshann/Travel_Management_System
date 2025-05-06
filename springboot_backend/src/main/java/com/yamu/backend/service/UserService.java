@@ -1,10 +1,12 @@
 package com.yamu.backend.service;
 
+import com.yamu.backend.dto.AdminResponseDTO;
 import com.yamu.backend.dto.GuideResponseDTO;
 import com.yamu.backend.dto.TravelerResponseDTO;
 import com.yamu.backend.dto.UserResponseDTO;
 import com.yamu.backend.dto.UserUpdateRequest;
 import com.yamu.backend.enums.UserRole;
+import com.yamu.backend.model.Admin;
 import com.yamu.backend.model.Guide;
 import com.yamu.backend.model.Traveler;
 import com.yamu.backend.model.User;
@@ -51,6 +53,13 @@ public class UserService {
                 guideDto.setAbout(guide.getAbout());
                 guideDto.setVehicleAvailability(guide.isVehicleAvailability());
                 baseDto = guideDto;
+            }
+            case ADMIN -> {
+                // Admin-specific mapping
+                Admin admin = (Admin) user;
+                AdminResponseDTO adminDto = new AdminResponseDTO();
+                baseDto = adminDto;
+
             }
             default -> baseDto = new UserResponseDTO();
         }

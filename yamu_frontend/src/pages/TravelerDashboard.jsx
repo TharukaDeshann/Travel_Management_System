@@ -131,7 +131,7 @@ export default function TravelerDashboard({ currentUser }) {
   };
 
   const handleNavigateToGuides = () => {
-    navigate('/guides', { state: { currentUser } });
+    navigate('/users/users-by-role', { state: { currentUser } });
   };
 
   const CurrencyDropdown = () => (
