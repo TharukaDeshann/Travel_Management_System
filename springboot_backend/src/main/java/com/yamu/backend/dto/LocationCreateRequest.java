@@ -7,6 +7,9 @@ import lombok.Setter;
 @Getter
 @Setter
 public class LocationCreateRequest {
+    @NotNull(message = "Day plan ID is required")
+    private String dayPlanId;
+
     @NotNull(message = "Name is required")
     private String name;
 
