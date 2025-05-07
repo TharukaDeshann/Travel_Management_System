@@ -16,7 +16,7 @@ public class UserUpdateRequest {
 
     private String lastName;
 
-   
+    
 
     @NotBlank(message = "Contact number is required")
     @Pattern(regexp = "^[0-9]{10,15}$", message = "Contact number must be 10 to 15 digits")

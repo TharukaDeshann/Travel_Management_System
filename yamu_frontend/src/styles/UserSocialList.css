@@ -1,0 +1,209 @@
+/* UserSocialList.css */
+.user-list-container {
+  max-width: 800px;
+  margin: 0 auto;
+  background-color: #f0f2f5;
+  padding: 20px;
+}
+
+.user-item {
+  display: flex;
+  align-items: center;
+  padding: 16px;
+  background-color: #ffffff;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.user-item:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.user-avatar {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background-color: #e4e6eb;
+  margin-right: 16px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  color: #65676b;
+  font-weight: 600;
+}
+
+.user-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.user-info {
+  flex: 1;
+}
+
+.user-name {
+  font-size: 16px;
+  font-weight: 600;
+  color: #050505;
+  margin: 0 0 4px 0;
+}
+
+.user-details {
+  color: #65676b;
+  font-size: 14px;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.user-role-badge {
+  display: inline-block;
+  background-color: #e7f3ff;
+  color: #1877f2;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 2px 8px;
+  border-radius: 10px;
+  margin-right: 8px;
+}
+
+.user-role-badge--guide {
+  background-color: #e3f2fd;
+  color: #1565c0;
+}
+
+.user-role-badge--traveler {
+  background-color: #f1f8e9;
+  color: #558b2f;
+}
+
+.user-meta {
+  font-size: 12px;
+  color: #65676b;
+  display: flex;
+  align-items: center;
+  margin-top: 4px;
+}
+
+.user-meta-item {
+  display: flex;
+  align-items: center;
+  margin-right: 12px;
+}
+
+.user-meta-icon {
+  margin-right: 4px;
+  font-size: 14px;
+}
+
+.view-profile-btn {
+  padding: 8px 12px;
+  background-color: #e7f3ff;
+  color: #1877f2;
+  border: none;
+  border-radius: 6px;
+  font-weight: 500;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  min-width: 100px;
+  text-align: center;
+}
+
+.view-profile-btn:hover {
+  background-color: #dbe7f2;
+}
+
+/* Search and filter panel */
+.search-panel {
+  background-color: #ffffff;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 16px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.search-row {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.search-input {
+  flex: 1;
+  padding: 10px 16px;
+  border-radius: 20px;
+  border: 1px solid #dddfe2;
+  background-color: #f0f2f5;
+  font-size: 14px;
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: #1877f2;
+  background-color: #ffffff;
+}
+
+.role-filter {
+  display: flex;
+  gap: 8px;
+}
+
+.role-tab {
+  padding: 8px 16px;
+  background-color: #f0f2f5;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #65676b;
+  cursor: pointer;
+  border: none;
+}
+
+.role-tab:hover {
+  background-color: #e4e6eb;
+}
+
+.role-tab.active {
+  background-color: #1877f2;
+  color: #ffffff;
+}
+
+.empty-state {
+  padding: 40px 20px;
+  text-align: center;
+  background-color: #ffffff;
+  border-radius: 8px;
+  margin-top: 16px;
+}
+
+.empty-state-icon {
+  font-size: 48px;
+  color: #dddfe2;
+  margin-bottom: 16px;
+}
+
+.empty-state-text {
+  color: #65676b;
+  font-size: 16px;
+}
+
+/* Loading state */
+.loading-spinner {
+  display: block;
+  width: 32px;
+  height: 32px;
+  margin: 24px auto;
+  border: 3px solid rgba(24, 119, 242, 0.2);
+  border-top-color: #1877f2;
+  border-radius: 50%;
+  animation: spinner 0.8s linear infinite;
+}
+
+@keyframes spinner {
+  to {transform: rotate(360deg);}
+}
