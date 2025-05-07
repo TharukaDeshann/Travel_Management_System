@@ -31,8 +31,9 @@ public class AuthService {
      * Register a new user based on the registration request
      */
     public User registerUser(UserRegistrationRequest request) {
-        if (userRepository.findByEmail(request.getEmail()) != null) {
-            throw new RuntimeException("Account already exists with this email");
+        // Check if email already exists
+        if (userRepository.findByEmail(request.getEmail()).isPresent()) {
+            throw new RuntimeException("Email already exists");
         }
 
         User user;

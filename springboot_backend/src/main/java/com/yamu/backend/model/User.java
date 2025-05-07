@@ -64,6 +64,8 @@ public abstract class User {
     @Column(nullable = false, updatable = false, insertable = false)
     private UserRole role; // Role defined by specialization
 
+    @Column(name = "profile_image_url")
+    private String profileImageUrl;
 
 
     public Boolean isVerified() {
