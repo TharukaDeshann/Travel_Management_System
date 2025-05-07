@@ -150,11 +150,12 @@ public class UserService {
      * Delete user (hard delete)
      */
     public void deleteUser(Long id) {
-        Optional<User> user = userRepository.findById(id);
-        if (user.isEmpty()) {
+        Optional<User> optUser = userRepository.findById(id);
+        if (optUser.isEmpty()) {
             throw new RuntimeException("User not found");
         }
-        userRepository.delete(user.get());
+        
+        userRepository.delete(optUser.get());
     }
     
     /**

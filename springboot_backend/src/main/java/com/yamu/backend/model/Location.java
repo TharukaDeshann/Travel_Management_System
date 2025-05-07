@@ -8,7 +8,9 @@ import lombok.Setter;
 @Getter @Setter
 public class Location {
     @Id
-    private String id;
+    @GeneratedValue(strategy = GenerationType.IDENTITY) // Auto-increment ID
+    @Column(name = "location_id")
+    private Long id;
     
     @ManyToOne
     @JoinColumn(name = "day_plan_id", nullable = false)

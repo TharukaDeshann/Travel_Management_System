@@ -22,48 +22,51 @@ public class LocationService {
         this.locationRepository = locationRepository;
     }
 
+    
     public List<Location> getAllLocations() {
         return locationRepository.findAll();
     }
 
-    public Optional<Location> getLocationById(long id) {
-        Optional<Location> location = locationRepository.findById(id);
-        if (location.isEmpty()) {
+    public Location getLocationById(long id) {
+        Optional<Location> optLocation = locationRepository.findById(id);
+        if (optLocation.isEmpty()) {
             throw new RuntimeException("Location not found");
         }
+        Location location = optLocation.get();
         return location;
     }
 
     @Transactional
     public void deleteLocation(long id) {
-        Optional<Location> location = locationRepository.findById(id);
-        if (location.isEmpty()) {
+        Optional<Location> optLocation = locationRepository.findById(id);
+        if (optLocation.isEmpty()) {
             throw new RuntimeException("Location not found");
         }
-        locationRepository.deleteById(id);
+
+        locationRepository.delete(optLocation.get());
     }
 
     public void updateLocation(long id, LocationUpdateRequest updateRequest) {
-        Optional<Location> location = locationRepository.findById(id);
-        if (location.isEmpty()) {
+        Optional<Location> optLocation = locationRepository.findById(id);
+        if (optLocation.isEmpty()) {
             throw new RuntimeException("Location not found");
         }
-        Location locationToUpdate = location.get();
+        Location location = optLocation.get();
         if (updateRequest.getName() != null) {
-            locationToUpdate.setName(updateRequest.getName());
+            location.setName(updateRequest.getName());
         }
-        updateRequest.getLongitude().ifPresent(locationToUpdate::setLongitude);
-        updateRequest.getLatitude().ifPresent(locationToUpdate::setLatitude);
-        locationRepository.save(locationToUpdate);
+        updateRequest.getLongitude().ifPresent(location::setLongitude);
+        updateRequest.getLatitude().ifPresent(location::setLatitude);
+        locationRepository.save(location);
     }
 
-    public void addLocation(List<LocationCreateRequest> createRequests) {
-        for (LocationCreateRequest createRequest : createRequests) {
+    public void addLocation(LocationCreateRequest createRequest) {
+        
             Location location = new Location();
             location.setName(createRequest.getName());
             location.setLongitude(createRequest.getLongitude());
             location.setLatitude(createRequest.getLatitude());
             locationRepository.save(location);
-        }
+        
     }
 }

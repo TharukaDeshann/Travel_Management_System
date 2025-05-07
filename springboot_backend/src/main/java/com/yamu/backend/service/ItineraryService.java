@@ -31,7 +31,6 @@ public class ItineraryService {
 
             for (ItineraryRequest.DayPlanRequest.LocationRequest locationRequest : dayPlanRequest.getLocations()) {
                 Location location = new Location();
-                location.setId(UUID.randomUUID().toString());
                 location.setName(locationRequest.getName());
                 location.setAddress(locationRequest.getAddress());
                 location.setLatitude(locationRequest.getLatitude());
