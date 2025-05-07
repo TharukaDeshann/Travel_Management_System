@@ -41,7 +41,7 @@ public class RouteService {
         route.setTravelMode(request.getTravelMode());
         route.setTotalDistance(request.getTotalDistance());
         route.setEstimatedTime(request.getEstimatedTime());
-        
+
         if (request.getLocations() != null) {
             for (LocationCreateRequest locRequest : request.getLocations()) {
                 Location location = new Location();
@@ -52,11 +52,46 @@ public class RouteService {
                 location.setPlaceId(locRequest.getPlaceId());
                 location.setAddress(locRequest.getAddress());
                 location.setNotes(locRequest.getNotes());
-                
+
                 route.getLocations().add(location);
             }
         }
-        
+
+        Route savedRoute = routeRepository.save(route);
+        return convertToRouteResponse(savedRoute);
+    }
+
+    @Transactional
+    public RouteResponse updateRoute(long id, RouteCreateRequest request) {
+        Optional<Route> optionalRoute = routeRepository.findById(id);
+        if (optionalRoute.isEmpty()) {
+            throw new RuntimeException("Route not found");
+        }
+
+        Route route = optionalRoute.get();
+        route.setName(request.getName());
+        route.setTravelMode(request.getTravelMode());
+        route.setTotalDistance(request.getTotalDistance());
+        route.setEstimatedTime(request.getEstimatedTime());
+
+        // Clear existing locations and add new ones
+        route.getLocations().clear();
+
+        if (request.getLocations() != null) {
+            for (LocationCreateRequest locRequest : request.getLocations()) {
+                Location location = new Location();
+                location.setName(locRequest.getName());
+                location.setLatitude(locRequest.getLatitude());
+                location.setLongitude(locRequest.getLongitude());
+                location.setPositionIndex(locRequest.getPositionIndex());
+                location.setPlaceId(locRequest.getPlaceId());
+                location.setAddress(locRequest.getAddress());
+                location.setNotes(locRequest.getNotes());
+
+                route.getLocations().add(location);
+            }
+        }
+
         Route savedRoute = routeRepository.save(route);
         return convertToRouteResponse(savedRoute);
     }
@@ -69,41 +104,6 @@ public class RouteService {
         routeRepository.deleteById(id);
     }
 
-    @Transactional
-    public RouteResponse updateRoute(long id, RouteCreateRequest request) {
-        Optional<Route> optionalRoute = routeRepository.findById(id);
-        if (optionalRoute.isEmpty()) {
-            throw new RuntimeException("Route not found");
-        }
-        
-        Route route = optionalRoute.get();
-        route.setName(request.getName());
-        route.setTravelMode(request.getTravelMode());
-        route.setTotalDistance(request.getTotalDistance());
-        route.setEstimatedTime(request.getEstimatedTime());
-        
-        // Clear existing locations and add new ones
-        route.getLocations().clear();
-        
-        if (request.getLocations() != null) {
-            for (LocationCreateRequest locRequest : request.getLocations()) {
-                Location location = new Location();
-                location.setName(locRequest.getName());
-                location.setLatitude(locRequest.getLatitude());
-                location.setLongitude(locRequest.getLongitude());
-                location.setPositionIndex(locRequest.getPositionIndex());
-                location.setPlaceId(locRequest.getPlaceId());
-                location.setAddress(locRequest.getAddress());
-                location.setNotes(locRequest.getNotes());
-                
-                route.getLocations().add(location);
-            }
-        }
-        
-        Route savedRoute = routeRepository.save(route);
-        return convertToRouteResponse(savedRoute);
-    }
-
     private RouteResponse convertToRouteResponse(Route route) {
         RouteResponse response = new RouteResponse();
         response.setId(route.getId());
@@ -111,7 +111,7 @@ public class RouteService {
         response.setTravelMode(route.getTravelMode());
         response.setTotalDistance(route.getTotalDistance());
         response.setEstimatedTime(route.getEstimatedTime());
-        
+
         List<LocationResponse> locationResponses = route.getLocations().stream()
                 .map(location -> {
                     LocationResponse locResponse = new LocationResponse();
@@ -126,7 +126,7 @@ public class RouteService {
                     return locResponse;
                 })
                 .collect(Collectors.toList());
-        
+
         response.setLocations(locationResponses);
         return response;
     }

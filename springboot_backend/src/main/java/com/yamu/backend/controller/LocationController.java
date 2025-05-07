@@ -3,59 +3,58 @@ package com.yamu.backend.controller;
 import com.yamu.backend.dto.LocationCreateRequest;
 import com.yamu.backend.dto.LocationUpdateRequest;
 import com.yamu.backend.model.Location;
+import com.yamu.backend.repository.LocationRepository;
 import com.yamu.backend.service.LocationService;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
-import jakarta.validation.Valid;
 import java.util.List;
-import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/locations")
-@Validated
 public class LocationController {
-
-    private final LocationService locationService;
-
     @Autowired
-    public LocationController(LocationService locationService) {
+    private final LocationRepository locationRepository;
+    private final LocationService  locationService;
+
+    public LocationController(LocationRepository locationRepository, LocationService locationService) {
+        this.locationRepository = locationRepository;
         this.locationService = locationService;
     }
 
+    @GetMapping("/day-plan/{dayPlanId}")
+    public List<Location> getLocationsByDayPlan(@PathVariable String dayPlanId) {
+        return locationRepository.findByDayPlanId(dayPlanId);
+    }
+
     @GetMapping
-    public List<Location> getAllLocations() {
-        return locationService.getAllLocations();
+    public ResponseEntity<List<Location>> getAllLocations() {
+        return ResponseEntity.ok(locationService.getAllLocations());
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<Location> getLocationById(@PathVariable long id) {
-        Optional<Location> location = locationService.getLocationById(id);
-        if (location.isPresent()) {
-            return ResponseEntity.ok(location.get());
-        } else {
-            return ResponseEntity.notFound().build();
-        }
-    }
-
-    @PostMapping("/add")
-    public ResponseEntity<String> addLocation(@Valid @RequestBody List<LocationCreateRequest> createRequests) {
-        locationService.addLocation(createRequests);
-        return ResponseEntity.ok("Locations added successfully");
-    }
-
-    @PutMapping("/{id}")
-    public ResponseEntity<Location> updateLocation(@PathVariable long id, @Valid @RequestBody LocationUpdateRequest updateRequest) {
-        locationService.updateLocation(id, updateRequest);
-        return ResponseEntity.ok().build();
+        Location location = locationService.getLocationById(id);
+        return ResponseEntity.ok(location);
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteLocation(@PathVariable long id) {
+    public ResponseEntity<String> deleteLocation(@PathVariable long id) {
         locationService.deleteLocation(id);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok("Location deleted successfully");
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<String> updateLocation(@PathVariable long id, @RequestBody LocationUpdateRequest locationUpdateRequest) {
+        locationService.updateLocation(id, locationUpdateRequest);
+        return ResponseEntity.ok("Location updated successfully");
+    }
+
+    @PostMapping("/create")
+    public ResponseEntity<String> createLocation(@RequestBody LocationCreateRequest location) {
+        locationService.addLocation(location);
+        return ResponseEntity.ok("Location created successfully");
     }
 }
