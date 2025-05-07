@@ -2,15 +2,20 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import apiClient from '../services/axiosInstance';
 import { fetchLoggedInUser } from '../services/authService';
+import { refreshToken } from "../services/authService";
 
 const GuideModal = ({ guide, onClose }) => {
   const [currentStep, setCurrentStep] = useState(1);
   const [numberOfDays, setNumberOfDays] = useState(1);
-  const [reservationDetails, setReservationDetails] = useState([{
-    place: '',
-    date: '',
-    travelers: 1
-  }]);
+  const [reservationDetails, setReservationDetails] = useState(
+    Array(1).fill().map(() => ({
+      place: '',
+      date: '',
+      travelers: 1,
+      vehicleRequested: false,
+      vehicleDetails: ''
+    }))
+  );
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
@@ -39,7 +44,13 @@ const GuideModal = ({ guide, onClose }) => {
     
     const newDetails = [];
     for (let i = 0; i < days; i++) {
-      newDetails.push(reservationDetails[i] || { place: '', date: '', travelers: 1 });
+      newDetails.push(reservationDetails[i] || { 
+        place: '', 
+        date: '', 
+        travelers: 1,
+        vehicleRequested: false,
+        vehicleDetails: ''
+      });
     }
     setReservationDetails(newDetails);
   };
@@ -61,15 +72,14 @@ const GuideModal = ({ guide, onClose }) => {
 
     if (!currentUser || !currentUser.id) {
       setError('Please login to make a reservation');
-      navigate('/login'); // Redirect to login page if not logged in
+      navigate('/login');
       return;
     }
 
-    // Validate reservation details
     for (let i = 0; i < reservationDetails.length; i++) {
       const detail = reservationDetails[i];
       if (!detail.place || !detail.date || !detail.travelers) {
-        setError(`Please fill all fields for Day ${i + 1}`);
+        setError(`Please fill all required fields for Day ${i + 1}`);
         return;
       }
     }
@@ -83,18 +93,21 @@ const GuideModal = ({ guide, onClose }) => {
         guideId: guide.id,
         dayDetails: reservationDetails.map((detail, index) => ({
           dayNumber: index + 1,
-          place: detail.place,
+          places: detail.place,
           date: detail.date,
-          numberOfTravelers: detail.travelers
+          numberOfTravelers: detail.travelers,
+          vehicleRequested: detail.vehicleRequested,
+          vehicleDetails: detail.vehicleDetails
         }))
       };
+      console.log('Reservation Data:', reservationData);
 
       const response = await apiClient.post('/api/reservations', reservationData);
       
       if (response.status === 200) {
         onClose();
         alert('Reservation request sent successfully!');
-        navigate('/my-reservations'); // Optional: redirect to reservations page
+        navigate('/traveler-dashboard');
       }
     } catch (err) {
       console.error('Reservation failed:', err);
@@ -165,8 +178,8 @@ const GuideModal = ({ guide, onClose }) => {
   );
 
   const renderReservationForm = () => (
-    <div>
-      <h2 style={{ marginTop: 0 }}>Create Reservation</h2>
+    <div style={{ padding: '20px' }}>
+      <h2 style={{ marginTop: 0, color: '#532321' }}>Create Reservation</h2>
       <p style={{ color: '#666', marginBottom: '20px' }}>
         Booking guide: {guide.name} ({guide.expertiseCityRegion})
       </p>
@@ -183,7 +196,9 @@ const GuideModal = ({ guide, onClose }) => {
             style={{
               marginLeft: '10px',
               padding: '5px',
-              width: '60px'
+              width: '60px',
+              border: '1px solid #ddd',
+              borderRadius: '4px'
             }}
           />
         </label>
@@ -191,48 +206,58 @@ const GuideModal = ({ guide, onClose }) => {
         {reservationDetails.map((detail, index) => (
           <div key={index} style={{
             border: '1px solid #ddd',
-            borderRadius: '4px',
-            padding: '15px',
-            marginBottom: '15px',
+            borderRadius: '8px',
+            padding: '20px',
+            marginBottom: '20px',
             backgroundColor: '#f9f9f9'
           }}>
-            <h4 style={{ marginTop: 0, marginBottom: '15px' }}>Day {index + 1} Details</h4>
+            <h4 style={{ marginTop: 0, marginBottom: '15px', color: '#532321' }}>
+              Day {index + 1} Details
+            </h4>
             
-            <div style={{ marginBottom: '10px' }}>
-              <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500' }}>Place:</label>
+            <div style={{ marginBottom: '15px' }}>
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>
+                Places to Visit:
+              </label>
               <input
                 type="text"
                 value={detail.place}
                 onChange={(e) => handleDetailChange(index, 'place', e.target.value)}
                 style={{
                   width: '100%',
-                  padding: '8px',
+                  padding: '8px 12px',
                   borderRadius: '4px',
-                  border: '1px solid #ddd'
+                  border: '1px solid #ddd',
+                  fontSize: '14px'
                 }}
-                placeholder="Where would you like to visit?"
+                placeholder="Enter the places to visit"
                 required
               />
             </div>
             
-            <div style={{ marginBottom: '10px' }}>
-              <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500' }}>Date:</label>
+            <div style={{ marginBottom: '15px' }}>
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>
+                Date:
+              </label>
               <input
                 type="date"
                 value={detail.date}
                 onChange={(e) => handleDetailChange(index, 'date', e.target.value)}
                 style={{
                   width: '100%',
-                  padding: '8px',
+                  padding: '8px 12px',
                   borderRadius: '4px',
-                  border: '1px solid #ddd'
+                  border: '1px solid #ddd',
+                  fontSize: '14px'
                 }}
                 required
               />
             </div>
             
-            <div>
-              <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500' }}>Number of Travelers:</label>
+            <div style={{ marginBottom: '15px' }}>
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>
+                Number of Travelers:
+              </label>
               <input
                 type="number"
                 min="1"
@@ -240,13 +265,59 @@ const GuideModal = ({ guide, onClose }) => {
                 onChange={(e) => handleDetailChange(index, 'travelers', parseInt(e.target.value))}
                 style={{
                   width: '100%',
-                  padding: '8px',
+                  padding: '8px 12px',
                   borderRadius: '4px',
-                  border: '1px solid #ddd'
+                  border: '1px solid #ddd',
+                  fontSize: '14px'
                 }}
                 required
               />
             </div>
+            
+            {guide.vehicleAvailability && (
+              <div style={{ marginBottom: '15px' }}>
+                <label style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  marginBottom: '8px',
+                  cursor: 'pointer'
+                }}>
+                  <input
+                    type="checkbox"
+                    checked={detail.vehicleRequested}
+                    onChange={(e) => handleDetailChange(index, 'vehicleRequested', e.target.checked)}
+                    style={{ 
+                      marginRight: '10px',
+                      width: '18px',
+                      height: '18px',
+                      cursor: 'pointer'
+                    }}
+                  />
+                  <span style={{ fontWeight: '500' }}>Request Vehicle for this day</span>
+                </label>
+                
+                {detail.vehicleRequested && (
+                  <div style={{ marginTop: '10px' }}>
+                    <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>
+                      Vehicle Details:
+                    </label>
+                    <textarea
+                      value={detail.vehicleDetails}
+                      onChange={(e) => handleDetailChange(index, 'vehicleDetails', e.target.value)}
+                      style={{
+                        width: '100%',
+                        padding: '8px 12px',
+                        borderRadius: '4px',
+                        border: '1px solid #ddd',
+                        minHeight: '80px',
+                        fontSize: '14px'
+                      }}
+                      placeholder="Any special requirements for the vehicle?"
+                    />
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         ))}
       </div>
@@ -254,7 +325,10 @@ const GuideModal = ({ guide, onClose }) => {
       {error && (
         <div style={{ 
           color: 'red', 
-          margin: '10px 0',
+          margin: '15px 0',
+          padding: '10px',
+          backgroundColor: '#ffebee',
+          borderRadius: '4px',
           textAlign: 'center'
         }}>
           {error}
@@ -264,7 +338,7 @@ const GuideModal = ({ guide, onClose }) => {
       <div style={{
         display: 'flex',
         justifyContent: 'space-between',
-        gap: '10px',
+        gap: '15px',
         marginTop: '20px'
       }}>
         <button
@@ -274,12 +348,13 @@ const GuideModal = ({ guide, onClose }) => {
             backgroundColor: '#f0f0f0',
             border: 'none',
             borderRadius: '4px',
-            cursor: 'pointer'
+            cursor: 'pointer',
+            fontWeight: '500'
           }}
         >
           Back
         </button>
-        <div style={{ display: 'flex', gap: '10px' }}>
+        <div style={{ display: 'flex', gap: '15px' }}>
           <button
             onClick={onClose}
             style={{
@@ -287,7 +362,8 @@ const GuideModal = ({ guide, onClose }) => {
               backgroundColor: '#f0f0f0',
               border: 'none',
               borderRadius: '4px',
-              cursor: 'pointer'
+              cursor: 'pointer',
+              fontWeight: '500'
             }}
           >
             Cancel
@@ -302,6 +378,7 @@ const GuideModal = ({ guide, onClose }) => {
               border: 'none',
               borderRadius: '4px',
               cursor: 'pointer',
+              fontWeight: '500',
               opacity: isSubmitting ? 0.7 : 1
             }}
           >
