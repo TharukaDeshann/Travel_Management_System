@@ -7,7 +7,7 @@ import lombok.Setter;
 import java.time.LocalDate;
 
 @Entity
-@Table(name = "guide_reservation_day_detail")
+@Table(name = "guide_reservation_day_details")
 @Getter
 @Setter
 public class GuideReservationDayDetail {
@@ -23,12 +23,18 @@ public class GuideReservationDayDetail {
     @Column(nullable = false)
     private Integer dayNumber;
 
-    @Column(nullable = false)
-    private String place;
+    @Column(nullable = false, length = 500)
+    private String places;
 
     @Column(nullable = false)
     private LocalDate date;
 
     @Column(nullable = false)
     private Integer numberOfTravelers;
+
+    @Column
+    private Boolean vehicleRequested = false;
+
+    @Column(length = 500)
+    private String vehicleDetails;
 }

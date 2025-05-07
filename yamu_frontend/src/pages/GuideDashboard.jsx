@@ -4,52 +4,110 @@ import yamuLogo from '../images/yamu-logo.png';
 import profileIcon from '../images/profile.png';
 import apiClient from "../services/axiosInstance";
 
+const RESERVATIONS_STORAGE_KEY = 'guideReservations';
+
 const GuideDashboard = ({ currentUser }) => {
   const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState('upcoming');
   const [reservations, setReservations] = useState([]);
-  const [activeTab, setActiveTab] = useState("upcoming");
-
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [unreadCount, setUnreadCount] = useState(0);
+  
   useEffect(() => {
-    if (currentUser?.id) {
-      const fetchReservations = async () => {
-        try {
-          const response = await apiClient.get(`/api/reservations/guide/${currentUser.id}`);
-          console.log("Fetched reservations:", response.data);
-
-          console.log("Current User ID:", currentUser.id);    
-          setReservations(response.data);
-        } catch (error) {
-          console.error("Error fetching reservations:", error);
+    currentUser = JSON.parse(localStorage.getItem("user"));
+    const loadReservations = async () => {
+      try {
+        const savedReservations = localStorage.getItem(RESERVATIONS_STORAGE_KEY);
+        if (savedReservations) {
+          const parsed = JSON.parse(savedReservations);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setReservations(parsed);
+          }
         }
-      };
-      fetchReservations();
-    }
+
+        if (currentUser?.id) {
+          const response = await apiClient.get(`/api/reservations/guide/${currentUser.id}`);
+          const freshData = response.data;
+          setReservations(freshData);
+          localStorage.setItem(RESERVATIONS_STORAGE_KEY, JSON.stringify(freshData));
+
+          // Fetch unread message count
+          const countResponse = await apiClient.get('/api/messages/unread-count');
+          setUnreadCount(countResponse.data);
+        } else {
+          setError("User information not available. Please login again.");
+        }
+      } catch (err) {
+        console.error("Error loading reservations:", err);
+        //setError("Failed to load reservations. Showing cached data if available.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadReservations();
   }, [currentUser]);
 
-  const handleReservationAction = async (reservationId, action) => {
+  const refreshData = async () => {
     try {
-      const endpoint = action === 'confirm' ? 'confirm' : 'decline';
-      await apiClient.put(`/api/reservations/${reservationId}/${endpoint}`);
-      
-      // Update local state
-      setReservations(prev => prev.map(res => 
-        res.id === reservationId 
-          ? { ...res, status: action === 'confirm' ? 'CONFIRMED' : 'DECLINED' } 
-          : res
-      ));
-    } catch (error) {
-      console.error(`Failed to ${action} reservation:`, error);
+      currentUser = JSON.parse(localStorage.getItem("user"));
+      if (!currentUser?.id) {
+        setError("User information not available. Cannot refresh.");
+        return;
+      }
+
+      setLoading(true);
+      const response = await apiClient.get(`/api/reservations/guide/${currentUser.id}`);
+      const freshData = response.data;
+      setReservations(freshData);
+      localStorage.setItem(RESERVATIONS_STORAGE_KEY, JSON.stringify(freshData));
+      setError(null);
+    } catch (err) {
+      console.error("Refresh failed:", err);
+      //setError("Failed to refresh. Showing cached data.");
+    } finally {
+      setLoading(false);
     }
   };
 
-  const filteredReservations = reservations.filter(res => {
-    if (activeTab === "upcoming") {
-      return res.status === 'PENDING' || res.status === 'CONFIRMED';
-    } else if (activeTab === "past") {
-      return res.status === 'DECLINED';
+  const handleStatusChange = async (reservationId, newStatus) => {
+    try {
+      currentUser = JSON.parse(localStorage.getItem("user"));currentUser = JSON.parse(localStorage.getItem("user"));
+      if (!currentUser?.id) {
+        setError("User information not available. Cannot update status.");
+        return;
+      }
+
+      let endpoint;
+      switch (newStatus) {
+        case 'CONFIRMED': endpoint = 'confirm'; break;
+        case 'DECLINED': endpoint = 'decline'; break;
+        case 'COMPLETED': endpoint = 'complete'; break;
+        default: return;
+      }
+
+      const response = await apiClient.put(`/api/reservations/${reservationId}/${endpoint}`);
+      
+      const updatedReservations = reservations.map(res => 
+        res.id === reservationId ? response.data : res
+      );
+      
+      setReservations(updatedReservations);
+      localStorage.setItem(RESERVATIONS_STORAGE_KEY, JSON.stringify(updatedReservations));
+    } catch (err) {
+      console.error("Status change failed:", err);
+      setError("Failed to update status. Please try again.");
     }
-    return true;
-  });
+  };
+
+  const upcomingReservations = reservations
+    .filter(res => res.status !== 'COMPLETED')
+    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+  const pastReservations = reservations
+    .filter(res => res.status === 'COMPLETED')
+    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
   return (
     <div style={{
@@ -57,7 +115,6 @@ const GuideDashboard = ({ currentUser }) => {
       backgroundColor: "#f5f5f5",
       fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif"
     }}>
-      {/* Navigation Bar */}
       <nav style={{
         display: "flex",
         justifyContent: "space-between",
@@ -75,11 +132,7 @@ const GuideDashboard = ({ currentUser }) => {
           gap: "10px",
           cursor: "pointer"
         }} onClick={() => navigate('/')}>
-          <img 
-            src={yamuLogo} 
-            alt="Yamu Logo" 
-            style={{ height: "40px" }}
-          />
+          <img src={yamuLogo} alt="Yamu Logo" style={{ height: "40px" }} />
           <span style={{
             fontSize: "24px",
             fontWeight: "bold",
@@ -87,82 +140,68 @@ const GuideDashboard = ({ currentUser }) => {
           }}>YAMU</span>
         </div>
         
-        <div style={{
-          display: "flex",
-          gap: "30px"
-        }}>
-          <button 
-            style={{
-              background: "none",
-              border: "none",
-              color: "#532321",
-              fontWeight: "600",
-              fontSize: "16px",
-              cursor: "pointer"
-            }}
-            onClick={() => navigate('/guide-dashboard')}
-          >
-            Dashboard
-          </button>
-          <button 
-            style={{
-              background: "none",
-              border: "none",
-              color: "#333",
-              fontSize: "16px",
-              cursor: "pointer"
-            }}
-            onClick={() => navigate('/guide-calendar')}
-          >
-            Calendar
-          </button>
-          <button 
-            style={{
-              background: "none",
-              border: "none",
-              color: "#333",
-              fontSize: "16px",
-              cursor: "pointer"
-            }}
-            onClick={() => navigate('/guide-reviews')}
-          >
-            Reviews
-          </button>
-          <button 
-            style={{
-              background: "none",
-              border: "none",
-              color: "#333",
-              fontSize: "16px",
-              cursor: "pointer"
-            }}
-            onClick={() => navigate('/emergency-contacts')}
-          >
-            Emergency Contacts
-          </button>
-          <button 
-            style={{
-              background: "none",
-              border: "none",
-              color: "#333",
-              fontSize: "16px",
-              cursor: "pointer"
-            }}
-            onClick={() => navigate('/inbox')}
-          >
-            Inbox
-          </button>
+        <div style={{ display: "flex", gap: "30px" }}>
+          {['Dashboard', 'Calendar', 'Reviews', 'Emergency Contacts'].map((item) => (
+            <button
+              key={item}
+              style={{
+                background: "none",
+                border: "none",
+                color: "#333",
+                fontSize: "16px",
+                cursor: "pointer",
+                padding: "5px 10px",
+                ':hover': {
+                  color: "#532321"
+                }
+              }}
+              onClick={() => navigate(`/guide-${item.toLowerCase().replace(' ', '-')}`)}
+            >
+              {item}
+            </button>
+          ))}
+          <div style={{ position: 'relative' }}>
+            <button
+              style={{
+                background: "none",
+                border: "none",
+                color: "#333",
+                fontSize: "16px",
+                cursor: "pointer",
+                padding: "5px 10px",
+                ':hover': {
+                  color: "#532321"
+                }
+              }}
+              onClick={() => navigate('/inbox')}
+            >
+              Inbox
+            </button>
+            {unreadCount > 0 && (
+              <span style={{
+                position: 'absolute',
+                top: '-5px',
+                right: '-5px',
+                backgroundColor: '#532321',
+                color: 'white',
+                borderRadius: '50%',
+                width: '18px',
+                height: '18px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '10px'
+              }}>
+                {unreadCount}
+              </span>
+            )}
+          </div>
         </div>
         
-        <div style={{
-          display: "flex",
-          alignItems: "center",
-          gap: "20px"
-        }}>
-          <span style={{ fontSize: "20px" }}>🔔</span>
+        <div style={{ display: "flex", alignItems: "center", gap: "20px" }}>
           <img 
             src={profileIcon} 
-            alt="User" 
+            alt="Profile" 
             style={{
               width: "40px",
               height: "40px",
@@ -175,220 +214,329 @@ const GuideDashboard = ({ currentUser }) => {
         </div>
       </nav>
 
-      {/* Main Content */}
       <div style={{
         padding: "40px",
         maxWidth: "1200px",
         margin: "0 auto"
       }}>
-        {/* My Tours Heading */}
-        <div style={{ marginTop: "20px" }}>
-          <div style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            marginBottom: "20px"
-          }}>
-            <h3 style={{
-              fontSize: "24px",
-              color: "#532321",
-              fontWeight: "600",
-              margin: 0
+        <div style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginBottom: "30px"
+        }}>
+          <h3 style={{
+            fontSize: "24px",
+            color: "#532321",
+            fontWeight: "600",
+            margin: 0
+          }}>My Tours</h3>
+          
+          <div style={{ display: "flex", gap: "10px" }}>
+            <button onClick={refreshData} style={{
+              padding: "8px 16px",
+              backgroundColor: "#f0f0f0",
+              border: "none",
+              borderRadius: "6px",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              gap: "5px",
+              ':hover': {
+                backgroundColor: "#e0e0e0"
+              }
             }}>
-              My Tours
-            </h3>
+              <span>↻</span> Refresh
+            </button>
             
             <div style={{
               display: "flex",
               gap: "10px",
-              border: "1px solid #ddd",
+              backgroundColor: "#f0f0f0",
               borderRadius: "8px",
-              overflow: "hidden"
+              padding: "4px"
             }}>
               <button
-                onClick={() => setActiveTab("upcoming")}
+                onClick={() => setActiveTab('upcoming')}
                 style={{
                   padding: "8px 16px",
-                  backgroundColor: activeTab === "upcoming" ? "#532321" : "white",
-                  color: activeTab === "upcoming" ? "white" : "#333",
+                  borderRadius: "6px",
                   border: "none",
-                  cursor: "pointer"
+                  background: activeTab === 'upcoming' ? "#532321" : "transparent",
+                  color: activeTab === 'upcoming' ? "white" : "#333",
+                  cursor: "pointer",
+                  fontWeight: "500"
                 }}
               >
                 Upcoming
               </button>
               <button
-                onClick={() => setActiveTab("past")}
+                onClick={() => setActiveTab('past')}
                 style={{
                   padding: "8px 16px",
-                  backgroundColor: activeTab === "past" ? "#532321" : "white",
-                  color: activeTab === "past" ? "white" : "#333",
+                  borderRadius: "6px",
                   border: "none",
-                  cursor: "pointer"
+                  background: activeTab === 'past' ? "#532321" : "transparent",
+                  color: activeTab === 'past' ? "white" : "#333",
+                  cursor: "pointer",
+                  fontWeight: "500"
                 }}
               >
                 Past
               </button>
             </div>
           </div>
-          
-          {filteredReservations.length === 0 ? (
-            <div style={{
-              backgroundColor: "white",
-              padding: "40px",
-              borderRadius: "8px",
-              textAlign: "center",
-              boxShadow: "0 2px 4px rgba(0,0,0,0.1)"
-            }}>
-              <p style={{ color: "#777", fontSize: "16px", margin: 0 }}>
-                {activeTab === "upcoming" 
-                  ? "You have no upcoming tours at the moment." 
-                  : "No past tours found."}
-              </p>
-            </div>
-          ) : (
-            <div style={{
-              display: 'grid',
-              gap: '20px'
-            }}>
-              {filteredReservations.map(reservation => (
-                <div key={reservation.id} style={{
-                  border: '1px solid #ddd',
-                  borderRadius: '8px',
-                  padding: '20px',
-                  backgroundColor: 'white',
-                  boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-                }}>
-                  <div style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    marginBottom: '15px',
-                    alignItems: 'center'
-                  }}>
-                    <div>
-                      <h4 style={{ margin: 0, fontSize: '18px' }}>
-                        Reservation from {reservation.traveler.firstName} {reservation.traveler.lastName}
-                      </h4>
-                      <p style={{ margin: '5px 0 0', color: '#666', fontSize: '14px' }}>
-                        Created: {new Date(reservation.createdAt).toLocaleDateString()}
-                      </p>
-                    </div>
-                    <span style={{
-                      padding: '5px 10px',
-                      borderRadius: '4px',
-                      backgroundColor: 
-                        reservation.status === 'PENDING' ? '#FFD700' :
-                        reservation.status === 'CONFIRMED' ? '#90EE90' : '#FF6347',
-                      color: 'black',
-                      fontWeight: 'bold',
-                      fontSize: '14px'
-                    }}>
-                      {reservation.status}
-                    </span>
-                  </div>
-                  
-                  <div style={{
-                    display: 'grid',
-                    gridTemplateColumns: '1fr 1fr',
-                    gap: '20px',
-                    marginBottom: '15px'
-                  }}>
-                    <div>
-                      <p style={{ margin: '5px 0', fontWeight: '500' }}>
-                        <span style={{ color: '#666' }}>Contact:</span> {reservation.traveler.contactNumber}
-                      </p>
-                      <p style={{ margin: '5px 0', fontWeight: '500' }}>
-                        <span style={{ color: '#666' }}>Email:</span> {reservation.traveler.email}
-                      </p>
-                    </div>
-                    <div>
-                      <p style={{ margin: '5px 0', fontWeight: '500' }}>
-                        <span style={{ color: '#666' }}>Duration:</span> {reservation.numberOfDays} days
-                      </p>
-                      <p style={{ margin: '5px 0', fontWeight: '500' }}>
-                        <span style={{ color: '#666' }}>Total Travelers:</span> {reservation.dayDetails.reduce((sum, day) => sum + day.numberOfTravelers, 0)}
-                      </p>
-                    </div>
-                  </div>
-                  
-                  <div style={{ marginTop: '15px' }}>
-                    <h5 style={{ 
-                      marginBottom: '10px',
-                      paddingBottom: '5px',
-                      borderBottom: '1px solid #eee'
-                    }}>
-                      Itinerary Details:
-                    </h5>
-                    {reservation.dayDetails.map((day, index) => (
-                      <div key={index} style={{
-                        padding: '15px',
-                        border: '1px solid #eee',
-                        borderRadius: '4px',
-                        marginBottom: '10px',
-                        backgroundColor: '#f9f9f9'
-                      }}>
-                        <p style={{ margin: '5px 0', fontWeight: '500' }}>
-                          <span style={{ color: '#666' }}>Day {day.dayNumber}:</span> {day.place}
-                        </p>
-                        <p style={{ margin: '5px 0', fontWeight: '500' }}>
-                          <span style={{ color: '#666' }}>Date:</span> {new Date(day.date).toLocaleDateString()}
-                        </p>
-                        <p style={{ margin: '5px 0', fontWeight: '500' }}>
-                          <span style={{ color: '#666' }}>Travelers:</span> {day.numberOfTravelers}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                  
-                  {reservation.status === 'PENDING' && (
-                    <div style={{
-                      display: 'flex',
-                      justifyContent: 'flex-end',
-                      gap: '10px',
-                      marginTop: '20px'
-                    }}>
-                      <button
-                        onClick={() => handleReservationAction(reservation.id, 'decline')}
-                        style={{
-                          padding: '8px 16px',
-                          backgroundColor: '#FF6347',
-                          color: 'white',
-                          border: 'none',
-                          borderRadius: '4px',
-                          cursor: 'pointer',
-                          fontWeight: '500',
-                          transition: 'all 0.2s'
-                        }}
-                        onMouseOver={(e) => e.target.style.opacity = '0.8'}
-                        onMouseOut={(e) => e.target.style.opacity = '1'}
-                      >
-                        Decline
-                      </button>
-                      <button
-                        onClick={() => handleReservationAction(reservation.id, 'confirm')}
-                        style={{
-                          padding: '8px 16px',
-                          backgroundColor: '#4CAF50',
-                          color: 'white',
-                          border: 'none',
-                          borderRadius: '4px',
-                          cursor: 'pointer',
-                          fontWeight: '500',
-                          transition: 'all 0.2s'
-                        }}
-                        onMouseOver={(e) => e.target.style.opacity = '0.8'}
-                        onMouseOut={(e) => e.target.style.opacity = '1'}
-                      >
-                        Confirm
-                      </button>
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
+        </div>
+
+        {error && (
+          <div style={{
+            padding: "15px",
+            backgroundColor: "#ffebee",
+            color: "#d32f2f",
+            borderRadius: "4px",
+            marginBottom: "20px"
+          }}>
+            {error}
+          </div>
+        )}
+
+        {loading ? (
+          <div style={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            height: "200px"
+          }}>
+            <p>Loading reservations...</p>
+          </div>
+        ) : activeTab === 'upcoming' ? (
+          <div style={{ display: "grid", gap: "20px" }}>
+            {upcomingReservations.length > 0 ? (
+              upcomingReservations.map(reservation => (
+                <ReservationCard 
+                  key={reservation.id}
+                  reservation={reservation}
+                  onStatusChange={handleStatusChange}
+                />
+              ))
+            ) : (
+              <div style={{
+                padding: "40px",
+                textAlign: "center",
+                backgroundColor: "white",
+                borderRadius: "8px",
+                boxShadow: "0 2px 8px rgba(0,0,0,0.1)"
+              }}>
+                <p>No upcoming reservations found</p>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div style={{ display: "grid", gap: "20px" }}>
+            {pastReservations.length > 0 ? (
+              pastReservations.map(reservation => (
+                <ReservationCard 
+                  key={reservation.id}
+                  reservation={reservation}
+                  isPast={true}
+                />
+              ))
+            ) : (
+              <div style={{
+                padding: "40px",
+                textAlign: "center",
+                backgroundColor: "white",
+                borderRadius: "8px",
+                boxShadow: "0 2px 8px rgba(0,0,0,0.1)"
+              }}>
+                <p>No past reservations found</p>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+const ReservationCard = ({ reservation, onStatusChange, isPast = false }) => {
+  const statusColors = {
+    'PENDING': '#FFA500',
+    'CONFIRMED': '#4CAF50',
+    'DECLINED': '#F44336',
+    'COMPLETED': '#2196F3'
+  };
+
+  return (
+    <div style={{
+      backgroundColor: "white",
+      borderRadius: "8px",
+      boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+      padding: "20px",
+      position: "relative"
+    }}>
+      <div style={{
+        position: "absolute",
+        top: "20px",
+        right: "20px",
+        padding: "4px 8px",
+        borderRadius: "4px",
+        color: "white",
+        fontSize: "12px",
+        fontWeight: "600",
+        backgroundColor: statusColors[reservation.status] || '#9E9E9E'
+      }}>
+        {reservation.status}
+      </div>
+
+      <div style={{ marginBottom: "15px" }}>
+        <h4 style={{
+          margin: "0 0 5px 0",
+          fontSize: "18px",
+          fontWeight: "600",
+          color: "#532321"
+        }}>Reservation #{reservation.id}</h4>
+        <p style={{
+          margin: 0,
+          color: "#666",
+          fontSize: "14px"
+        }}>
+          Created: {new Date(reservation.createdAt).toLocaleString()}
+        </p>
+      </div>
+
+      <div style={{
+        display: "flex",
+        gap: "20px",
+        marginBottom: "15px"
+      }}>
+        <div>
+          <h5 style={{
+            margin: "0 0 8px 0",
+            fontSize: "14px",
+            color: "#532321",
+            fontWeight: "500"
+          }}>Traveler Details</h5>
+          <p style={{ margin: "4px 0", fontSize: "14px" }}>
+            <strong>Name:</strong> {reservation.traveler?.firstName} {reservation.traveler?.lastName}
+          </p>
+          <p style={{ margin: "4px 0", fontSize: "14px" }}>
+            <strong>Contact:</strong> {reservation.traveler?.contactNumber}
+          </p>
+        </div>
+
+        <div>
+          <h5 style={{
+            margin: "0 0 8px 0",
+            fontSize: "14px",
+            color: "#532321",
+            fontWeight: "500"
+          }}>Tour Details</h5>
+          <p style={{ margin: "4px 0", fontSize: "14px" }}>
+            <strong>Days:</strong> {reservation.numberOfDays}
+          </p>
+          <p style={{ margin: "4px 0", fontSize: "14px" }}>
+            <strong>Travelers:</strong> {reservation.dayDetails?.[0]?.numberOfTravelers || 'N/A'}
+          </p>
         </div>
       </div>
+
+      <div style={{ marginBottom: "20px" }}>
+        <h5 style={{
+          margin: "0 0 8px 0",
+          fontSize: "14px",
+          color: "#532321",
+          fontWeight: "500"
+        }}>Itinerary</h5>
+        <div style={{ display: "grid", gap: "10px" }}>
+          {reservation.dayDetails?.map((day, index) => (
+            <div key={index} style={{
+              padding: "10px",
+              backgroundColor: "#f9f9f9",
+              borderRadius: "4px"
+            }}>
+              <p style={{ margin: "4px 0", fontWeight: "500" }}>
+                Day {day.dayNumber}: {day.places}
+              </p>
+              <p style={{ margin: "4px 0", fontSize: "13px" }}>
+                <strong>Date:</strong> {new Date(day.date).toLocaleDateString()}
+              </p>
+              {day.vehicleRequested && (
+                <p style={{ margin: "4px 0", fontSize: "13px" }}>
+                  <strong>Vehicle:</strong> {day.vehicleDetails || 'No details'}
+                </p>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {!isPast && (
+        <div style={{
+          display: "flex",
+          justifyContent: "flex-end",
+          gap: "10px"
+        }}>
+          {reservation.status === 'PENDING' && (
+            <>
+              <button
+                onClick={() => onStatusChange(reservation.id, 'CONFIRMED')}
+                style={{
+                  padding: "8px 16px",
+                  backgroundColor: "#4CAF50",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "4px",
+                  cursor: "pointer",
+                  fontSize: "14px",
+                  ':hover': {
+                    backgroundColor: "#3e8e41"
+                  }
+                }}
+              >
+                Confirm
+              </button>
+              <button
+                onClick={() => onStatusChange(reservation.id, 'DECLINED')}
+                style={{
+                  padding: "8px 16px",
+                  backgroundColor: "#F44336",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "4px",
+                  cursor: "pointer",
+                  fontSize: "14px",
+                  ':hover': {
+                    backgroundColor: "#d32f2f"
+                  }
+                }}
+              >
+                Decline
+              </button>
+            </>
+          )}
+          
+          {reservation.status === 'CONFIRMED' && (
+            <button
+              onClick={() => onStatusChange(reservation.id, 'COMPLETED')}
+              style={{
+                padding: "8px 16px",
+                backgroundColor: "#2196F3",
+                color: "white",
+                border: "none",
+                borderRadius: "4px",
+                cursor: "pointer",
+                fontSize: "14px",
+                ':hover': {
+                  backgroundColor: "#1976D2"
+                }
+              }}
+            >
+              Mark as Completed
+            </button>
+          )}
+        </div>
+      )}
     </div>
   );
 };

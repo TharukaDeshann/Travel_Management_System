@@ -83,7 +83,8 @@ const Login = () => {
         try {
           const userData = await fetchLoggedInUser();
           setUser(userData);
-          
+          console.log("User data fetched:", userData);
+          localStorage.setItem("user", JSON.stringify(userData));
           // Redirect based on role
           if (userData.role === "TRAVELER") {
             navigate("/traveler-dashboard");

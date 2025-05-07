@@ -131,7 +131,7 @@ export default function TravelerDashboard({ currentUser }) {
   };
 
   const handleNavigateToGuides = () => {
-    navigate('/guides', { state: { currentUser } });
+    navigate('/guides-page', { state: { currentUser } });
   };
 
   const CurrencyDropdown = () => (
@@ -181,11 +181,18 @@ export default function TravelerDashboard({ currentUser }) {
             <li
               key={item}
               className="nav-link"
-              onClick={() => item === 'Guides' && handleNavigateToGuides()}
+              onClick={() => {
+                if (item === 'Guides') {
+                  handleNavigateToGuides();
+                } else if (item === 'Dashboard') {
+                  navigate('/traveler-dashboard');
+                }
+              }}
             >
               {item}
             </li>
           ))}
+          {/* Add this to the nav-links array */}
           <li
             key="Inbox"
             className="nav-link"
@@ -202,7 +209,7 @@ export default function TravelerDashboard({ currentUser }) {
             <span className="notification-badge">3</span>
           </div>
           <div className="icon-container">
-            <img src={profileIcon} alt="Profile" className="profile-image" />
+            <img src={profileIcon} alt="Profile" className="profile-image" onClick={() => navigate('/profile')} />
           </div>
         </div>
       </nav>
@@ -235,7 +242,7 @@ export default function TravelerDashboard({ currentUser }) {
               <h2 className="text-lg font-bold">{section.title}</h2>
               <button 
                 className="text-blue-500"
-                onClick={() => section.title === "Discover Tour Guides" ? navigate('/guides') : null}
+                onClick={() => section.title === "Discover Tour Guides" ? navigate('/guides-page') : null}
               >
                 See more →
               </button>
