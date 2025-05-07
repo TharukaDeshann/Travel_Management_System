@@ -21,7 +21,8 @@ import GuidesPage from "./pages/GuidesPage.jsx";
 import WeatherCard from "./components/WeatherCard.jsx";
 import ItineraryPlanner from "./pages/ItineraryPlanner.jsx";
 import ItinerarySelection from "./pages/ItinerarySelection.jsx";
-import FinalizeItinerary from "./pages/FinalizeItinerary.jsx"; // Import FinalizeItinerary
+import FinalizeItinerary from "./pages/FinalizeItinerary.jsx"; 
+import Inbox from "./pages/Inbox.jsx";// Import FinalizeItinerary
 
 import VerifyEmail from "./pages/VerifyEmail.jsx";
 import VerifyEmailPending from "./pages/VerifyEmailPending.jsx";
@@ -30,6 +31,7 @@ import UpdateEmail from "./pages/profile/components/UpdateEmail.jsx";
 import UpdatePassword from "./pages/profile/components/UpdatePassword.jsx";
 import AdminDashboard from "./pages/AdminDashboard.jsx";
 import UsersSocialPage from "./pages/UsersSocialPage.jsx";
+
 
 const App = () => {
   return (
@@ -69,7 +71,12 @@ const App = () => {
             <Route path="/guide-calendar" element={<GuideCalendar />} />
             <Route path="/visit-plan" element={<VisitPlanPage />} />
             <Route path="/guides-page" element={<GuidesPage />} />
+<<<<<<< HEAD
+            <Route path="/inbox" element={<Inbox />} />
+
+=======
             <Route path="/users/users-by-role" element={<UsersSocialPage />} />
+>>>>>>> 0da65856030fb21be05a0c1b4541f6f1126092ba
 
             {/* Profile Routes */}
             <Route path="/profile" element={<UserProfile />} />
