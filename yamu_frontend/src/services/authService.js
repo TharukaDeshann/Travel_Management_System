@@ -60,27 +60,15 @@ export const refreshToken = async () => {
 };
 
 export const logoutUser = async () => {
-  const { setUser } = useUser();
-
   try {
-    await axios.post(
-      `${API_URL}/logout`, 
-      {}, 
-      {
-        withCredentials: true, 
-      }
-    );
-    
-    // Clear token expiration
+    await axios.post(`${API_URL}/logout`, {}, { withCredentials: true });
     window.tokenExpirationTime = null;
-    setUser(null);
-    
   } catch (error) {
     console.error("Logout error:", error);
+    throw error;
   }
-  // Redirect to login page
-  window.location.href = "/login";
 };
+
 
 // Add function to check if user is logged in
 export const isLoggedIn = () => {
