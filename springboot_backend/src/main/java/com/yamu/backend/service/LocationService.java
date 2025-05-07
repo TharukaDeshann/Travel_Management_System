@@ -5,7 +5,9 @@ import java.util.Optional;
 
 import com.yamu.backend.dto.LocationCreateRequest;
 import com.yamu.backend.dto.LocationUpdateRequest;
+import com.yamu.backend.model.DayPlan;
 import com.yamu.backend.model.Location;
+import com.yamu.backend.repository.DayPlanRepository;
 import com.yamu.backend.repository.LocationRepository;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,9 +18,11 @@ import org.springframework.transaction.annotation.Transactional;
 public class LocationService {
 
     private final LocationRepository locationRepository;
+    private final DayPlanRepository dayPlanRepository;
 
     @Autowired
-    public LocationService(LocationRepository locationRepository) {
+    public LocationService(LocationRepository locationRepository, DayPlanRepository dayPlanRepository) {
+        this.dayPlanRepository = dayPlanRepository;
         this.locationRepository = locationRepository;
     }
 
@@ -61,12 +65,19 @@ public class LocationService {
     }
 
     public void addLocation(LocationCreateRequest createRequest) {
-        
-            Location location = new Location();
-            location.setName(createRequest.getName());
-            location.setLongitude(createRequest.getLongitude());
-            location.setLatitude(createRequest.getLatitude());
-            locationRepository.save(location);
-        
-    }
+    DayPlan dayPlan = dayPlanRepository.findById(createRequest.getDayPlanId())
+        .orElseThrow(() -> new RuntimeException("DayPlan not found"));
+
+    Location location = new Location();
+    location.setDayPlan(dayPlan); // 💥 This is what was missing
+    location.setName(createRequest.getName());
+    location.setLatitude(createRequest.getLatitude());
+    location.setLongitude(createRequest.getLongitude());
+    location.setPositionIndex(createRequest.getPositionIndex());
+    location.setAddress(createRequest.getAddress());
+    location.setPlaceId(createRequest.getPlaceId());
+    location.setNotes(createRequest.getNotes());
+
+    locationRepository.save(location);
+}
 }

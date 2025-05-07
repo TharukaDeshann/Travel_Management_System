@@ -21,6 +21,9 @@ public class ItineraryRequest {
     @Setter
     public static class DayPlanRequest {
         private Date date;
+        private String hotelDetails;      // Optional
+        private String transportDetails;  // Optional
+        private String guideDetails;      // Optional
         private List<LocationRequest> locations;
 
         @Getter
