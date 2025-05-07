@@ -38,6 +38,17 @@ public class GuideReservationByTravelerService {
         User guide = userRepository.findById(request.getGuideId())
                 .orElseThrow(() -> new RuntimeException("Guide not found"));
 
+        if (!(guide instanceof Guide)) {
+            throw new RuntimeException("Invalid guide user");
+        }
+
+        boolean hasVehicleRequest = request.getDayDetails().stream()
+                .anyMatch(CreateReservationRequest.DayDetail::isVehicleRequested);
+        
+        if (hasVehicleRequest && !((Guide) guide).isVehicleAvailability()) {
+            throw new RuntimeException("This guide doesn't have vehicle availability");
+        }
+
         GuideReservationByTraveler reservation = new GuideReservationByTraveler();
         reservation.setTraveler(traveler);
         reservation.setGuide(guide);
@@ -49,9 +60,11 @@ public class GuideReservationByTravelerService {
                     GuideReservationDayDetail dayDetail = new GuideReservationDayDetail();
                     dayDetail.setReservation(reservation);
                     dayDetail.setDayNumber(detail.getDayNumber());
-                    dayDetail.setPlace(detail.getPlace());
+                    dayDetail.setPlaces(detail.getPlaces());
                     dayDetail.setDate(LocalDate.parse(detail.getDate()));
                     dayDetail.setNumberOfTravelers(detail.getNumberOfTravelers());
+                    dayDetail.setVehicleRequested(detail.isVehicleRequested());
+                    dayDetail.setVehicleDetails(detail.getVehicleDetails());
                     return dayDetail;
                 })
                 .collect(Collectors.toList());
@@ -69,7 +82,8 @@ public class GuideReservationByTravelerService {
     }
 
     @Transactional
-    public GuideReservationByTraveler updateReservationStatus(Long reservationId, GuideReservationByTraveler.ReservationStatus status) {
+    public GuideReservationByTraveler updateReservationStatus(Long reservationId, 
+            GuideReservationByTraveler.ReservationStatus status) {
         GuideReservationByTraveler reservation = reservationRepository.findById(reservationId)
                 .orElseThrow(() -> new RuntimeException("Reservation not found"));
         

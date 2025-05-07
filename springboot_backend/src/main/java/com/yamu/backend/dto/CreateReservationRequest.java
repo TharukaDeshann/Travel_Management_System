@@ -1,10 +1,17 @@
 package com.yamu.backend.dto;
 
+import jakarta.validation.constraints.*;
 import java.util.List;
 
 public class CreateReservationRequest {
+
+    @NotNull(message = "Traveler ID is required")
     private Long travelerId;
+    
+    @NotNull(message = "Guide ID is required")
     private Long guideId;
+    
+    @NotEmpty(message = "At least one day detail is required")
     private List<DayDetail> dayDetails;
 
     // Getters and Setters
@@ -33,10 +40,20 @@ public class CreateReservationRequest {
     }
 
     public static class DayDetail {
+        @Min(value = 1, message = "Day number must be at least 1")
         private int dayNumber;
-        private String place;
+        
+        @NotBlank(message = "Place is required")
+        private String places;
+        
+        @NotNull(message = "Date is required")
         private String date;
+        
+        @Min(value = 1, message = "There must be at least 1 traveler")
         private int numberOfTravelers;
+        
+        private boolean vehicleRequested;
+        private String vehicleDetails;
 
         // Getters and Setters
         public int getDayNumber() {
@@ -47,12 +64,12 @@ public class CreateReservationRequest {
             this.dayNumber = dayNumber;
         }
 
-        public String getPlace() {
-            return place;
+        public String getPlaces() {
+            return places;
         }
 
-        public void setPlace(String place) {
-            this.place = place;
+        public void setPlaces(String places) {
+            this.places = places;
         }
 
         public String getDate() {
@@ -69,6 +86,22 @@ public class CreateReservationRequest {
 
         public void setNumberOfTravelers(int numberOfTravelers) {
             this.numberOfTravelers = numberOfTravelers;
+        }
+
+        public boolean isVehicleRequested() {
+            return vehicleRequested;
+        }
+
+        public void setVehicleRequested(boolean vehicleRequested) {
+            this.vehicleRequested = vehicleRequested;
+        }
+
+        public String getVehicleDetails() {
+            return vehicleDetails;
+        }
+
+        public void setVehicleDetails(String vehicleDetails) {
+            this.vehicleDetails = vehicleDetails;
         }
     }
 }

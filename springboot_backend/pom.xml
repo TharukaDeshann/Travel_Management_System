@@ -6,7 +6,7 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>3.4.2</version>
+		<version>3.4.5</version>
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.yamu</groupId>
@@ -53,6 +53,7 @@
     <groupId>org.springframework.security</groupId>
     <artifactId>spring-security-core</artifactId>
 </dependency>
+
 <dependency>
     <groupId>org.springframework.security</groupId>
     <artifactId>spring-security-web</artifactId>
@@ -106,6 +107,12 @@
 			<optional>true</optional>
 		</dependency>
 		<dependency>
+    <groupId>org.projectlombok</groupId>
+    <artifactId>lombok</artifactId>
+    <version>1.18.28</version> <!-- Use the latest version -->
+    <scope>provided</scope>
+</dependency>
+		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-test</artifactId>
 			<scope>test</scope>
@@ -117,10 +124,26 @@
 		</dependency>
 
 		<dependency>
-        <groupId>mysql</groupId>
-        <artifactId>mysql-connector-java</artifactId>
-		<version>8.0.33</version>
-    </dependency>
+    		<groupId>com.cloudinary</groupId>
+    		<artifactId>cloudinary-http5</artifactId>
+    		<version>2.0.0</version>
+		</dependency>
+		<dependency>
+    		<groupId>com.cloudinary</groupId>
+    		<artifactId>cloudinary-taglib</artifactId>
+    		<version>2.0.0</version>
+		</dependency>
+		<dependency>
+    		<groupId>io.github.cdimascio</groupId>
+    		<artifactId>dotenv-java</artifactId>
+    		<version>3.0.0</version>
+		</dependency>
+		<dependency>
+       		<groupId>mysql</groupId>
+        	<artifactId>mysql-connector-java</artifactId>
+			<version>8.0.33</version>
+    	</dependency>
+		
 
     <!-- Spring Boot Starter Thymeleaf (for HTML views) -->
     <dependency>
@@ -143,6 +166,10 @@
 			<artifactId>h2</artifactId>
 			<scope>runtime</scope>
 		</dependency>
+		<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-websocket</artifactId>
+	</dependency>
 
 
 	</dependencies>

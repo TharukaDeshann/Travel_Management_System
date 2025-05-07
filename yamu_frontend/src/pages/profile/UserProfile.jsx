@@ -4,6 +4,7 @@ import { useUser } from "../../context/UserContext";
 import { fetchLoggedInUser, logoutUser } from "../../services/authService";
 import { useNotification } from "../../hooks/useNotification.jsx";
 import styled from "styled-components";
+import apiClient from "../../services/axiosInstance.js"
 
 // Custom styled components
 import {
@@ -117,6 +118,33 @@ const UserProfile = () => {
       showError("Logout failed. Please try again.");
     }
   };
+  const [selectedImage, setSelectedImage] = useState(null);
+
+const handleImageChange = (e) => {
+  setSelectedImage(e.target.files[0]);
+};
+
+const handleImageUpload = async () => {
+  if (!selectedImage) return showError("Please select an image.");
+
+  const formData = new FormData();
+  formData.append("image", selectedImage);
+
+  try {
+    const response = await apiClient.post(`/api/users/${user.id}/upload-profile-picture`, formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+
+    const updatedImage = response.data.imageUrl;
+    setUser({ ...user, profileImage: updatedImage });
+    showSuccess("Profile image updated successfully!");
+  } catch (err) {
+    showError("Image upload failed. Please try again.");
+  }
+};
+
   
 
   const getUserInitials = () => {
@@ -268,6 +296,15 @@ const UserProfile = () => {
             <i className="fas fa-sign-out-alt"></i> 
             Log Out
           </Button>
+          <div>
+          <input
+  type="file"
+  accept="image/*"
+  onChange={(e) => handleImageChange(e)}
+  style={{ marginTop: "16px" }}
+/>
+<Button onClick={handleImageUpload}>Upload New Image</Button></div>
+
         </FlexContainer>
       </Card>
     </Container>

@@ -42,6 +42,6 @@ public class GuideReservationByTraveler {
     private LocalDateTime updatedAt = LocalDateTime.now();
 
     public enum ReservationStatus {
-        PENDING, CONFIRMED, DECLINED
+        PENDING, CONFIRMED, DECLINED, COMPLETED
     }
 }
