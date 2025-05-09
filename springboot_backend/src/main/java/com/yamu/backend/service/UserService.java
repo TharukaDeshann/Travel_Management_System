@@ -83,7 +83,10 @@ public class UserService {
     public List<UserResponseDTO> getAllUserDTOs() {
         return userRepository.findAll().stream()
                 .map(this::mapToUserDTO)
+                .filter(user -> !user.getRole().equals(UserRole.ADMIN.name())) // Filter out the admin users
                 .collect(Collectors.toList());
+        // Filter out the admin users
+        
     }
 
     /**

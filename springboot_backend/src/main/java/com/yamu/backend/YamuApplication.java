@@ -25,7 +25,5 @@ public class YamuApplication {
 		Dotenv dotenv = Dotenv.load();
 		Cloudinary cloudinary = new Cloudinary(dotenv.get("CLOUDINARY_URL"));
 		System.out.println(cloudinary.config.cloudName);
-
-	
 	}
 }

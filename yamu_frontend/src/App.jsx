@@ -27,10 +27,12 @@ import Inbox from "./pages/Inbox.jsx";// Import FinalizeItinerary
 import VerifyEmail from "./pages/VerifyEmail.jsx";
 import VerifyEmailPending from "./pages/VerifyEmailPending.jsx";
 import UserProfile from "./pages/profile/UserProfile.jsx";
+import ProfileView from "./pages/ProfileView.jsx";
 import UpdateEmail from "./pages/profile/components/UpdateEmail.jsx";
 import UpdatePassword from "./pages/profile/components/UpdatePassword.jsx";
 import AdminDashboard from "./pages/AdminDashboard.jsx";
 import UsersSocialPage from "./pages/UsersSocialPage.jsx";
+
 
 
 const App = () => {
@@ -71,12 +73,12 @@ const App = () => {
             <Route path="/guide-calendar" element={<GuideCalendar />} />
             <Route path="/visit-plan" element={<VisitPlanPage />} />
             <Route path="/guides-page" element={<GuidesPage />} />
-<<<<<<< HEAD
+
             <Route path="/inbox" element={<Inbox />} />
 
-=======
-            <Route path="/users/users-by-role" element={<UsersSocialPage />} />
->>>>>>> 0da65856030fb21be05a0c1b4541f6f1126092ba
+
+            <Route path="/users" element={<UsersSocialPage />} />
+            <Route path="/users/profile/:userId" element={<ProfileView />} />
 
             {/* Profile Routes */}
             <Route path="/profile" element={<UserProfile />} />
