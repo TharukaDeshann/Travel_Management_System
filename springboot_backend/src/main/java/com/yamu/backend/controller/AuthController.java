@@ -188,7 +188,7 @@ public class AuthController {
                         .body(Map.of("error", "Refresh token has been revoked"));
             }
 
-            if (email != null && jwtUtil.validateToken(refreshToken, email)) {
+            if (email != null && jwtUtil.validateToken(refreshToken)) {
                 // Generate new access token
                 String newAccessToken = jwtUtil.generateAccessToken(email);
 
@@ -259,7 +259,7 @@ public class AuthController {
         User user = optUser.orElse(null);
 
         // Validate token and user
-        if (token == null || !jwtUtil.validateToken(token, email)) {
+        if (token == null || !jwtUtil.validateToken(token)) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Invalid or expired session"));
         }
 

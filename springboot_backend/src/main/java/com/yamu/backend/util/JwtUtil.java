@@ -49,7 +49,7 @@ public class JwtUtil {
         return claimsResolver.apply(claims);
     }
 
-    public boolean validateToken(String token, String userEmail) {
+    public boolean validateToken(String token) {
         try {
             // Verify signature and parse token
             Claims claims = Jwts.parserBuilder()
@@ -59,12 +59,12 @@ public class JwtUtil {
                 .getBody();
             
             // Check user identity
-            boolean validUser = claims.getSubject().equals(userEmail);
+            // boolean validUser = claims.getSubject().equals(userEmail);
             
             // Check expiration
             boolean tokenNotExpired = !claims.getExpiration().before(new Date());
             
-            return validUser && tokenNotExpired;
+            return  tokenNotExpired;
         } catch (Exception e) {
             return false;
         }
