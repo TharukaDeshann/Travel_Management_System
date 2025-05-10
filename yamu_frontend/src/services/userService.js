@@ -1,6 +1,16 @@
 import apiClient from "./axiosInstance";
 import { fetchLoggedInUser } from "./authService";
 
+// check whether logged user is equals to the userId
+export const isLoggedUser = (userId) => {
+  const loggedUser = fetchLoggedInUser();
+  if(loggedUser) {
+    return loggedUser.id == userId;
+  } else {
+    return false;
+  }
+}
+
 // Update user email
 export const updateEmail = async (data) => {
   const user = await fetchLoggedInUser();
@@ -8,6 +18,7 @@ export const updateEmail = async (data) => {
   const res = await apiClient.put(`/api/users/${id}/update-email`, data);
   return res;
 };
+
 
 // Update user password
 export const updatePassword = async (data) => {

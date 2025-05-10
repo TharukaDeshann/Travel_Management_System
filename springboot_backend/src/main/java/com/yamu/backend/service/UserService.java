@@ -1,5 +1,6 @@
 package com.yamu.backend.service;
 
+import com.cloudinary.Cloudinary;
 import com.yamu.backend.dto.AdminResponseDTO;
 import com.yamu.backend.dto.GuideResponseDTO;
 import com.yamu.backend.dto.TravelerResponseDTO;
@@ -12,8 +13,10 @@ import com.yamu.backend.model.Traveler;
 import com.yamu.backend.model.User;
 import com.yamu.backend.repository.UserRepository;
 
+
 import java.time.LocalDateTime;
 import java.util.List;
+
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -21,12 +24,15 @@ import java.util.stream.Collectors;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+
 @Service
 public class UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final Cloudinary cloudinary;
 
-    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
+    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder, Cloudinary cloudinary) {
+        this.cloudinary = cloudinary;
         this.passwordEncoder = passwordEncoder;
         this.userRepository = userRepository;
     }
@@ -119,6 +125,8 @@ public class UserService {
                 .map(this::mapToUserDTO)
                 .collect(Collectors.toList());
     }
+
+    
 
     /**
      * Update user information
