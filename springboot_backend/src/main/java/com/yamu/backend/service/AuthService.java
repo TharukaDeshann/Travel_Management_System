@@ -31,8 +31,9 @@ public class AuthService {
      * Register a new user based on the registration request
      */
     public User registerUser(UserRegistrationRequest request) {
-        if (userRepository.findByEmail(request.getEmail()) != null) {
-            throw new RuntimeException("Account already exists with this email");
+        // Check if email already exists
+        if (userRepository.findByEmail(request.getEmail()).isPresent()) {
+            throw new RuntimeException("Email already exists");
         }
 
         User user;
@@ -152,7 +153,7 @@ public class AuthService {
         }
         
         if (user.getTokenExpiry().isBefore(LocalDateTime.now())) {
-            return ResponseEntity.badRequest().body(Map.of("message", "Token has expired."));
+            return ResponseEntity.badRequest().body(Map.of("message", "Verification Token has expired."));
         }
         
         user.setVerified(true);

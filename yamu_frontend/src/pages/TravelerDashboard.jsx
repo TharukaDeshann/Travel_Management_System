@@ -7,8 +7,9 @@ import yamuLogo from '../images/yamu-logo.png';
 import notificationIcon from '../images/notification.png';
 import profileIcon from '../images/profile.png';
 import botImage from '../images/bot-image.png';
+import apiClient from "../services/axiosInstance";
+import GuideModal from "../components/GuideModal";
 
-// Add currencies array at the top level
 const currencies = [
   { code: 'USD', symbol: '$' },
   { code: 'LKR', symbol: 'Rs.' },
@@ -16,172 +17,111 @@ const currencies = [
   { code: 'CHF', symbol: 'Fr.' }
 ];
 
-const sections = [
-  { 
-    title: "Discover Places", 
-    items: [
-      {
-        name: "Sigiriya",
-        image: "/src/images/sigiriya.jpg",
-      },
-      {
-        name: "Hiriketiya",
-        image: "/src/images/hiriketiya.jpg",
-      },
-      {
-        name: "Ambuluwawa",
-        image: "/src/images/ambuluwawa.jpg",
-      },
-      {
-        name: "Nagapooshani Amman Temple",
-        image: "/src/images/amman_temple.jpg",
-      },
-      {
-        name: "Adams Peak",
-        image: "/src/images/adams-peak.jpg",
-      }
-    ] 
-  },
-  { 
-    title: "Discover Accommodations", 
-    items: [
-      {
-        name: "Wild Coast Tented Lodge",
-        image: "/src/images/wild_coast.jpg",  
-      },
-      {
-        name: "98 Acre Resort & Spa",
-        image: "/src/images/98_acre.jpg",
-      },
-      {
-        name: "Anantara Resort & Spa",
-        image: "/src/images/anantaya.jpg",
-      },
-      {
-        name: "Jetwing Colombo Seven",
-        image: "/src/images/jetwing.jpg",
-      },
-      {
-        name: "The Lake Forest Hotel",
-        image: "/src/images/lake_forest.jpg",
-      },
-    ] 
-  },
-  { 
-    title: "Discover Tour Guides", 
-    items: [
-      {
-        name: "Rajam Chaitanya",
-        image: "/src/images/rajam.jpeg",
-      },
-      {
-        name: "Duminda Jayasinghe",
-        image: "/src/images/duminda.jpg",
-      },
-      {
-        name: "Selvam Vetri",
-        image: "/src/images/selvam.webp",
-      },
-      {
-        name: "Samantha Perera",
-        image: "/src/images/samantha.webp",
-      },
-      {
-        name: "Jagath Karunathilake",
-        image: "/src/images/jagath.jpeg",
-      }
-      
-    ] 
-  },
-
-  { 
-    title: "Event & Festival Highlights", 
-    items: [
-      {
-        name: "Esala Perahera",
-        image: "/src/images/asala_perahera.webp",
-      },
-      {
-        name: "Nallur Kovil Festival",
-        image: "/src/images/nallur_festival.jpg",
-      },
-      {
-        name: "Sinhala Tamil New Year",
-        image: "/src/images/new_year.jpeg",
-      },
-      {
-        name: "Kuweni The Musical",
-        image: "/src/images/kuweni.jpg",
-      },
-      {
-        name: "Whale Watching Season",
-        image: "/src/images/whale_watching.jpg",
-      }   
-    ] 
-  }
-];
-
-// Packages with base prices in LKR
-const packages = [
-  { name: "Package 1", price: 50000, image: "/src/images/sigiriya.jpg", description: "3 Days Sigiriya Adventure" },
-  { name: "Package 2", price: 60000, image: "/src/images/hiriketiya.jpg", description: "5 Days Beach Getaway" },
-  { name: "Package 3", price: 30000, image: "/src/images/hiriketiya.jpg", description: "2 Days Quick Escape" }
-];
-
-export default function TravelerDashboard() {
+export default function TravelerDashboard({ currentUser }) {
   const navigate = useNavigate();
   const [selectedCurrency, setSelectedCurrency] = useState('LKR');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [exchangeRates, setExchangeRates] = useState({});
-
-  // Initialize convertedPackages with the base LKR prices
-  const [convertedPackages, setConvertedPackages] = useState(
-    packages.map(pkg => ({
-      ...pkg,
-      convertedPrice: pkg.price // Initially set to LKR price
-    }))
-  );
+  const [guides, setGuides] = useState([]);
   const [showLeftButton, setShowLeftButton] = useState({});
+  const [selectedGuide, setSelectedGuide] = useState(null);
 
-  // Fetch exchange rates
   useEffect(() => {
-    const fetchExchangeRates = async () => {
-      if (selectedCurrency === 'LKR') {
-        setConvertedPackages(packages.map(pkg => ({
-          ...pkg,
-          convertedPrice: pkg.price
-        })));
-        return;
-      }
-
+    const fetchGuides = async () => {
       try {
-        const response = await fetch(`https://v6.exchangerate-api.com/v6/ee302ff3be157ca6a021f6a0/pair/LKR/${selectedCurrency}`);
-        const data = await response.json();
-        
-        if (data && data.conversion_rate) {
-          const rate = data.conversion_rate;
-          console.log(`Conversion rate for ${selectedCurrency}: ${rate}`);
-          
-          const updatedPackages = packages.map(pkg => ({
-            ...pkg,
-            convertedPrice: Math.round((pkg.price * rate) * 100) / 100
-          }));
-          
-          setConvertedPackages(updatedPackages);
-        } else {
-          console.error('Invalid API response:', data);
-        }
+        const response = await apiClient.get("/api/users/role/GUIDE");
+        setGuides(response.data);
       } catch (error) {
-        console.error("Error fetching exchange rates:", error);
+        console.error("Error fetching guides:", error);
       }
     };
 
+    fetchGuides();
+  }, []);
+
+  const sections = [
+    {
+      title: "Discover Places",
+      items: [
+        { name: "Sigiriya", image: "/src/images/sigiriya.jpg" },
+        { name: "Hiriketiya", image: "/src/images/hiriketiya.jpg" },
+        { name: "Ambuluwawa", image: "/src/images/ambuluwawa.jpg" },
+        { name: "Nagapooshani Amman Temple", image: "/src/images/amman_temple.jpg" },
+        { name: "Adams Peak", image: "/src/images/adams-peak.jpg" }
+      ]
+    },
+    {
+      title: "Discover Accommodations",
+      items: [
+        { name: "Wild Coast Tented Lodge", image: "/src/images/wild_coast.jpg" },
+        { name: "98 Acre Resort & Spa", image: "/src/images/98_acre.jpg" },
+        { name: "Anantara Resort & Spa", image: "/src/images/anantaya.jpg" },
+        { name: "Jetwing Colombo Seven", image: "/src/images/jetwing.jpg" },
+        { name: "The Lake Forest Hotel", image: "/src/images/lake_forest.jpg" }
+      ]
+    },
+    {
+      title: "Discover Tour Guides",
+      items: guides.slice(0, 5).map(guide => ({
+        name: `${guide.firstName} ${guide.lastName}`,
+        image: "/src/images/default-profile.png",
+        guide: guide
+      }))
+    },
+    {
+      title: "Event & Festival Highlights",
+      items: [
+        { name: "Esala Perahera", image: "/src/images/asala_perahera.webp" },
+        { name: "Nallur Kovil Festival", image: "/src/images/nallur_festival.jpg" },
+        { name: "Sinhala Tamil New Year", image: "/src/images/new_year.jpeg" },
+        { name: "Kuweni The Musical", image: "/src/images/kuweni.jpg" },
+        { name: "Whale Watching Season", image: "/src/images/whale_watching.jpg" }
+      ]
+    }
+  ];
+
+  const packages = [
+    { name: "Package 1", price: 50000, image: "/src/images/sigiriya.jpg", description: "3 Days Sigiriya Adventure" },
+    { name: "Package 2", price: 60000, image: "/src/images/hiriketiya.jpg", description: "5 Days Beach Getaway" },
+    { name: "Package 3", price: 30000, image: "/src/images/hiriketiya.jpg", description: "2 Days Quick Escape" }
+  ];
+
+  const [convertedPackages, setConvertedPackages] = useState(
+    packages.map(pkg => ({ ...pkg, convertedPrice: pkg.price }))
+  );
+
+  const fetchExchangeRates = async () => {
+    if (selectedCurrency === 'LKR') {
+      setConvertedPackages(packages.map(pkg => ({
+        ...pkg,
+        convertedPrice: pkg.price
+      })));
+      return;
+    }
+
+    try {
+      const response = await fetch(`https://v6.exchangerate-api.com/v6/ee302ff3be157ca6a021f6a0/pair/LKR/${selectedCurrency}`);
+      const data = await response.json();
+      
+      if (data && data.conversion_rate) {
+        const rate = data.conversion_rate;
+        const updatedPackages = packages.map(pkg => ({
+          ...pkg,
+          convertedPrice: Math.round((pkg.price * rate) * 100) / 100
+        }));
+        setConvertedPackages(updatedPackages);
+      }
+    } catch (error) {
+      console.error("Error fetching exchange rates:", error);
+    }
+  };
+
+  useEffect(() => {
     fetchExchangeRates();
     const intervalId = setInterval(fetchExchangeRates, 60000);
     return () => clearInterval(intervalId);
   }, [selectedCurrency]);
 
-  // Handle scroll for sections
   const handleScroll = (e, title) => {
     const { scrollLeft } = e.target;
     setShowLeftButton(prev => ({
@@ -190,10 +130,17 @@ export default function TravelerDashboard() {
     }));
   };
 
-  // Currency dropdown component
+  const handleNavigateToGuides = () => {
+<<<<<<< HEAD
+    navigate('/guides-page', { state: { currentUser } });
+=======
+    navigate('/users/users-by-role', { state: { currentUser } });
+>>>>>>> 0da65856030fb21be05a0c1b4541f6f1126092ba
+  };
+
   const CurrencyDropdown = () => (
     <div className="currency-dropdown">
-      <button 
+      <button
         type="button"
         className="currency-button"
         onClick={(e) => {
@@ -205,7 +152,7 @@ export default function TravelerDashboard() {
         <span>{selectedCurrency}</span>
         <span className={`dropdown-arrow ${isDropdownOpen ? 'open' : ''}`}>▼</span>
       </button>
-      
+
       {isDropdownOpen && (
         <div className="dropdown-menu">
           {currencies.map((currency) => (
@@ -214,7 +161,6 @@ export default function TravelerDashboard() {
               type="button"
               className="currency-option"
               onClick={() => {
-                console.log(`Switching to currency: ${currency.code}`);
                 setSelectedCurrency(currency.code);
                 setIsDropdownOpen(false);
               }}
@@ -236,8 +182,28 @@ export default function TravelerDashboard() {
         </div>
         <ul className="nav-links">
           {['Dashboard', 'Hotels', 'Guides', 'Places', 'Emergency Contacts'].map((item) => (
-            <li key={item} className="nav-link">{item}</li>
+            <li
+              key={item}
+              className="nav-link"
+              onClick={() => {
+                if (item === 'Guides') {
+                  handleNavigateToGuides();
+                } else if (item === 'Dashboard') {
+                  navigate('/traveler-dashboard');
+                }
+              }}
+            >
+              {item}
+            </li>
           ))}
+          {/* Add this to the nav-links array */}
+          <li
+            key="Inbox"
+            className="nav-link"
+            onClick={() => navigate('/inbox')}
+          >
+            Inbox
+          </li>
         </ul>
         <div className="flex items-center space-x-4">
           <CurrencyDropdown />
@@ -247,7 +213,11 @@ export default function TravelerDashboard() {
             <span className="notification-badge">3</span>
           </div>
           <div className="icon-container">
-            <img src={profileIcon} alt="Profile" className="profile-image" />
+<<<<<<< HEAD
+            <img src={profileIcon} alt="Profile" className="profile-image" onClick={() => navigate('/profile')} />
+=======
+            <img src={profileIcon} alt="Profile" className="profile-image" onClick={() => (window.location.href = "/profile")} />
+>>>>>>> 0da65856030fb21be05a0c1b4541f6f1126092ba
           </div>
         </div>
       </nav>
@@ -274,12 +244,16 @@ export default function TravelerDashboard() {
           </div>
         </div>
 
-        {/* Other Sections */}
         {sections.map((section) => (
           <div key={section.title} className="section-container">
             <div className="flex justify-between items-center">
               <h2 className="text-lg font-bold">{section.title}</h2>
-              <button className="text-blue-500">See more →</button>
+              <button 
+                className="text-blue-500"
+                onClick={() => section.title === "Discover Tour Guides" ? navigate('/guides-page') : null}
+              >
+                See more →
+              </button>
             </div>
             <div className={`cards-scroll-container ${showLeftButton[section.title] ? 'scrolled' : ''}`}>
               {showLeftButton[section.title] && (
@@ -298,10 +272,17 @@ export default function TravelerDashboard() {
                 onScroll={(e) => handleScroll(e, section.title)}
               >
                 {section.items.map((item) => (
-                  <div key={item.name} className="card-container">
+                  <div 
+                    key={item.name} 
+                    className="card-container"
+                    onClick={() => section.title === "Discover Tour Guides" && setSelectedGuide(item.guide)}
+                  >
                     <img src={item.image} alt={item.name} className="card-image" />
                     <div className="card-overlay">
                       <h3 className="card-title">{item.name}</h3>
+                      {section.title === "Discover Tour Guides" && (
+                        <p style={{ color: 'white', fontSize: '14px' }}>{item.guide.expertiseCityRegion}</p>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -319,7 +300,6 @@ export default function TravelerDashboard() {
           </div>
         ))}
 
-        {/* Packages Section */}
         <div className="section-container">
           <h2 className="text-lg font-bold">Discover Packages</h2>
           <div className="cards-scroll-container">
@@ -349,6 +329,14 @@ export default function TravelerDashboard() {
           onClick={() => navigate('/chatbot')}
         />
       </div>
+
+      {selectedGuide && (
+        <GuideModal 
+          guide={selectedGuide} 
+          onClose={() => setSelectedGuide(null)}
+          currentUser={currentUser}
+        />
+      )}
     </div>
   );
 }

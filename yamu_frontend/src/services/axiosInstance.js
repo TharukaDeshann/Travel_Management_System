@@ -64,6 +64,7 @@ apiClient.interceptors.response.use(
     
     // If 401 error and request hasn't been retried yet
     if (error.response && error.response.status === 401 && !originalRequest._retry) {
+      console.log("Token expired, refreshing...");
       if (isRefreshing) {
         // If refresh is in progress, queue this request
         return new Promise((resolve, reject) => {

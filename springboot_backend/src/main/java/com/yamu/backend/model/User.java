@@ -33,6 +33,9 @@ public abstract class User {
     @Email(message = "Invalid email format")
     private String email;
 
+    @Email(message = "Invalid email format")
+    private String pendingEmail;
+
     @Column(name = "is_verified")
     private Boolean isVerified = false;
 
@@ -60,6 +63,10 @@ public abstract class User {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, updatable = false, insertable = false)
     private UserRole role; // Role defined by specialization
+
+    @Column(name = "profile_image_url")
+    private String profileImageUrl;
+
 
     public Boolean isVerified() {
         return this.isVerified;
