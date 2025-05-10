@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import GuideModal from '../components/GuideModal';
 import apiClient from '../services/axiosInstance';
+import { fetchUsersByRole } from '../services/userService';
 
 const GuidesPage = ({ currentUser }) => {
   const [guides, setGuides] = useState([]);
@@ -12,8 +13,8 @@ const GuidesPage = ({ currentUser }) => {
   useEffect(() => {
     const fetchGuides = async () => {
       try {
-        const response = await apiClient.get("/api/users/role/GUIDE");
-        setGuides(response.data);
+        const response = await fetchUsersByRole('GUIDE');
+        setGuides(response);
       } catch (error) {
         console.error("Error fetching guides:", error);
       }
@@ -72,7 +73,7 @@ const GuidesPage = ({ currentUser }) => {
             }}
           >
             <img 
-              src="/src/images/default-profile.png" 
+              src={guide.profileImageUrl || 'https://via.placeholder.com/300'}
               alt={guide.name}
               style={{
                 width: '100%',

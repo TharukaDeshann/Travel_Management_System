@@ -57,10 +57,7 @@ public class UserController {
         this.userService = userService;
     }
 
-    @GetMapping("/user")
-    public String userPage() {
-        return "You are an authenticated user";
-    }
+    
 
     // Get all users
     @GetMapping
@@ -76,30 +73,34 @@ public class UserController {
     }
 
     // Upload user profile image
-    @PostMapping("/{id}/upload-profile-picture")
-    public ResponseEntity<String> uploadProfilePicture(@PathVariable Long id,
-            @RequestParam("file") MultipartFile file) {
-        try {
-            String imageUrl = imageUploadService.uploadImage(file);
-            Optional<User> optUser = userRepository.findById(id); 
-            User user = optUser.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
-            user.setProfileImageUrl(imageUrl);
-            userRepository.save(user);
-            return ResponseEntity.ok(imageUrl);
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Upload failed");
+    @PutMapping("/{id}/profile-image")
+    public ResponseEntity<?> updateProfileImage(@PathVariable Long id, 
+                                                @RequestParam("image") MultipartFile imageFile) {
+        User currentUser = getCurrentUser();
+
+        if (currentUser != null && (currentUser.getId().equals(id))){
+            try {
+                String imageUrl = imageUploadService.uploadProfileImage(id, imageFile);
+                return ResponseEntity.ok(Map.of("imageUrl", imageUrl));
+            } catch (Exception e) {
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                        .body(Map.of("error", "Failed to upload image: " + e.getMessage()));
+            }
         }
+
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(Map.of("error", "You are not authorized to update this user's profile image"));
     }
 
     // UPDATE USER
     @PutMapping("/{id}")
-    public ResponseEntity<String> updateUser(@PathVariable Long id, @RequestBody UserUpdateRequest updateRequest) {
+    public ResponseEntity<String> updateUser(@PathVariable Long id, @RequestBody @Valid UserUpdateRequest updateRequest) {
 
         User currentUser = getCurrentUser();
 
         if (currentUser != null && (currentUser.getId().equals(id))) {
             User user = userService.updateUser(id, updateRequest);
-            return ResponseEntity.ok("User updated successfully");
+            return ResponseEntity.ok( "User updated successfully");
 
         } else {
             return ResponseEntity.status(403).body("You are not authorized to update this user");

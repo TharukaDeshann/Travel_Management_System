@@ -121,7 +121,7 @@ const GuideModal = ({ guide, onClose }) => {
     <div style={{ display: 'flex', gap: '20px' }}>
       <div style={{ flex: 1 }}>
         <img 
-          src={guide.image || '/src/images/default-profile.png'} 
+          src={guide.profileImageUrl || '/src/images/default-profile.png'} 
           alt={guide.name}
           style={{
             width: '100%',
@@ -133,13 +133,17 @@ const GuideModal = ({ guide, onClose }) => {
       </div>
       
       <div style={{ flex: 2 }}>
-        <h2 style={{ marginTop: 0 }}>{guide.name}</h2>
+        <h2 style={{ marginTop: 0 }}>{guide.firstName} {guide.lastName}</h2>
         <p><strong>Contact:</strong> {guide.contactNumber}</p>
+        <p><strong>Email:</strong> {guide.email}</p>
         <p><strong>Address:</strong> {guide.address}</p>
         <p><strong>Expertise:</strong> {guide.expertiseCityRegion}</p>
         <p><strong>Language:</strong> {guide.language}</p>
         <p><strong>Vehicle:</strong> {guide.vehicleAvailability ? 'Available' : 'Not Available'}</p>
         <p><strong>About:</strong> {guide.about}</p>
+        <p><strong>Verified:</strong> {guide.verified ? "Yes" : "No"}</p>
+
+        
         
         <div style={{
           display: 'flex',
