@@ -143,7 +143,7 @@ const UserProfile = () => {
       <Card>
         <Grid columns={2}>
           <div>
-            <Avatar size="120px" src={user.profileImage}>
+            <Avatar size="120px" src={user.profileImageUrl} alt="Profile Image">
               
             </Avatar>
             <Title size="20px">{`${user.firstName} ${user.lastName}`}</Title>

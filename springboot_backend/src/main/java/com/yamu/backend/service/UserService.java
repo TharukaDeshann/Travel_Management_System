@@ -72,6 +72,7 @@ public class UserService {
 
         // Common fields for all users
         baseDto.setId(user.getId());
+        baseDto.setProfileImageUrl(user.getProfileImageUrl());
         baseDto.setFirstName(user.getFirstName());
         baseDto.setLastName(user.getLastName());
         baseDto.setEmail(user.getEmail());

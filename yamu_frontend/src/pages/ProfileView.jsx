@@ -110,8 +110,8 @@ const ProfileView = () => {
       
       <div className="profile-header">
         <div className="profile-avatar">
-          {user.profileImage ? (
-            <img src={user.profileImage} alt={`${user.firstName} ${user.lastName}`} />
+          {user.profileImageUrl ? (
+            <img src={user.profileImageUrl} alt={`${user.firstName} ${user.lastName}`} />
           ) : (
             <div className="avatar-placeholder">
               {user.firstName?.charAt(0)}{user.lastName?.charAt(0)}

@@ -39,7 +39,8 @@ const ProfileImageUploader = () => {
 
     try {
       const response = await uploadImage(formData);
-      setUser({ ...user, profileImage: response.imageUrl });
+
+      setUser({ ...user, profileImageUrl: response.imageUrl });
       showSuccess("Profile image updated successfully!");
       setSelectedImage(null);
     } catch (error) {

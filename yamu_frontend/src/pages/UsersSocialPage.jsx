@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'; // Import useNavigate
 import { useUsersByRole } from '../hooks/useUsersByRole';
 import UserSocialList from '../components/UserSocialList';
 import '../styles/UserSocialList.css';
+import BackButton from '../components/BackButton';
 
 const UsersSocialPage = () => {
   // State for filters
@@ -58,6 +59,7 @@ const UsersSocialPage = () => {
   return (
     <div className="user-list-container">
       <h1>Find Users</h1>
+      <BackButton/>
       
       <div className="search-panel">
         <div className="search-row">
