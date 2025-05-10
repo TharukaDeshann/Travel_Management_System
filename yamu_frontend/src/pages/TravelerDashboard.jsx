@@ -346,6 +346,7 @@ export default function TravelerDashboard() {
           alt="Bot Assistant"
           type="button"
           className="fixed-bottom-image"
+          onClick={() => navigate('/chatbot')}
         />
       </div>
     </div>
