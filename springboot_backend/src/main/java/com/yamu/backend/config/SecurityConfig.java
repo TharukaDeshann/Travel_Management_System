@@ -61,7 +61,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/reviews").permitAll()
                         .requestMatchers("/ws/**", "/app/**", "/topic/**", "/queue/**", "/user/**").permitAll()
                         .requestMatchers("/api/auth/login", "/api/auth/register",
-                                "/api/auth/refresh-token", "/api/auth/user", "api/auth/current-user", "/api/users/user",
+                                "/api/auth/refresh-token", "/api/auth/user", "api/auth/me", 
                                 "/api/locations/**", "/api/auth/verify-email", "api/auth/resend-verification")
                         .permitAll()
                         .requestMatchers(HttpMethod.PUT, "/api/users/{id}").authenticated()

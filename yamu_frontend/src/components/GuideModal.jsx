@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Mail, Star } from 'lucide-react';
 import apiClient from '../services/axiosInstance';
 import { fetchLoggedInUser } from '../services/authService';
-import ReviewModal from './ReviewModal';
+import { refreshToken } from "../services/authService";
 
 const GuideModal = ({ guide, onClose }) => {
   const [currentStep, setCurrentStep] = useState(1);
@@ -17,60 +16,38 @@ const GuideModal = ({ guide, onClose }) => {
       vehicleDetails: ''
     }))
   );
-  const [currentUser, setCurrentUser] = useState(JSON.parse(localStorage.getItem("user")));
-  const [isLoadingUser, setIsLoadingUser] = useState(true);
-  const [averageRating, setAverageRating] = useState(0);
-  const [reviewCount, setReviewCount] = useState(0);
-  const [showReviewModal, setShowReviewModal] = useState(false);
-  const [error, setError] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState(null);
+  const [currentUser, setCurrentUser] = useState(null);
+  const [isLoadingUser, setIsLoadingUser] = useState(true);
+  const [showReviewModal, setShowReviewModal] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
-    const loadUserAndRating = async () => {
+    const loadUser = async () => {
       try {
-        // First try to get user from localStorage
-        let user = JSON.parse(localStorage.getItem("user"));
-        
-        // If not found or incomplete, fetch from API
-        if (!user || !user.id) {
-          user = await fetchLoggedInUser();
-          localStorage.setItem("user", JSON.stringify(user));
-          setCurrentUser(user);
-        }
-        
-        const ratingResponse = await apiClient.get(`/api/reviews/guide/${guide.id}/average-rating`, {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
-          }
-        });
-        setAverageRating(ratingResponse.data || 0);
-        
-        const reviewsResponse = await apiClient.get(`/api/reviews/guide/${guide.id}`, {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
-          }
-        });
-        setReviewCount(reviewsResponse.data.length);
+        const user = await fetchLoggedInUser();
+        setCurrentUser(user);
       } catch (err) {
-        console.error('Error loading data:', err);
+        console.error('Failed to fetch user:', err);
+        setCurrentUser(null);
       } finally {
         setIsLoadingUser(false);
       }
     };
-    
-    loadUserAndRating();
-  }, [guide.id]);
+
+    loadUser();
+  }, []);
 
   const handleDayChange = (e) => {
     const days = parseInt(e.target.value);
     setNumberOfDays(days);
-
+    
     const newDetails = [];
     for (let i = 0; i < days; i++) {
-      newDetails.push(reservationDetails[i] || {
-        place: '',
-        date: '',
+      newDetails.push(reservationDetails[i] || { 
+        place: '', 
+        date: '', 
         travelers: 1,
         vehicleRequested: false,
         vehicleDetails: ''
@@ -124,13 +101,10 @@ const GuideModal = ({ guide, onClose }) => {
           vehicleDetails: detail.vehicleDetails
         }))
       };
+      console.log('Reservation Data:', reservationData);
 
-      const response = await apiClient.post('/api/reservations', reservationData, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
-        }
-      });
-
+      const response = await apiClient.post('/api/reservations', reservationData);
+      
       if (response.status === 200) {
         onClose();
         alert('Reservation request sent successfully!');
@@ -147,9 +121,9 @@ const GuideModal = ({ guide, onClose }) => {
   const renderGuideDetails = () => (
     <div style={{ display: 'flex', gap: '20px' }}>
       <div style={{ flex: 1 }}>
-        <img
-          src={guide.profileImageUrl || '/src/images/default-profile.png'}
-          alt={`${guide.firstName} ${guide.lastName}`}
+        <img 
+          src={guide.profileImageUrl || '/src/images/default-profile.png'} 
+          alt={guide.name}
           style={{
             width: '100%',
             height: '300px',
@@ -161,28 +135,17 @@ const GuideModal = ({ guide, onClose }) => {
 
       <div style={{ flex: 2 }}>
         <h2 style={{ marginTop: 0 }}>{guide.firstName} {guide.lastName}</h2>
-        
-        <div style={{ display: 'flex', alignItems: 'center', gap: '5px', marginBottom: '10px' }}>
-          {[1, 2, 3, 4, 5].map((star) => (
-            <Star 
-              key={star}
-              size={18}
-              fill={star <= averageRating ? '#FFD700' : 'none'}
-              color={star <= averageRating ? '#FFD700' : '#ddd'}
-            />
-          ))}
-          <span style={{ marginLeft: '5px', fontSize: '14px' }}>
-            {averageRating.toFixed(1)} ({reviewCount} reviews)
-          </span>
-        </div>
-        
-        <p style={{ margin: '5px 0' }}><strong>Contact:</strong> {guide.contactNumber}</p>
-        <p style={{ margin: '5px 0' }}><strong>Address:</strong> {guide.address}</p>
-        <p style={{ margin: '5px 0' }}><strong>Expertise:</strong> {guide.expertiseCityRegion}</p>
-        <p style={{ margin: '5px 0' }}><strong>Language:</strong> {guide.language}</p>
-        <p style={{ margin: '5px 0' }}><strong>Vehicle:</strong> {guide.vehicleAvailability ? 'Available' : 'Not Available'}</p>
-        <p style={{ margin: '5px 0 15px 0' }}><strong>About:</strong> {guide.about}</p>
+        <p><strong>Contact:</strong> {guide.contactNumber}</p>
+        <p><strong>Email:</strong> {guide.email}</p>
+        <p><strong>Address:</strong> {guide.address}</p>
+        <p><strong>Expertise:</strong> {guide.expertiseCityRegion}</p>
+        <p><strong>Language:</strong> {guide.language}</p>
+        <p><strong>Vehicle:</strong> {guide.vehicleAvailability ? 'Available' : 'Not Available'}</p>
+        <p><strong>About:</strong> {guide.about}</p>
+        <p><strong>Verified:</strong> {guide.verified ? "Yes" : "No"}</p>
 
+        
+        
         <div style={{
           display: 'flex',
           justifyContent: 'flex-end',

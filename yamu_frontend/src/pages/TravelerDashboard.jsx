@@ -131,7 +131,10 @@ export default function TravelerDashboard({ currentUser }) {
   };
 
   const handleNavigateToGuides = () => {
+
     navigate('/guides-page', { state: { currentUser } });
+
+
   };
 
   const CurrencyDropdown = () => (
@@ -209,7 +212,9 @@ export default function TravelerDashboard({ currentUser }) {
             <span className="notification-badge">3</span>
           </div>
           <div className="icon-container">
-            <img src={profileIcon} alt="Profile" className="profile-image" onClick={() => (window.location.href = "/profile")} />
+
+            <img src={profileIcon} alt="Profile" className="profile-image" onClick={() => navigate('/profile')} />
+
           </div>
         </div>
       </nav>
@@ -322,6 +327,7 @@ export default function TravelerDashboard({ currentUser }) {
           alt="Bot Assistant"
           type="button"
           className="fixed-bottom-image"
+          onClick={() => navigate('/chatbot')}
         />
       </div>
 
