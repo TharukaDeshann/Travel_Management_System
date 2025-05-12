@@ -1,0 +1,13 @@
+.back-button {
+  background-color: transparent;
+  color: #6b7280;
+  border: none;
+  padding: 0.5rem 0;
+  font-size: 1rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  transition: color 0.2s ease;
+  margin-bottom: 1.5rem;
+}

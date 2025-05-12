@@ -31,7 +31,7 @@ export const login = async (credentials) => {
 };
 
 export const fetchLoggedInUser = async () => {
-  const response = await apiClient.get(`${API_URL}/current-user`, {
+  const response = await apiClient.get(`${API_URL}/me`, {
     withCredentials: true,
   });
   return response.data;

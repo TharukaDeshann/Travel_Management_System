@@ -4,9 +4,6 @@ import { useUser } from "../../context/UserContext";
 import { fetchLoggedInUser, logoutUser } from "../../services/authService";
 import { useNotification } from "../../hooks/useNotification.jsx";
 import styled from "styled-components";
-import apiClient from "../../services/axiosInstance.js"
-
-// Custom styled components
 import {
   Container,
   Card,
@@ -21,7 +18,10 @@ import {
   SectionTitle
 } from "../../components/StyledComponents";
 
-// Profile Detail Item - Styled component approach instead of inline styles
+// Import image uploader component
+import ProfileImageUploader from "../../components/ProfileImageUploader";
+
+// Styled components
 const DetailLabel = styled(Text)`
   font-size: 14px;
   font-weight: 500;
@@ -46,7 +46,15 @@ const NotProvidedText = styled.span`
   font-style: italic;
 `;
 
-// Profile Detail Item component
+const LoadingContainer = styled.div`
+  text-align: center;
+  padding: 100px 0;
+`;
+
+const BadgeContainer = styled.div`
+  margin-bottom: 16px;
+`;
+
 const ProfileDetailItem = ({ label, value, icon }) => (
   <DetailContainer>
     <DetailLabel>{label}</DetailLabel>
@@ -59,24 +67,15 @@ const ProfileDetailItem = ({ label, value, icon }) => (
   </DetailContainer>
 );
 
-const LoadingContainer = styled.div`
-  text-align: center;
-  padding: 100px 0;
-`;
-
-const BadgeContainer = styled.div`
-  margin-bottom: 16px;
-`;
-
 const UserProfile = () => {
   const { user, setUser } = useUser();
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
-  const { showSuccess, showError } = useNotification();
+  const { showError } = useNotification();
 
   useEffect(() => {
     document.title = "Your Profile";
-    
+
     const loadUserProfile = async () => {
       setLoading(true);
       try {
@@ -89,7 +88,6 @@ const UserProfile = () => {
       }
     };
 
-    // If user is not already loaded, fetch it
     if (!user) {
       loadUserProfile();
     } else {
@@ -97,55 +95,19 @@ const UserProfile = () => {
     }
   }, [user, setUser, showError]);
 
-  const handleUpdateProfile = () => {
-    navigate("/profile/update");
-  };
-
-  const handleUpdateEmail = () => {
-    navigate("/profile/update-email");
-  };
-
-  const handleUpdatePassword = () => {
-    navigate("/profile/update-password");
-  };
+  const handleUpdateProfile = () => navigate("/profile/update");
+  const handleUpdateEmail = () => navigate("/profile/update-email");
+  const handleUpdatePassword = () => navigate("/profile/update-password");
 
   const handleLogout = async () => {
     try {
       await logoutUser();
-      setUser(null); // Safe to use here
+      setUser(null);
       navigate("/login");
     } catch (error) {
       showError("Logout failed. Please try again.");
     }
   };
-  const [selectedImage, setSelectedImage] = useState(null);
-
-const handleImageChange = (e) => {
-  setSelectedImage(e.target.files[0]);
-};
-
-const handleImageUpload = async () => {
-  if (!selectedImage) return showError("Please select an image.");
-
-  const formData = new FormData();
-  formData.append("image", selectedImage);
-
-  try {
-    const response = await apiClient.post(`/api/users/${user.id}/upload-profile-picture`, formData, {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
-    });
-
-    const updatedImage = response.data.imageUrl;
-    setUser({ ...user, profileImage: updatedImage });
-    showSuccess("Profile image updated successfully!");
-  } catch (err) {
-    showError("Image upload failed. Please try again.");
-  }
-};
-
-  
 
   const getUserInitials = () => {
     if (!user) return "";
@@ -169,9 +131,7 @@ const handleImageUpload = async () => {
         <LoadingContainer>
           <Title>User profile not available</Title>
           <Text>Please log in to view your profile</Text>
-          <Button onClick={() => navigate("/login")}>
-            Login
-          </Button>
+          <Button onClick={() => navigate("/login")}>Login</Button>
         </LoadingContainer>
       </Container>
     );
@@ -180,110 +140,68 @@ const handleImageUpload = async () => {
   return (
     <Container width="900px">
       <Title>Your Profile</Title>
-      
       <Card>
         <Grid columns={2}>
           <div>
-            <Avatar size="120px" src={user.profileImage}>
-              {getUserInitials()}
+            <Avatar size="120px" src={user.profileImageUrl} alt="Profile Image">
+              
             </Avatar>
-            <Title size="20px">
-              {`${user.firstName} ${user.lastName}`}
-            </Title>
+            <Title size="20px">{`${user.firstName} ${user.lastName}`}</Title>
             <Badge variant={user.verified ? "success" : "warning"}>
               {user.verified ? "Verified" : "Unverified"}
             </Badge>
-            <Text size="16px" color="#666">
-              {user.role}
-            </Text>
+            <Text size="16px" color="#666">{user.role}</Text>
+
+            {/* Image upload component */}
+            <ProfileImageUploader />
           </div>
-          
+
           <div>
             <SectionTitle>Basic Information</SectionTitle>
-            <ProfileDetailItem 
-              label="Email" 
-              value={user.email} 
-              icon="✉️" 
-            />
-            <ProfileDetailItem 
-              label="Phone Number" 
-              value={user.contactNumber} 
-              icon="📱" 
-            />
-            <ProfileDetailItem 
-              label="Address" 
-              value={user.address} 
-              icon="🏠" 
-            />
+            <ProfileDetailItem label="Email" value={user.email} icon="✉️" />
+            <ProfileDetailItem label="Phone Number" value={user.contactNumber} icon="📱" />
+            <ProfileDetailItem label="Address" value={user.address} icon="🏠" />
           </div>
         </Grid>
-        
+
         <Separator />
-        
-        {/* Role-specific information */}
+
         <SectionTitle>
           {user.role === "GUIDE" ? "Guide Information" : user.role === "TRAVELER" ? "Traveler Information" : "Additional Information"}
         </SectionTitle>
-        
+
         {user.role === "GUIDE" && (
           <div>
-            <ProfileDetailItem 
-              label="About Me" 
-              value={user.about} 
-              icon="📝" 
-            />
-            
+            <ProfileDetailItem label="About Me" value={user.about} icon="📝" />
             <DetailLabel>Languages</DetailLabel>
             <BadgeContainer>
               {user.language ? (
                 user.language.split(',').map(lang => (
-                  <Badge key={lang.trim()}>
-                    {lang.trim()}
-                  </Badge>
+                  <Badge key={lang.trim()}>{lang.trim()}</Badge>
                 ))
               ) : (
                 <NotProvidedText>No languages specified</NotProvidedText>
               )}
             </BadgeContainer>
-            
-            <ProfileDetailItem 
-              label="Vehicle Availability" 
-              value={user.vehicleAvailability ? "Available" : "Not Available"} 
-              icon="🚗" 
-            />
-            
-            <ProfileDetailItem 
-              label="Expertise Region" 
-              value={user.expertiseCityRegion} 
-              icon="🗺️" 
-            />
+            <ProfileDetailItem label="Vehicle Availability" value={user.vehicleAvailability ? "Available" : "Not Available"} icon="🚗" />
+            <ProfileDetailItem label="Expertise Region" value={user.expertiseCityRegion} icon="🗺️" />
           </div>
         )}
-        
+
         {user.role === "TRAVELER" && (
           <div>
-            <ProfileDetailItem 
-              label="Nationality" 
-              value={user.nationality} 
-              icon="🌍" 
-            />
+            <ProfileDetailItem label="Nationality" value={user.nationality} icon="🌍" />
           </div>
         )}
-        
+
         <Separator />
-        
+
         <FlexContainer gap={16}>
-          <Button onClick={handleUpdateProfile}>
-            Update Profile
-          </Button>
-          <Button onClick={handleUpdateEmail}>
-            Update Email
-          </Button>
-          <Button onClick={handleUpdatePassword}>
-            Update Password
-          </Button>
-          <Button 
-            onClick={handleLogout} 
+          <Button onClick={handleUpdateProfile}>Update Profile</Button>
+          <Button onClick={handleUpdateEmail}>Update Email</Button>
+          <Button onClick={handleUpdatePassword}>Update Password</Button>
+          <Button
+            onClick={handleLogout}
             style={{
               backgroundColor: "#d9534f",
               color: "#fff",
@@ -293,18 +211,8 @@ const handleImageUpload = async () => {
               cursor: "pointer"
             }}
           >
-            <i className="fas fa-sign-out-alt"></i> 
-            Log Out
+            <i className="fas fa-sign-out-alt"></i> Log Out
           </Button>
-          <div>
-          <input
-  type="file"
-  accept="image/*"
-  onChange={(e) => handleImageChange(e)}
-  style={{ marginTop: "16px" }}
-/>
-<Button onClick={handleImageUpload}>Upload New Image</Button></div>
-
         </FlexContainer>
       </Card>
     </Container>

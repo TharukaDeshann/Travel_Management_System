@@ -131,11 +131,10 @@ export default function TravelerDashboard({ currentUser }) {
   };
 
   const handleNavigateToGuides = () => {
-<<<<<<< HEAD
+
     navigate('/guides-page', { state: { currentUser } });
-=======
-    navigate('/users/users-by-role', { state: { currentUser } });
->>>>>>> 0da65856030fb21be05a0c1b4541f6f1126092ba
+
+
   };
 
   const CurrencyDropdown = () => (
@@ -213,11 +212,9 @@ export default function TravelerDashboard({ currentUser }) {
             <span className="notification-badge">3</span>
           </div>
           <div className="icon-container">
-<<<<<<< HEAD
+
             <img src={profileIcon} alt="Profile" className="profile-image" onClick={() => navigate('/profile')} />
-=======
-            <img src={profileIcon} alt="Profile" className="profile-image" onClick={() => (window.location.href = "/profile")} />
->>>>>>> 0da65856030fb21be05a0c1b4541f6f1126092ba
+
           </div>
         </div>
       </nav>
@@ -326,6 +323,7 @@ export default function TravelerDashboard({ currentUser }) {
           alt="Bot Assistant"
           type="button"
           className="fixed-bottom-image"
+          onClick={() => navigate('/chatbot')}
         />
       </div>
 
