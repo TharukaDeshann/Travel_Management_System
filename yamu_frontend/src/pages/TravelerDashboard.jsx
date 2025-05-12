@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, Mail } from "lucide-react";
 import '../styles/TravelerDashboard.css';
 import WeatherCard from "../components/WeatherCard";
 import yamuLogo from '../images/yamu-logo.png';
@@ -131,11 +131,7 @@ export default function TravelerDashboard({ currentUser }) {
   };
 
   const handleNavigateToGuides = () => {
-<<<<<<< HEAD
     navigate('/guides-page', { state: { currentUser } });
-=======
-    navigate('/users/users-by-role', { state: { currentUser } });
->>>>>>> 0da65856030fb21be05a0c1b4541f6f1126092ba
   };
 
   const CurrencyDropdown = () => (
@@ -196,13 +192,13 @@ export default function TravelerDashboard({ currentUser }) {
               {item}
             </li>
           ))}
-          {/* Add this to the nav-links array */}
           <li
             key="Inbox"
             className="nav-link"
-            onClick={() => navigate('/inbox')}
+            onClick={() => navigate('/inbox', { state: { currentUser } })}
+            style={{ display: 'flex', alignItems: 'center', padding: '0 12px' }}
           >
-            Inbox
+            <Mail size={20} />
           </li>
         </ul>
         <div className="flex items-center space-x-4">
@@ -213,11 +209,7 @@ export default function TravelerDashboard({ currentUser }) {
             <span className="notification-badge">3</span>
           </div>
           <div className="icon-container">
-<<<<<<< HEAD
-            <img src={profileIcon} alt="Profile" className="profile-image" onClick={() => navigate('/profile')} />
-=======
             <img src={profileIcon} alt="Profile" className="profile-image" onClick={() => (window.location.href = "/profile")} />
->>>>>>> 0da65856030fb21be05a0c1b4541f6f1126092ba
           </div>
         </div>
       </nav>
@@ -232,8 +224,12 @@ export default function TravelerDashboard({ currentUser }) {
             />
           </div>
           <div className="buttons-container">
-            <button className="action-button upcoming-trips-button">
-              Upcoming Trips
+          
+          <button 
+            className="action-button upcoming-trips-button"
+            onClick={() => navigate('/traveler-upcoming-trips')}
+          >
+           Upcoming Trips
             </button>
             <button 
               className="action-button start-planning-button"
