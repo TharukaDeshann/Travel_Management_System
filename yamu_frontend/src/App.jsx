@@ -23,6 +23,7 @@ import ItineraryPlanner from "./pages/ItineraryPlanner.jsx";
 import ItinerarySelection from "./pages/ItinerarySelection.jsx";
 import FinalizeItinerary from "./pages/FinalizeItinerary.jsx"; 
 import Inbox from "./pages/Inbox.jsx";// Import FinalizeItinerary
+import TravelerUpcomingTrips from "./pages/TravelerUpcomingTrips";
 
 import VerifyEmail from "./pages/VerifyEmail.jsx";
 import VerifyEmailPending from "./pages/VerifyEmailPending.jsx";
@@ -54,7 +55,7 @@ const App = () => {
           <Route path="/itinerary-planner" element={<ItineraryPlanner />} />
           <Route path="/itinerary-selection" element={<ItinerarySelection />} />
           <Route path="/finalize-itinerary" element={<FinalizeItinerary />} />
-
+          
           {/* Email verification pending */}
           <Route
             path="/verify-email-pending"
@@ -69,16 +70,12 @@ const App = () => {
             <Route path="/traveler-dashboard" element={<TravelerDashboard />} />
             <Route path="/guide-dashboard" element={<GuideDashboard />} />
             <Route path="/admin-dashboard" element={<AdminDashboard />} />
-            <Route path="/guide-review" element={<GuideReview />} />
+            <Route path="/guide-reviews" element={<GuideReview />} />
             <Route path="/guide-calendar" element={<GuideCalendar />} />
             <Route path="/visit-plan" element={<VisitPlanPage />} />
             <Route path="/guides-page" element={<GuidesPage />} />
-
+            <Route path="/users/users-by-role" element={<UsersSocialPage />} />
             <Route path="/inbox" element={<Inbox />} />
-
-
-            <Route path="/users" element={<UsersSocialPage />} />
-            <Route path="/users/profile/:userId" element={<ProfileView />} />
 
             {/* Profile Routes */}
             <Route path="/profile" element={<UserProfile />} />
