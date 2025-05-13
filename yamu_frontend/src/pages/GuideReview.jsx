@@ -18,11 +18,8 @@ const GuideReview = () => {
         setCurrentUser(user);
         
         if (user?.id) {
-          const response = await apiClient.get(`/api/reviews/guide/${user.id}`, {
-            headers: {
-              'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
-            }
-          });
+          const response = await apiClient.get(`/api/reviews/guide/${user.id}`);
+          console.log('Reviews:', response.data);
           setReviews(response.data);
         }
       } catch (error) {
@@ -139,7 +136,7 @@ const GuideReview = () => {
                     fontSize: '18px',
                     color: '#333'
                   }}>
-                    {review.traveler.firstName} {review.traveler.lastName}
+                    {review.travelerName}
                   </h3>
                   <div style={{ display: 'flex', gap: '3px' }}>
                     {[1, 2, 3, 4, 5].map((star) => (
