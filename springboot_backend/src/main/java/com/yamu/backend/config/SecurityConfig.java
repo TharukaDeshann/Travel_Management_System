@@ -57,8 +57,8 @@ public class SecurityConfig {
                         .requestMatchers("/api/weather/**").permitAll()
                         .requestMatchers("/h2-console/**").permitAll()
                         .requestMatchers("/api/auth/login", "/api/auth/register",
-                                "/api/auth/refresh-token", "/api/auth/user", "api/auth/current-user", "/api/users/user",
-                                "/api/locations/**", "/api/auth/verify-email", "api/auth/resend-verification")
+                                "/api/auth/refresh-token", "/api/auth/user", "/api/auth/current-user", "/api/users/user",
+                                "/api/locations/**", "/api/auth/verify-email", "/api/auth/resend-verification")
                         .permitAll()
                         // Order matters! More specific patterns first
                         .requestMatchers(HttpMethod.PUT, "/api/users/{id}").authenticated()
@@ -68,6 +68,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/guide/**").hasRole("GUIDE")
                         .requestMatchers("/api/traveler/**").hasRole("TRAVELER")
                         .requestMatchers("/api/users/**").hasAnyRole("ADMIN", "GUIDE", "TRAVELER")
+                        .requestMatchers("/api/itineraries/**").hasRole("TRAVELER") // Restrict itineraries to TRAVELER
                         .anyRequest().authenticated())
                 // send 401 instead of 403 when no auth
                 .exceptionHandling(ex -> ex
