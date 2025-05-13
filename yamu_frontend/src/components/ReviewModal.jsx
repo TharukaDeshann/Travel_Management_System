@@ -1,25 +1,45 @@
 import React, { useState, useEffect } from 'react';
 import { Star } from 'lucide-react';
 import apiClient from '../services/axiosInstance';
+import { fetchLoggedInUser } from '../services/authService'; // Import fetchLoggedInUser
 
-const ReviewModal = ({ guide, currentUser, onClose, onReviewSubmitted }) => {
+const ReviewModal = ({ guide, onClose, onReviewSubmitted }) => {
   const [reviewText, setReviewText] = useState('');
   const [rating, setRating] = useState(0);
   const [hoverRating, setHoverRating] = useState(0);
   const [existingReview, setExistingReview] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [currentUser, setCurrentUser] = useState(null); // State for logged-in user
+
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        const user = await fetchLoggedInUser(); // Fetch logged-in user
+        setCurrentUser(user);
+      } catch (err) {
+        console.error('Error fetching logged-in user:', err);
+        setError('Failed to fetch user data. Please log in again.');
+      }
+    };
+
+    fetchUserData();
+  }, []);
 
   useEffect(() => {
     const fetchUserReview = async () => {
+      if (!currentUser?.id) return;
+
       try {
-        if (currentUser?.id) {
+        const token = localStorage.getItem("accessToken");
+        if (token) {
           const response = await apiClient.get(`/api/reviews/guide/${guide.id}`, {
             headers: {
-              'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+              'Authorization': `Bearer ${token}`
             }
           });
-          const userReview = response.data.find(r => r.traveler.id === currentUser.id);
+
+          const userReview = response.data.find(r => r.travelerId === currentUser.id);
           if (userReview) {
             setExistingReview(userReview);
             setReviewText(userReview.comment);
@@ -27,14 +47,16 @@ const ReviewModal = ({ guide, currentUser, onClose, onReviewSubmitted }) => {
           }
         }
       } catch (err) {
-        console.error('Error fetching user review:', err);
-        setError('Failed to load review data');
+        console.error('Error fetching reviews:', err);
+        setError('Failed to load reviews');
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchUserReview();
+    if (currentUser) {
+      fetchUserReview();
+    }
   }, [guide.id, currentUser]);
 
   const handleSubmit = async () => {
@@ -43,15 +65,25 @@ const ReviewModal = ({ guide, currentUser, onClose, onReviewSubmitted }) => {
       return;
     }
 
+    const token = localStorage.getItem("accessToken");
+    if (!currentUser?.id || !token) {
+      setError('User information not available. Please login again.');
+      return;
+    }
+
     try {
-      await apiClient.post(`/api/reviews/guide/${guide.id}`, {
-        rating,
-        comment: reviewText
-      }, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+      await apiClient.post(
+        `/api/reviews/guide/${guide.id}`, 
+        {
+          rating,
+          comment: reviewText
+        }, 
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
         }
-      });
+      );
       onReviewSubmitted();
       onClose();
     } catch (err) {

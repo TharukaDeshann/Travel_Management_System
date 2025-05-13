@@ -3,8 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import apiClient from '../services/axiosInstance';
 import { fetchLoggedInUser } from '../services/authService';
 import { refreshToken } from "../services/authService";
+import ReviewModal from './ReviewModal';
 
-const GuideModal = ({ guide, onClose }) => {
+const GuideModal = ({ guide, onClose, currentUser }) => {
   const [currentStep, setCurrentStep] = useState(1);
   const [numberOfDays, setNumberOfDays] = useState(1);
   const [reservationDetails, setReservationDetails] = useState(
@@ -18,26 +19,8 @@ const GuideModal = ({ guide, onClose }) => {
   );
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
-  const [currentUser, setCurrentUser] = useState(null);
-  const [isLoadingUser, setIsLoadingUser] = useState(true);
   const [showReviewModal, setShowReviewModal] = useState(false);
   const navigate = useNavigate();
-
-  useEffect(() => {
-    const loadUser = async () => {
-      try {
-        const user = await fetchLoggedInUser();
-        setCurrentUser(user);
-      } catch (err) {
-        console.error('Failed to fetch user:', err);
-        setCurrentUser(null);
-      } finally {
-        setIsLoadingUser(false);
-      }
-    };
-
-    loadUser();
-  }, []);
 
   const handleDayChange = (e) => {
     const days = parseInt(e.target.value);
@@ -101,7 +84,6 @@ const GuideModal = ({ guide, onClose }) => {
           vehicleDetails: detail.vehicleDetails
         }))
       };
-      console.log('Reservation Data:', reservationData);
 
       const response = await apiClient.post('/api/reservations', reservationData);
       
@@ -132,7 +114,7 @@ const GuideModal = ({ guide, onClose }) => {
           }}
         />
       </div>
-
+      
       <div style={{ flex: 2 }}>
         <h2 style={{ marginTop: 0 }}>{guide.firstName} {guide.lastName}</h2>
         <p><strong>Contact:</strong> {guide.contactNumber}</p>
@@ -144,48 +126,12 @@ const GuideModal = ({ guide, onClose }) => {
         <p><strong>About:</strong> {guide.about}</p>
         <p><strong>Verified:</strong> {guide.verified ? "Yes" : "No"}</p>
 
-        
-        
         <div style={{
           display: 'flex',
           justifyContent: 'flex-end',
           gap: '10px',
-          marginTop: '20px',
-          alignItems: 'center'
+          marginTop: '20px'
         }}>
-          <button
-            onClick={() => navigate(`/inbox?select=${guide.id}`)}
-            style={{
-              padding: '10px 16px',
-              backgroundColor: '#f0f0f0',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '6px'
-            }}
-          >
-            <Mail size={16} />
-            Message
-          </button>
-          
-          {currentUser && (
-            <button
-              onClick={() => setShowReviewModal(true)}
-              style={{
-                padding: '10px 16px',
-                backgroundColor: '#f0f0f0',
-                border: 'none',
-                borderRadius: '4px',
-                cursor: 'pointer'
-              }}
-            >
-              Leave Review
-            </button>
-          )}
-          
           <button
             onClick={onClose}
             style={{
@@ -197,6 +143,19 @@ const GuideModal = ({ guide, onClose }) => {
             }}
           >
             Close
+          </button>
+          <button
+            onClick={() => setShowReviewModal(true)}
+            style={{
+              padding: '10px 20px',
+              backgroundColor: '#4CAF50',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: 'pointer'
+            }}
+          >
+            Reviews
           </button>
           <button
             onClick={() => setCurrentStep(2)}
@@ -220,9 +179,9 @@ const GuideModal = ({ guide, onClose }) => {
     <div style={{ padding: '20px' }}>
       <h2 style={{ marginTop: 0, color: '#532321' }}>Create Reservation</h2>
       <p style={{ color: '#666', marginBottom: '20px' }}>
-        Booking guide: {guide.firstName} {guide.lastName} ({guide.expertiseCityRegion})
+        Booking guide: {guide.name} ({guide.expertiseCityRegion})
       </p>
-
+      
       <div style={{ marginBottom: '20px' }}>
         <label style={{ display: 'block', marginBottom: '10px' }}>
           <strong>Number of Days:</strong>
@@ -237,13 +196,11 @@ const GuideModal = ({ guide, onClose }) => {
               padding: '5px',
               width: '60px',
               border: '1px solid #ddd',
-              borderRadius: '4px',
-              outline: 'none',
-              fontSize: '14px'
+              borderRadius: '4px'
             }}
           />
         </label>
-
+        
         {reservationDetails.map((detail, index) => (
           <div key={index} style={{
             border: '1px solid #ddd',
@@ -255,7 +212,7 @@ const GuideModal = ({ guide, onClose }) => {
             <h4 style={{ marginTop: 0, marginBottom: '15px', color: '#532321' }}>
               Day {index + 1} Details
             </h4>
-
+            
             <div style={{ marginBottom: '15px' }}>
               <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>
                 Places to Visit:
@@ -275,7 +232,7 @@ const GuideModal = ({ guide, onClose }) => {
                 required
               />
             </div>
-
+            
             <div style={{ marginBottom: '15px' }}>
               <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>
                 Date:
@@ -284,7 +241,6 @@ const GuideModal = ({ guide, onClose }) => {
                 type="date"
                 value={detail.date}
                 onChange={(e) => handleDetailChange(index, 'date', e.target.value)}
-                min={new Date().toISOString().split('T')[0]}
                 style={{
                   width: '100%',
                   padding: '8px 12px',
@@ -295,7 +251,7 @@ const GuideModal = ({ guide, onClose }) => {
                 required
               />
             </div>
-
+            
             <div style={{ marginBottom: '15px' }}>
               <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>
                 Number of Travelers:
@@ -315,12 +271,12 @@ const GuideModal = ({ guide, onClose }) => {
                 required
               />
             </div>
-
+            
             {guide.vehicleAvailability && (
               <div style={{ marginBottom: '15px' }}>
-                <label style={{
-                  display: 'flex',
-                  alignItems: 'center',
+                <label style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
                   marginBottom: '8px',
                   cursor: 'pointer'
                 }}>
@@ -328,7 +284,7 @@ const GuideModal = ({ guide, onClose }) => {
                     type="checkbox"
                     checked={detail.vehicleRequested}
                     onChange={(e) => handleDetailChange(index, 'vehicleRequested', e.target.checked)}
-                    style={{
+                    style={{ 
                       marginRight: '10px',
                       width: '18px',
                       height: '18px',
@@ -337,7 +293,7 @@ const GuideModal = ({ guide, onClose }) => {
                   />
                   <span style={{ fontWeight: '500' }}>Request Vehicle for this day</span>
                 </label>
-
+                
                 {detail.vehicleRequested && (
                   <div style={{ marginTop: '10px' }}>
                     <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>
@@ -363,10 +319,10 @@ const GuideModal = ({ guide, onClose }) => {
           </div>
         ))}
       </div>
-
+      
       {error && (
-        <div style={{
-          color: 'red',
+        <div style={{ 
+          color: 'red', 
           margin: '15px 0',
           padding: '10px',
           backgroundColor: '#ffebee',
@@ -376,7 +332,7 @@ const GuideModal = ({ guide, onClose }) => {
           {error}
         </div>
       )}
-
+      
       <div style={{
         display: 'flex',
         justifyContent: 'space-between',
@@ -432,82 +388,58 @@ const GuideModal = ({ guide, onClose }) => {
   );
 
   return (
-    <>
+    <div style={{
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: 'rgba(0,0,0,0.5)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      zIndex: 1000
+    }}>
       <div style={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        backgroundColor: 'rgba(0,0,0,0.5)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        zIndex: 1000
+        backgroundColor: 'white',
+        borderRadius: '8px',
+        width: '80%',
+        maxWidth: '900px',
+        maxHeight: '90vh',
+        overflowY: 'auto',
+        padding: '20px',
+        position: 'relative'
       }}>
-        <div style={{
-          backgroundColor: 'white',
-          borderRadius: '8px',
-          width: '80%',
-          maxWidth: '900px',
-          maxHeight: '90vh',
-          overflowY: 'auto',
-          padding: '20px',
-          position: 'relative'
-        }}>
-          <button
-            onClick={onClose}
-            style={{
-              position: 'absolute',
-              top: '10px',
-              right: '10px',
-              background: 'none',
-              border: 'none',
-              fontSize: '20px',
-              cursor: 'pointer'
-            }}
-          >
-            ❌
-          </button>
+        <button 
+          onClick={onClose}
+          style={{
+            position: 'absolute',
+            top: '10px',
+            right: '10px',
+            background: 'none',
+            border: 'none',
+            fontSize: '20px',
+            cursor: 'pointer'
+          }}
+        >
+          ❌
+        </button>
 
-          {isLoadingUser ? (
-            <div style={{
-              display: 'flex',
-              justifyContent: 'center',
-              alignItems: 'center',
-              height: '200px'
-            }}>
-              <p>Loading guide information...</p>
-            </div>
-          ) : (
-            currentStep === 1 ? renderGuideDetails() : renderReservationForm()
-          )}
-        </div>
+        {currentStep === 1 ? renderGuideDetails() : renderReservationForm()}
       </div>
-      
+
       {showReviewModal && (
         <ReviewModal
           guide={guide}
           currentUser={currentUser}
           onClose={() => setShowReviewModal(false)}
           onReviewSubmitted={() => {
-            // Refresh ratings after submission
-            apiClient.get(`/api/reviews/guide/${guide.id}/average-rating`, {
-              headers: {
-                'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
-              }
-            })
-              .then(res => setAverageRating(res.data || 0));
-            apiClient.get(`/api/reviews/guide/${guide.id}`, {
-              headers: {
-                'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
-              }
-            })
-              .then(res => setReviewCount(res.data.length));
+            setShowReviewModal(false);
+            alert('Review submitted successfully!');
           }}
         />
       )}
-    </>
+    </div>
   );
 };
 

@@ -75,6 +75,7 @@ const App = () => {
             <Route path="/visit-plan" element={<VisitPlanPage />} />
             <Route path="/guides-page" element={<GuidesPage />} />
             <Route path="/users/users-by-role" element={<UsersSocialPage />} />
+            <Route path="/inbox" element={<Inbox />} />
 
             {/* Profile Routes */}
             <Route path="/profile" element={<UserProfile />} />

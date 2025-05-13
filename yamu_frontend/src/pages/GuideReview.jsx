@@ -18,7 +18,11 @@ const GuideReview = () => {
         setCurrentUser(user);
         
         if (user?.id) {
-          const response = await apiClient.get(`/api/reviews/guide/${user.id}`);
+          const response = await apiClient.get(`/api/reviews/guide/${user.id}`, {
+            headers: {
+              'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+            }
+          });
           setReviews(response.data);
         }
       } catch (error) {
