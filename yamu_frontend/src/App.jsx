@@ -23,14 +23,17 @@ import ItineraryPlanner from "./pages/ItineraryPlanner.jsx";
 
 import FinalizeItinerary from "./pages/FinalizeItinerary.jsx"; 
 import Inbox from "./pages/Inbox.jsx";// Import FinalizeItinerary
+import TravelerUpcomingTrips from "./pages/TravelerUpcomingTrips";
 
 import VerifyEmail from "./pages/VerifyEmail.jsx";
 import VerifyEmailPending from "./pages/VerifyEmailPending.jsx";
 import UserProfile from "./pages/profile/UserProfile.jsx";
+import ProfileView from "./pages/ProfileView.jsx";
 import UpdateEmail from "./pages/profile/components/UpdateEmail.jsx";
 import UpdatePassword from "./pages/profile/components/UpdatePassword.jsx";
 import AdminDashboard from "./pages/AdminDashboard.jsx";
 import UsersSocialPage from "./pages/UsersSocialPage.jsx";
+
 
 
 const App = () => {
@@ -64,7 +67,7 @@ const App = () => {
             <Route path="/traveler-dashboard" element={<TravelerDashboard />} />
             <Route path="/guide-dashboard" element={<GuideDashboard />} />
             <Route path="/admin-dashboard" element={<AdminDashboard />} />
-            <Route path="/guide-review" element={<GuideReview />} />
+            <Route path="/guide-reviews" element={<GuideReview />} />
             <Route path="/guide-calendar" element={<GuideCalendar />} />
             <Route path="/visit-plan" element={<VisitPlanPage />} />
             <Route path="/guides-page" element={<GuidesPage />} />

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { Mail } from "lucide-react";
 import yamuLogo from '../images/yamu-logo.png';
 import profileIcon from '../images/profile.png';
 import apiClient from "../services/axiosInstance";
@@ -32,7 +33,6 @@ const GuideDashboard = ({ currentUser }) => {
           setReservations(freshData);
           localStorage.setItem(RESERVATIONS_STORAGE_KEY, JSON.stringify(freshData));
 
-          // Fetch unread message count
           const countResponse = await apiClient.get('/api/messages/unread-count');
           setUnreadCount(countResponse.data);
         } else {
@@ -40,7 +40,6 @@ const GuideDashboard = ({ currentUser }) => {
         }
       } catch (err) {
         console.error("Error loading reservations:", err);
-        //setError("Failed to load reservations. Showing cached data if available.");
       } finally {
         setLoading(false);
       }
@@ -65,7 +64,6 @@ const GuideDashboard = ({ currentUser }) => {
       setError(null);
     } catch (err) {
       console.error("Refresh failed:", err);
-      //setError("Failed to refresh. Showing cached data.");
     } finally {
       setLoading(false);
     }
@@ -73,7 +71,7 @@ const GuideDashboard = ({ currentUser }) => {
 
   const handleStatusChange = async (reservationId, newStatus) => {
     try {
-      currentUser = JSON.parse(localStorage.getItem("user"));currentUser = JSON.parse(localStorage.getItem("user"));
+      currentUser = JSON.parse(localStorage.getItem("user"));
       if (!currentUser?.id) {
         setError("User information not available. Cannot update status.");
         return;
@@ -109,8 +107,212 @@ const GuideDashboard = ({ currentUser }) => {
     .filter(res => res.status === 'COMPLETED')
     .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
-  return (
+  const ReservationCard = ({ reservation, onStatusChange, isPast = false }) => {
+    const statusColors = {
+      'PENDING': '#FFA500',
+      'CONFIRMED': '#4CAF50',
+      'DECLINED': '#F44336',
+      'COMPLETED': '#2196F3'
+    };
 
+    const handleMessageClick = () => {
+      navigate(`/inbox?select=${reservation.traveler?.id}`);
+    };
+
+    const MessageButton = () => (
+      <button
+        onClick={handleMessageClick}
+        style={{
+          padding: "8px 16px",
+          backgroundColor: "#f0f0f0",
+          border: "none",
+          borderRadius: "4px",
+          cursor: "pointer",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: "6px",
+          transition: "all 0.2s ease",
+          ':hover': {
+            backgroundColor: "#e0e0e0"
+          }
+        }}
+      >
+        <Mail size={16} />
+        Message
+      </button>
+    );
+
+    return (
+      <div style={{
+        backgroundColor: "white",
+        borderRadius: "8px",
+        boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+        padding: "20px",
+        position: "relative"
+      }}>
+        <div style={{
+          position: "absolute",
+          top: "20px",
+          right: "20px",
+          padding: "4px 8px",
+          borderRadius: "4px",
+          color: "white",
+          fontSize: "12px",
+          fontWeight: "600",
+          backgroundColor: statusColors[reservation.status] || '#9E9E9E'
+        }}>
+          {reservation.status}
+        </div>
+
+        <div style={{ marginBottom: "15px" }}>
+          <h4 style={{
+            margin: "0 0 5px 0",
+            fontSize: "18px",
+            fontWeight: "600",
+            color: "#532321"
+          }}>Reservation #{reservation.id}</h4>
+          <p style={{
+            margin: 0,
+            color: "#666",
+            fontSize: "14px"
+          }}>
+            Created: {new Date(reservation.createdAt).toLocaleString()}
+          </p>
+        </div>
+
+        <div style={{
+          display: "flex",
+          gap: "20px",
+          marginBottom: "15px"
+        }}>
+          <div>
+            <h5 style={{
+              margin: "0 0 8px 0",
+              fontSize: "14px",
+              color: "#532321",
+              fontWeight: "500"
+            }}>Traveler Details</h5>
+            <p style={{ margin: "4px 0", fontSize: "14px" }}>
+              <strong>Name:</strong> {reservation.traveler?.firstName} {reservation.traveler?.lastName}
+            </p>
+            <p style={{ margin: "4px 0", fontSize: "14px" }}>
+              <strong>Contact:</strong> {reservation.traveler?.contactNumber}
+            </p>
+          </div>
+
+          <div>
+            <h5 style={{
+              margin: "0 0 8px 0",
+              fontSize: "14px",
+              color: "#532321",
+              fontWeight: "500"
+            }}>Tour Details</h5>
+            <p style={{ margin: "4px 0", fontSize: "14px" }}>
+              <strong>Days:</strong> {reservation.numberOfDays}
+            </p>
+            <p style={{ margin: "4px 0", fontSize: "14px" }}>
+              <strong>Travelers:</strong> {reservation.dayDetails?.[0]?.numberOfTravelers || 'N/A'}
+            </p>
+          </div>
+        </div>
+
+        <div style={{ marginBottom: "20px" }}>
+          <h5 style={{
+            margin: "0 0 8px 0",
+            fontSize: "14px",
+            color: "#532321",
+            fontWeight: "500"
+          }}>Itinerary</h5>
+          <div style={{ display: "grid", gap: "10px" }}>
+            {reservation.dayDetails?.map((day, index) => (
+              <div key={index} style={{
+                padding: "10px",
+                backgroundColor: "#f9f9f9",
+                borderRadius: "4px"
+              }}>
+                <p style={{ margin: "4px 0", fontWeight: "500" }}>
+                  Day {day.dayNumber}: {day.places}
+                </p>
+                <p style={{ margin: "4px 0", fontSize: "13px" }}>
+                  <strong>Date:</strong> {new Date(day.date).toLocaleDateString()}
+                </p>
+                {day.vehicleRequested && (
+                  <p style={{ margin: "4px 0", fontSize: "13px" }}>
+                    <strong>Vehicle:</strong> {day.vehicleDetails || 'No details'}
+                  </p>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {!isPast && (
+          <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px", alignItems: "center" }}>
+            {reservation.status !== 'DECLINED' && <MessageButton />}
+
+            {reservation.status === 'PENDING' && (
+              <>
+                <button
+                  onClick={() => onStatusChange(reservation.id, 'DECLINED')}
+                  style={{
+                    padding: "8px 16px",
+                    backgroundColor: "#F44336",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "4px",
+                    cursor: "pointer",
+                    ':hover': {
+                      backgroundColor: "#d32f2f"
+                    }
+                  }}
+                >
+                  Decline
+                </button>
+                <button
+                  onClick={() => onStatusChange(reservation.id, 'CONFIRMED')}
+                  style={{
+                    padding: "8px 16px",
+                    backgroundColor: "#4CAF50",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "4px",
+                    cursor: "pointer",
+                    ':hover': {
+                      backgroundColor: "#3e8e41"
+                    }
+                  }}
+                >
+                  Confirm
+                </button>
+              </>
+            )}
+
+            {reservation.status === 'CONFIRMED' && (
+              <button
+                onClick={() => onStatusChange(reservation.id, 'COMPLETED')}
+                style={{
+                  padding: "8px 16px",
+                  backgroundColor: "#2196F3",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "4px",
+                  cursor: "pointer",
+                  ':hover': {
+                    backgroundColor: "#1976D2"
+                  }
+                }}
+              >
+                Mark as Completed
+              </button>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  return (
     <div style={{
       minHeight: "100vh",
       backgroundColor: "#f5f5f5",
@@ -139,8 +341,6 @@ const GuideDashboard = ({ currentUser }) => {
             fontWeight: "bold",
             color: "#532321"
           }}>YAMU</span>
-
-
         </div>
         
         <div style={{ display: "flex", gap: "30px" }}>
@@ -163,44 +363,61 @@ const GuideDashboard = ({ currentUser }) => {
               {item}
             </button>
           ))}
-          <div style={{ position: 'relative' }}>
-            <button
-              style={{
-                background: "none",
-                border: "none",
-                color: "#333",
-                fontSize: "16px",
-                cursor: "pointer",
-                padding: "5px 10px",
-                ':hover': {
-                  color: "#532321"
-                }
-              }}
-              onClick={() => navigate('/inbox')}
-            >
-              Inbox
-            </button>
-            {unreadCount > 0 && (
-              <span style={{
-                position: 'absolute',
-                top: '-5px',
-                right: '-5px',
-                backgroundColor: '#532321',
-                color: 'white',
-                borderRadius: '50%',
-                width: '18px',
-                height: '18px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '10px'
-              }}>
-                {unreadCount}
-              </span>
-            )}
-          </div>
+          <button
+            style={{
+              background: "none",
+              border: "none",
+              color: "#333",
+              fontSize: "16px",
+              cursor: "pointer",
+              padding: "5px 10px",
+              ':hover': {
+                color: "#532321"
+              }
+            }}
+            onClick={() => navigate('/guide-review')}
+          >
+            Reviews
+          </button>
         </div>
-
+        
+        <div style={{ position: 'relative' }}>
+          <button
+            style={{
+              background: "none",
+              border: "none",
+              color: "#333",
+              fontSize: "16px",
+              cursor: "pointer",
+              padding: "5px 10px",
+              ':hover': {
+                color: "#532321"
+              }
+            }}
+            onClick={() => navigate('/inbox')}
+            aria-label="Inbox"
+          >
+            <Mail size={20} />
+          </button>
+          {unreadCount > 0 && (
+            <span style={{
+              position: 'absolute',
+              top: '-5px',
+              right: '-5px',
+              backgroundColor: '#532321',
+              color: 'white',
+              borderRadius: '50%',
+              width: '18px',
+              height: '18px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '10px'
+            }}>
+              {unreadCount}
+            </span>
+          )}
+        </div>
         
         <div style={{ display: "flex", alignItems: "center", gap: "20px" }}>
           <img 
@@ -288,8 +505,6 @@ const GuideDashboard = ({ currentUser }) => {
               >
                 Past
               </button>
-
-        
             </div>
           </div>
         </div>
@@ -361,188 +576,6 @@ const GuideDashboard = ({ currentUser }) => {
           </div>
         )}
       </div>
-    </div>
-  );
-};
-
-const ReservationCard = ({ reservation, onStatusChange, isPast = false }) => {
-  const statusColors = {
-    'PENDING': '#FFA500',
-    'CONFIRMED': '#4CAF50',
-    'DECLINED': '#F44336',
-    'COMPLETED': '#2196F3'
-  };
-
-  return (
-    <div style={{
-      backgroundColor: "white",
-      borderRadius: "8px",
-      boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-      padding: "20px",
-      position: "relative"
-    }}>
-      <div style={{
-        position: "absolute",
-        top: "20px",
-        right: "20px",
-        padding: "4px 8px",
-        borderRadius: "4px",
-        color: "white",
-        fontSize: "12px",
-        fontWeight: "600",
-        backgroundColor: statusColors[reservation.status] || '#9E9E9E'
-      }}>
-        {reservation.status}
-      </div>
-
-      <div style={{ marginBottom: "15px" }}>
-        <h4 style={{
-          margin: "0 0 5px 0",
-          fontSize: "18px",
-          fontWeight: "600",
-          color: "#532321"
-        }}>Reservation #{reservation.id}</h4>
-        <p style={{
-          margin: 0,
-          color: "#666",
-          fontSize: "14px"
-        }}>
-          Created: {new Date(reservation.createdAt).toLocaleString()}
-        </p>
-      </div>
-
-      <div style={{
-        display: "flex",
-        gap: "20px",
-        marginBottom: "15px"
-      }}>
-        <div>
-          <h5 style={{
-            margin: "0 0 8px 0",
-            fontSize: "14px",
-            color: "#532321",
-            fontWeight: "500"
-          }}>Traveler Details</h5>
-          <p style={{ margin: "4px 0", fontSize: "14px" }}>
-            <strong>Name:</strong> {reservation.traveler?.firstName} {reservation.traveler?.lastName}
-          </p>
-          <p style={{ margin: "4px 0", fontSize: "14px" }}>
-            <strong>Contact:</strong> {reservation.traveler?.contactNumber}
-          </p>
-        </div>
-
-        <div>
-          <h5 style={{
-            margin: "0 0 8px 0",
-            fontSize: "14px",
-            color: "#532321",
-            fontWeight: "500"
-          }}>Tour Details</h5>
-          <p style={{ margin: "4px 0", fontSize: "14px" }}>
-            <strong>Days:</strong> {reservation.numberOfDays}
-          </p>
-          <p style={{ margin: "4px 0", fontSize: "14px" }}>
-            <strong>Travelers:</strong> {reservation.dayDetails?.[0]?.numberOfTravelers || 'N/A'}
-          </p>
-        </div>
-      </div>
-
-      <div style={{ marginBottom: "20px" }}>
-        <h5 style={{
-          margin: "0 0 8px 0",
-          fontSize: "14px",
-          color: "#532321",
-          fontWeight: "500"
-        }}>Itinerary</h5>
-        <div style={{ display: "grid", gap: "10px" }}>
-          {reservation.dayDetails?.map((day, index) => (
-            <div key={index} style={{
-              padding: "10px",
-              backgroundColor: "#f9f9f9",
-              borderRadius: "4px"
-            }}>
-              <p style={{ margin: "4px 0", fontWeight: "500" }}>
-                Day {day.dayNumber}: {day.places}
-              </p>
-              <p style={{ margin: "4px 0", fontSize: "13px" }}>
-                <strong>Date:</strong> {new Date(day.date).toLocaleDateString()}
-              </p>
-              {day.vehicleRequested && (
-                <p style={{ margin: "4px 0", fontSize: "13px" }}>
-                  <strong>Vehicle:</strong> {day.vehicleDetails || 'No details'}
-                </p>
-              )}
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {!isPast && (
-        <div style={{
-          display: "flex",
-          justifyContent: "flex-end",
-          gap: "10px"
-        }}>
-          {reservation.status === 'PENDING' && (
-            <>
-              <button
-                onClick={() => onStatusChange(reservation.id, 'CONFIRMED')}
-                style={{
-                  padding: "8px 16px",
-                  backgroundColor: "#4CAF50",
-                  color: "white",
-                  border: "none",
-                  borderRadius: "4px",
-                  cursor: "pointer",
-                  fontSize: "14px",
-                  ':hover': {
-                    backgroundColor: "#3e8e41"
-                  }
-                }}
-              >
-                Confirm
-              </button>
-              <button
-                onClick={() => onStatusChange(reservation.id, 'DECLINED')}
-                style={{
-                  padding: "8px 16px",
-                  backgroundColor: "#F44336",
-                  color: "white",
-                  border: "none",
-                  borderRadius: "4px",
-                  cursor: "pointer",
-                  fontSize: "14px",
-                  ':hover': {
-                    backgroundColor: "#d32f2f"
-                  }
-                }}
-              >
-                Decline
-              </button>
-            </>
-          )}
-          
-          {reservation.status === 'CONFIRMED' && (
-            <button
-              onClick={() => onStatusChange(reservation.id, 'COMPLETED')}
-              style={{
-                padding: "8px 16px",
-                backgroundColor: "#2196F3",
-                color: "white",
-                border: "none",
-                borderRadius: "4px",
-                cursor: "pointer",
-                fontSize: "14px",
-                ':hover': {
-                  backgroundColor: "#1976D2"
-                }
-              }}
-            >
-              Mark as Completed
-            </button>
-          )}
-        </div>
-      )}
     </div>
   );
 };
