@@ -1,11 +1,15 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { websocketService } from '../services/websocketService';
 import apiClient from '../services/axiosInstance';
 import { useUser } from '../context/UserContext';
 
-const Inbox = ({currentUser}) => {
+const Inbox = () => {
   const { user } = useUser();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const messagesEndRef = useRef(null);
+  
   const [chatPartners, setChatPartners] = useState([]);
   const [selectedPartner, setSelectedPartner] = useState(null);
   const [messages, setMessages] = useState([]);
@@ -15,6 +19,29 @@ const Inbox = ({currentUser}) => {
   const [unreadCounts, setUnreadCounts] = useState({});
   const [allUsers, setAllUsers] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [isConnected, setIsConnected] = useState(false);
+  const [isLoadingChat, setIsLoadingChat] = useState(false);
+
+  const handleIncomingMessage = useCallback((message) => {
+    setMessages(prev => {
+      const messageExists = prev.some(m => m.id === message.id);
+      if (messageExists) return prev;
+
+      const isUnread = message.receiverId === user.id && !message.read;
+      if (isUnread) {
+        setUnreadCounts(prev => ({
+          ...prev,
+          [message.senderId]: (prev[message.senderId] || 0) + 1
+        }));
+      }
+
+      return [...prev, message];
+    });
+
+    if (selectedPartner === message.senderId) {
+      apiClient.post(`/api/messages/mark-read/${message.id}`);
+    }
+  }, [user, selectedPartner]);
 
   useEffect(() => {
     if (!user) {
@@ -22,313 +49,501 @@ const Inbox = ({currentUser}) => {
       return;
     }
 
-    const fetchChatPartners = async () => {
+    const setupWebSocket = async () => {
       try {
-        const response = await apiClient.get('/api/messages/chat-partners');
-        setChatPartners(response.data);
-        
-        const counts = {};
-        for (const partnerId of response.data) {
-          const countResponse = await apiClient.get(`/api/messages/unread-count?partnerId=${partnerId}`);
-          counts[partnerId] = countResponse.data;
+        await websocketService.connect();
+        websocketService.subscribe(
+          `/user/${user.id}/queue/messages`,
+          handleIncomingMessage
+        );
+        setIsConnected(true);
+      } catch (error) {
+        console.error('WebSocket connection failed:', error);
+        setIsConnected(false);
+        setError('Realtime connection unavailable - using fallback');
+      }
+    };
+
+    const connectionListener = websocketService.addConnectionListener(
+      (connected) => {
+        setIsConnected(connected);
+        if (connected) {
+          websocketService.subscribe(
+            `/user/${user.id}/queue/messages`,
+            handleIncomingMessage
+          );
         }
-        setUnreadCounts(counts);
-      } catch (err) {
-        setError('Failed to load chat partners');
-        console.error(err);
-      } finally {
+      }
+    );
+
+    setupWebSocket();
+
+    return () => {
+      connectionListener();
+      websocketService.disconnect();
+    };
+  }, [user, navigate, handleIncomingMessage]);
+
+  useEffect(() => {
+    if (!user) return;
+
+    const loadInitialData = async () => {
+      try {
+        const [partnersResponse, countsResponse, usersResponse] = await Promise.all([
+          apiClient.get('/api/messages/chat-partners'),
+          apiClient.get('/api/messages/unread-count'),
+          apiClient.get(`/api/users/role/${user.role === 'TRAVELER' ? 'GUIDE' : 'TRAVELER'}`)
+        ]);
+
+        setChatPartners(partnersResponse.data);
+        setUnreadCounts(countsResponse.data);
+        setAllUsers(usersResponse.data);
+        setLoading(false);
+      } catch (error) {
+        setError('Failed to load initial data');
         setLoading(false);
       }
     };
 
-    const fetchAllUsers = async () => {
+    loadInitialData();
+  }, [user]);
+
+  useEffect(() => {
+    const userIdParam = searchParams.get('select');
+    if (userIdParam) {
+      setIsLoadingChat(true);
+      const userId = parseInt(userIdParam);
+      if (!isNaN(userId)) {
+        setSelectedPartner(userId);
+        setTimeout(() => {
+          messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+          setIsLoadingChat(false);
+        }, 100);
+      }
+    }
+  }, [searchParams]);
+
+  useEffect(() => {
+    if (!selectedPartner) return;
+
+    const loadMessages = async () => {
       try {
-        const role = user.role === 'TRAVELER' ? 'GUIDE' : 'TRAVELER';
-        const response = await apiClient.get(`/api/users/role/${role}`);
-        setAllUsers(response.data);
-      } catch (err) {
-        console.error('Failed to fetch users:', err);
+        const response = await apiClient.get(`/api/messages/conversation/${selectedPartner}`);
+        setMessages(response.data);
+        setUnreadCounts(prev => ({
+          ...prev,
+          [selectedPartner]: 0
+        }));
+      } catch (error) {
+        setError('Failed to load messages');
       }
     };
 
-    fetchChatPartners();
-    fetchAllUsers();
-  }, [user, navigate]);
+    loadMessages();
+  }, [selectedPartner]);
 
   useEffect(() => {
-    if (selectedPartner) {
-      const fetchMessages = async () => {
-        try {
-            currentUser = JSON.parse(localStorage.getItem("user"));
-          const response = await apiClient.get(`/api/messages/conversation/${selectedPartner.id}`);
-          setMessages(response.data);
-          // Mark messages as read when conversation is opened
-          await apiClient.post(`/api/messages/mark-as-read/${selectedPartner.id}`);
-        } catch (err) {
-          setError('Failed to load messages');
-          console.error(err);
-        }
-      };
-      fetchMessages();
-    }
-  }, [selectedPartner]);
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
 
   const handleSendMessage = async () => {
     if (!newMessage.trim() || !selectedPartner) return;
 
+    const messageData = {
+      receiverId: selectedPartner,
+      content: newMessage,
+    };
+
+    const tempId = `temp-${Date.now()}`;
+    const optimisticMessage = {
+      id: tempId,
+      senderId: user.id,
+      senderName: `${user.firstName} ${user.lastName}`,
+      receiverId: selectedPartner,
+      receiverName: allUsers.find(u => u.id === selectedPartner)?.name || '',
+      content: newMessage,
+      timestamp: new Date().toISOString(),
+      read: false,
+    };
+
+    setMessages(prev => [...prev, optimisticMessage]);
+    setNewMessage('');
+
     try {
-      const response = await apiClient.post('/api/messages', {
-        receiverId: selectedPartner.id,
-        content: newMessage
-      });
-      
-      setMessages([...messages, response.data]);
-      setNewMessage('');
-    } catch (err) {
+      const wsSuccess = websocketService.send('/app/chat', messageData);
+
+      if (!wsSuccess) {
+        const response = await apiClient.post('/api/messages', messageData);
+        setMessages(prev => prev.map(msg => 
+          msg.id === tempId ? response.data : msg
+        ));
+      }
+    } catch (error) {
+      setMessages(prev => prev.filter(msg => msg.id !== tempId));
       setError('Failed to send message');
-      console.error(err);
     }
   };
 
-  const filteredUsers = allUsers.filter(user => 
-    `${user.firstName} ${user.lastName}`.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredUsers = allUsers.filter(u =>
+    `${u.firstName} ${u.lastName}`
+      .toLowerCase()
+      .includes(searchTerm.toLowerCase())
   );
 
-  return (
-    <div style={{
+  const getChatItemStyle = (partnerId) => {
+    const baseStyle = {
+      padding: "12px 16px",
+      cursor: "pointer",
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      borderBottom: "1px solid #f0f0f0",
+      transition: "background-color 0.2s",
+      ':hover': {
+        backgroundColor: "#f5f5f5",
+      }
+    };
+
+    const activeStyle = {
+      backgroundColor: "#f0f7ff",
+    };
+
+    const selectedFromParamStyle = {
+      backgroundColor: "#e6f7ff",
+      borderLeft: "3px solid #532321"
+    };
+
+    let style = { ...baseStyle };
+    if (selectedPartner === partnerId) {
+      style = { ...style, ...activeStyle };
+    }
+
+    const userIdParam = searchParams.get('select');
+    if (userIdParam && partnerId === parseInt(userIdParam)) {
+      style = { ...style, ...selectedFromParamStyle };
+    }
+
+    return style;
+  };
+
+  const styles = {
+    container: {
       display: 'flex',
       height: 'calc(100vh - 60px)',
-      backgroundColor: '#f5f5f5'
-    }}>
-      {/* Sidebar */}
-      <div style={{
-        width: '300px',
-        borderRight: '1px solid #e0e0e0',
-        overflowY: 'auto',
-        display: 'flex',
-        flexDirection: 'column',
-        backgroundColor: 'white'
-      }}>
-        {/* Search */}
-        <div style={{ padding: '15px', borderBottom: '1px solid #e0e0e0' }}>
+      backgroundColor: '#f5f5f5',
+      position: 'relative',
+    },
+    connectionBanner: {
+      position: 'absolute',
+      top: '10px',
+      right: '10px',
+      padding: '8px 16px',
+      backgroundColor: '#FFC107',
+      color: 'black',
+      borderRadius: '20px',
+      fontSize: '14px',
+      zIndex: 100,
+      boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+    },
+    sidebar: {
+      width: '320px',
+      borderRight: '1px solid #e0e0e0',
+      overflowY: 'auto',
+      display: 'flex',
+      flexDirection: 'column',
+      backgroundColor: 'white',
+    },
+    searchContainer: {
+      padding: '16px',
+      borderBottom: '1px solid #e0e0e0',
+    },
+    searchInput: {
+      width: '100%',
+      padding: '10px 16px',
+      border: '1px solid #ddd',
+      borderRadius: '20px',
+      outline: 'none',
+      fontSize: '14px',
+    },
+    sectionHeader: {
+      padding: '12px 16px',
+      margin: 0,
+      fontSize: '16px',
+      fontWeight: '600',
+      color: '#532321',
+      backgroundColor: '#f9f9f9',
+    },
+    chatItemContent: {
+      display: 'flex',
+      flexDirection: 'column',
+      flex: 1,
+    },
+    partnerName: {
+      fontWeight: '500',
+      marginBottom: '4px',
+    },
+    unreadCount: {
+      backgroundColor: '#532321',
+      color: 'white',
+      borderRadius: '50%',
+      minWidth: '20px',
+      height: '20px',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      fontSize: '12px',
+      padding: '0 4px',
+    },
+    chatArea: {
+      flex: 1,
+      display: 'flex',
+      flexDirection: 'column',
+      backgroundColor: 'white',
+    },
+    chatHeader: {
+      padding: '16px',
+      borderBottom: '1px solid #e0e0e0',
+      backgroundColor: '#f9f9f9',
+    },
+    messagesContainer: {
+      flex: 1,
+      padding: '16px',
+      overflowY: 'auto',
+      display: 'flex',
+      flexDirection: 'column',
+      background: '#f5f7fa',
+    },
+    message: {
+      maxWidth: '75%',
+      marginBottom: '12px',
+      padding: '12px 16px',
+      borderRadius: '18px',
+      position: 'relative',
+      wordBreak: 'break-word',
+    },
+    sentMessage: {
+      alignSelf: 'flex-end',
+      backgroundColor: '#532321',
+      color: 'white',
+      borderBottomRightRadius: '4px',
+    },
+    receivedMessage: {
+      alignSelf: 'flex-start',
+      backgroundColor: 'white',
+      color: '#333',
+      borderBottomLeftRadius: '4px',
+      boxShadow: '0 1px 2px rgba(0,0,0,0.1)',
+    },
+    messageContent: {
+      marginBottom: '6px',
+      lineHeight: '1.4',
+    },
+    messageTime: {
+      fontSize: '11px',
+      opacity: 0.8,
+      textAlign: 'right',
+    },
+    inputContainer: {
+      padding: '16px',
+      borderTop: '1px solid #e0e0e0',
+      display: 'flex',
+      alignItems: 'center',
+      backgroundColor: '#f9f9f9',
+    },
+    messageInput: {
+      flex: 1,
+      padding: '12px 16px',
+      border: '1px solid #ddd',
+      borderRadius: '20px',
+      marginRight: '12px',
+      outline: 'none',
+      fontSize: '14px',
+    },
+    sendButton: {
+      padding: '12px 24px',
+      backgroundColor: '#532321',
+      color: 'white',
+      border: 'none',
+      borderRadius: '20px',
+      cursor: 'pointer',
+      fontWeight: '500',
+      transition: 'background-color 0.2s',
+      ':hover': {
+        backgroundColor: '#3a1817',
+      },
+      ':disabled': {
+        backgroundColor: '#cccccc',
+        cursor: 'not-allowed',
+      },
+    },
+    emptyState: {
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
+      height: '100%',
+      color: '#666',
+      textAlign: 'center',
+      padding: '20px',
+    },
+    errorMessage: {
+      color: '#d32f2f',
+      padding: '12px',
+      textAlign: 'center',
+      fontSize: '14px',
+    },
+    loadingIndicator: {
+      padding: '20px',
+      textAlign: 'center',
+      color: '#666',
+    },
+  };
+
+  return (
+    <div style={styles.container}>
+      {!isConnected && (
+        <div style={styles.connectionBanner}>
+          Offline Mode - Messages may be delayed
+        </div>
+      )}
+
+      <div style={styles.sidebar}>
+        <div style={styles.searchContainer}>
           <input
             type="text"
             placeholder="Search users..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            style={{
-              width: '100%',
-              padding: '8px 12px',
-              border: '1px solid #ddd',
-              borderRadius: '4px'
-            }}
+            style={styles.searchInput}
           />
         </div>
+
+        <h3 style={styles.sectionHeader}>Your Conversations</h3>
         
-        {/* Chat List */}
-        <div style={{ padding: '15px', flex: 1, overflowY: 'auto' }}>
-          <h3 style={{ marginTop: 0, marginBottom: '15px', color: '#532321' }}>Your Chats</h3>
-          {loading ? (
-            <p>Loading chats...</p>
-          ) : error ? (
-            <p style={{ color: '#d32f2f', padding: '10px' }}>{error}</p>
-          ) : (
-            chatPartners.map(partner => (
-              <div 
+        {loading ? (
+          <div style={styles.loadingIndicator}>Loading chats...</div>
+        ) : error ? (
+          <div style={styles.errorMessage}>{error}</div>
+        ) : (
+          chatPartners.map(partnerId => {
+            const partner = allUsers.find(u => u.id === partnerId);
+            if (!partner) return null;
+
+            return (
+              <div
                 key={partner.id}
-                style={{
-                  padding: '10px',
-                  cursor: 'pointer',
-                  borderRadius: '4px',
-                  marginBottom: '5px',
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  backgroundColor: selectedPartner?.id === partner.id ? '#e8f0fe' : 'transparent',
-                  ':hover': {
-                    backgroundColor: '#f5f5f5'
-                  }
+                style={getChatItemStyle(partner.id)}
+                onClick={() => {
+                  setSelectedPartner(partner.id);
+                  navigate('/inbox');
                 }}
-                onClick={() => setSelectedPartner(partner)}
               >
-                <div style={{ fontWeight: 500 }}>
-                  {partner.firstName} {partner.lastName}
+                <div style={styles.chatItemContent}>
+                  <div style={styles.partnerName}>
+                    {partner.firstName} {partner.lastName}
+                  </div>
                 </div>
                 {unreadCounts[partner.id] > 0 && (
-                  <div style={{
-                    backgroundColor: '#532321',
-                    color: 'white',
-                    borderRadius: '50%',
-                    width: '20px',
-                    height: '20px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: '12px'
-                  }}>
+                  <div style={styles.unreadCount}>
                     {unreadCounts[partner.id]}
                   </div>
                 )}
               </div>
-            ))
-          )}
-        </div>
+            );
+          })
+        )}
 
-        {/* User List */}
-        <div style={{ padding: '15px', borderTop: '1px solid #e0e0e0' }}>
-          <h3 style={{ marginTop: 0, marginBottom: '15px', color: '#532321' }}>
-            {user?.role === 'TRAVELER' ? 'Available Guides' : 'Travelers'}
-          </h3>
-          {filteredUsers.map(user => (
-            <div 
-              key={user.id}
-              style={{
-                padding: '10px',
-                cursor: 'pointer',
-                borderRadius: '4px',
-                marginBottom: '5px',
-                display: 'flex',
-                flexDirection: 'column',
-                ':hover': {
-                  backgroundColor: '#f5f5f5'
-                }
-              }}
-              onClick={() => setSelectedPartner(user)}
-            >
-              <div>
-                {user.firstName} {user.lastName}
+        <h3 style={styles.sectionHeader}>
+          {user?.role === 'TRAVELER' ? 'Available Guides' : 'Travelers'}
+        </h3>
+        
+        {filteredUsers.map(u => (
+          <div
+            key={u.id}
+            style={getChatItemStyle(u.id)}
+            onClick={() => {
+              setSelectedPartner(u.id);
+              navigate('/inbox');
+            }}
+          >
+            <div style={styles.chatItemContent}>
+              <div style={styles.partnerName}>
+                {u.firstName} {u.lastName}
               </div>
-              {user.role === 'GUIDE' && (
+              {u.role === 'GUIDE' && (
                 <div style={{ fontSize: '12px', color: '#666' }}>
-                  {user.expertiseCityRegion}
+                  {u.expertiseCityRegion}
                 </div>
               )}
             </div>
-          ))}
-        </div>
+          </div>
+        ))}
       </div>
 
-      {/* Chat Container */}
-      <div style={{
-        flex: 1,
-        display: 'flex',
-        flexDirection: 'column',
-        backgroundColor: 'white'
-      }}>
+      <div style={styles.chatArea}>
         {selectedPartner ? (
           <>
-            {/* Chat Header */}
-            <div style={{
-              padding: '15px',
-              borderBottom: '1px solid #e0e0e0',
-              backgroundColor: '#f9f9f9'
-            }}>
+            <div style={styles.chatHeader}>
               <h3 style={{ margin: 0 }}>
-                {selectedPartner.firstName} {selectedPartner.lastName}
-                {selectedPartner.role === 'GUIDE' && (
+                {allUsers.find(u => u.id === selectedPartner)?.firstName}{' '}
+                {allUsers.find(u => u.id === selectedPartner)?.lastName}
+                {allUsers.find(u => u.id === selectedPartner)?.role === 'GUIDE' && (
                   <span style={{ fontSize: '14px', color: '#666', marginLeft: '8px' }}>
-                    - {selectedPartner.expertiseCityRegion}
+                    - {allUsers.find(u => u.id === selectedPartner)?.expertiseCityRegion}
                   </span>
                 )}
               </h3>
             </div>
-            
-            {/* Messages */}
-            <div style={{
-              flex: 1,
-              padding: '15px',
-              overflowY: 'auto',
-              display: 'flex',
-              flexDirection: 'column'
-            }}>
-              {messages.length === 0 ? (
-                <div style={{
-                  display: 'flex',
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                  height: '100%',
-                  color: '#666'
-                }}>
-                  No messages yet. Start the conversation!
+
+            <div style={styles.messagesContainer}>
+              {isLoadingChat ? (
+                <div style={styles.loadingIndicator}>Loading conversation...</div>
+              ) : messages.length === 0 ? (
+                <div style={styles.emptyState}>
+                  <p>No messages yet. Start the conversation!</p>
                 </div>
               ) : (
                 messages.map(message => (
-                  <div 
+                  <div
                     key={message.id}
                     style={{
-                      maxWidth: '70%',
-                      marginBottom: '15px',
-                      padding: '10px 15px',
-                      borderRadius: '18px',
-                      position: 'relative',
-                      alignSelf: message.senderId === user.id ? 'flex-end' : 'flex-start',
-                      backgroundColor: message.senderId === user.id ? '#532321' : '#f1f1f1',
-                      color: message.senderId === user.id ? 'white' : 'black',
-                      borderBottomRightRadius: message.senderId === user.id ? '0' : '18px',
-                      borderBottomLeftRadius: message.senderId === user.id ? '18px' : '0'
+                      ...styles.message,
+                      ...(message.senderId === user.id ? styles.sentMessage : styles.receivedMessage),
                     }}
                   >
-                    <div style={{ marginBottom: '5px' }}>{message.content}</div>
+                    <div style={styles.messageContent}>{message.content}</div>
                     <div style={{
-                      fontSize: '11px',
-                      opacity: 0.8,
-                      textAlign: 'right',
-                      color: message.senderId === user.id ? 'rgba(255,255,255,0.8)' : 'rgba(0,0,0,0.8)'
+                      ...styles.messageTime,
+                      color: message.senderId === user.id ? 'rgba(255,255,255,0.8)' : 'rgba(0,0,0,0.6)'
                     }}>
                       {new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </div>
                   </div>
                 ))
               )}
+              <div ref={messagesEndRef} />
             </div>
-            
-            {/* Message Input */}
-            <div style={{
-              padding: '15px',
-              borderTop: '1px solid #e0e0e0',
-              display: 'flex'
-            }}>
+
+            <div style={styles.inputContainer}>
               <input
                 type="text"
                 value={newMessage}
                 onChange={(e) => setNewMessage(e.target.value)}
                 placeholder="Type your message..."
                 onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-                style={{
-                  flex: 1,
-                  padding: '10px 15px',
-                  border: '1px solid #ddd',
-                  borderRadius: '20px',
-                  marginRight: '10px'
-                }}
+                style={styles.messageInput}
               />
-              <button 
+              <button
                 onClick={handleSendMessage}
-                style={{
-                  padding: '10px 20px',
-                  backgroundColor: '#532321',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '20px',
-                  cursor: 'pointer',
-                  ':hover': {
-                    backgroundColor: '#3a1817'
-                  }
-                }}
+                style={styles.sendButton}
+                disabled={!newMessage.trim()}
               >
                 Send
               </button>
             </div>
           </>
         ) : (
-          <div style={{
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            height: '100%',
-            color: '#666'
-          }}>
-            <p>Select a chat from the sidebar to start messaging</p>
+          <div style={styles.emptyState}>
+            <p>Select a conversation from the sidebar to start messaging</p>
           </div>
         )}
       </div>

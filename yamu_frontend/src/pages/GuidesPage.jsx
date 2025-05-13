@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import GuideModal from '../components/GuideModal';
 import apiClient from '../services/axiosInstance';
 import { fetchUsersByRole } from '../services/userService';
 
-const GuidesPage = ({ currentUser }) => {
+const GuidesPage = () => {
+  const location = useLocation();
+  const currentUser = location.state?.currentUser;
   const [guides, setGuides] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedGuide, setSelectedGuide] = useState(null);
@@ -26,7 +28,7 @@ const GuidesPage = ({ currentUser }) => {
   const filteredGuides = guides.filter(guide => {
     const searchLower = searchTerm.toLowerCase();
     return (
-      `${guide.firstName} ${guide.lastName}`.toLowerCase().includes(searchLower) ||
+      (guide.firstName + ' ' + guide.lastName).toLowerCase().includes(searchLower) ||
       guide.expertiseCityRegion.toLowerCase().includes(searchLower) ||
       guide.language.toLowerCase().includes(searchLower)
     );
