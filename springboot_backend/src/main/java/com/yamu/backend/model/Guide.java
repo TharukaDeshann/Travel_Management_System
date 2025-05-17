@@ -1,5 +1,8 @@
 package com.yamu.backend.model;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
@@ -27,5 +30,6 @@ public class Guide extends User {
     @NotNull(message = "Vehicle Availability is required")
     private boolean vehicleAvailability;
 
+    
     
 }
