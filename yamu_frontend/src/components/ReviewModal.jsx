@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Star } from 'lucide-react';
 import apiClient from '../services/axiosInstance';
-import { fetchLoggedInUser } from '../services/authService'; // Import fetchLoggedInUser
+import { fetchLoggedInUser } from '../services/authService';
+import { useUser } from '../context/UserContext';
 
 const ReviewModal = ({ guide, onClose, onReviewSubmitted }) => {
   const [reviewText, setReviewText] = useState('');
@@ -10,41 +11,22 @@ const ReviewModal = ({ guide, onClose, onReviewSubmitted }) => {
   const [existingReview, setExistingReview] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [currentUser, setCurrentUser] = useState(null); // State for logged-in user
-
-  useEffect(() => {
-    const fetchUserData = async () => {
-      try {
-        const user = await fetchLoggedInUser(); // Fetch logged-in user
-        setCurrentUser(user);
-      } catch (err) {
-        console.error('Error fetching logged-in user:', err);
-        setError('Failed to fetch user data. Please log in again.');
-      }
-    };
-
-    fetchUserData();
-  }, []);
+  
+  // Instead of maintaining a separate state, use the UserContext
+  const { user } = useUser();
 
   useEffect(() => {
     const fetchUserReview = async () => {
-      if (!currentUser?.id) return;
+      if (!user?.id) return;
 
       try {
-        const token = localStorage.getItem("accessToken");
-        if (token) {
-          const response = await apiClient.get(`/api/reviews/guide/${guide.id}`, {
-            headers: {
-              'Authorization': `Bearer ${token}`
-            }
-          });
-
-          const userReview = response.data.find(r => r.travelerId === currentUser.id);
-          if (userReview) {
-            setExistingReview(userReview);
-            setReviewText(userReview.comment);
-            setRating(userReview.rating);
-          }
+        const response = await apiClient.get(`/api/reviews/guide/${guide.id}`);
+        
+        const userReview = response.data.find(r => r.travelerId === user.id);
+        if (userReview) {
+          setExistingReview(userReview);
+          setReviewText(userReview.comment);
+          setRating(userReview.rating);
         }
       } catch (err) {
         console.error('Error fetching reviews:', err);
@@ -54,34 +36,32 @@ const ReviewModal = ({ guide, onClose, onReviewSubmitted }) => {
       }
     };
 
-    if (currentUser) {
+    if (user) {
       fetchUserReview();
+    } else {
+      setIsLoading(false);
+      setError('Please log in to submit a review');
     }
-  }, [guide.id, currentUser]);
+  }, [guide.id, user]);
 
   const handleSubmit = async () => {
     if (!rating) {
       setError('Please select a rating');
       return;
     }
-
-    const token = localStorage.getItem("accessToken");
-    if (!currentUser?.id || !token) {
+    
+    if (!user?.id) {
       setError('User information not available. Please login again.');
       return;
     }
 
     try {
+      console.log({ rating, comment: reviewText });
       await apiClient.post(
         `/api/reviews/guide/${guide.id}`, 
         {
           rating,
           comment: reviewText
-        }, 
-        {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
         }
       );
       onReviewSubmitted();

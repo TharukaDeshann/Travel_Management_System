@@ -238,7 +238,7 @@ export default function TravelerDashboard({ currentUser }) {
             </button>
             <button 
               className="action-button start-planning-button"
-              onClick={() => navigate('/visit-planner')}
+              onClick={() => navigate('/itinerary-planner')}
             >
               Start Planning
             </button>

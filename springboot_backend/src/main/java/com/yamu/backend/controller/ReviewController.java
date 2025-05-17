@@ -3,12 +3,14 @@ package com.yamu.backend.controller;
 import com.yamu.backend.dto.ReviewDto;
 import com.yamu.backend.dto.ReviewResponseDto;
 import com.yamu.backend.model.User;
+import com.yamu.backend.repository.UserRepository;
 import com.yamu.backend.service.ReviewService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
@@ -16,23 +18,25 @@ import java.util.List;
 @RequestMapping("/api/reviews")
 public class ReviewController {
     private final ReviewService reviewService;
+    private final UserRepository userRepository;
 
-    public ReviewController(ReviewService reviewService) {
+    public ReviewController(ReviewService reviewService, UserRepository userRepository) {
+        this.userRepository = userRepository;
         this.reviewService = reviewService;
     }
 
     @PostMapping("/guide/{guideId}")
     public ResponseEntity<?> createOrUpdateReview(
             @PathVariable Long guideId,
-            @RequestBody @Valid ReviewDto reviewDto,
-            Authentication authentication) {
+            @RequestBody @Valid ReviewDto reviewDto) {
         
-        if (authentication == null || !authentication.isAuthenticated()) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Authentication required");
-        }
+        
         
         try {
-            Long travelerId = ((User) authentication.getPrincipal()).getId();
+            String email = SecurityContextHolder.getContext().getAuthentication().getName();
+            User user =  userRepository.findByEmail(email)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+            Long travelerId = user.getId();
             ReviewResponseDto response = reviewService.createOrUpdateReview(travelerId, guideId, reviewDto);
             return ResponseEntity.ok(response);
         } catch (Exception e) {
