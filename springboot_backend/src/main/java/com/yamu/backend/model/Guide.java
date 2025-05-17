@@ -30,8 +30,6 @@ public class Guide extends User {
     @NotNull(message = "Vehicle Availability is required")
     private boolean vehicleAvailability;
 
-    @OneToMany(mappedBy = "guide", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Vehicles> vehicles = new ArrayList<>();
     
     
 }

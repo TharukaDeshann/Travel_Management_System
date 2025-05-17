@@ -95,10 +95,7 @@ const UserProfile = () => {
     }
   }, [user, setUser, showError]);
 
-  const handleUpdateProfile = () => navigate("/profile/update");
-  const handleUpdateEmail = () => navigate("/profile/update-email");
-  const handleUpdatePassword = () => navigate("/profile/update-password");
-
+  const handleUpdateProfile = () => navigate("/profile/update-profile");
   const handleLogout = async () => {
     try {
       await logoutUser();
@@ -196,10 +193,8 @@ const UserProfile = () => {
 
         <Separator />
 
-        <FlexContainer gap={16}>
+        <FlexContainer  justifyContent="space-between">
           <Button onClick={handleUpdateProfile}>Update Profile</Button>
-          <Button onClick={handleUpdateEmail}>Update Email</Button>
-          <Button onClick={handleUpdatePassword}>Update Password</Button>
           <Button
             onClick={handleLogout}
             style={{

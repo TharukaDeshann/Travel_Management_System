@@ -28,9 +28,8 @@ import TravelerUpcomingTrips from "./pages/TravelerUpcomingTrips";
 import VerifyEmail from "./pages/VerifyEmail.jsx";
 import VerifyEmailPending from "./pages/VerifyEmailPending.jsx";
 import UserProfile from "./pages/profile/UserProfile.jsx";
+import UpdateUserProfile from "./pages/profile/components/UpdateUserProfile.jsx";
 import ProfileView from "./pages/ProfileView.jsx";
-import UpdateEmail from "./pages/profile/components/UpdateEmail.jsx";
-import UpdatePassword from "./pages/profile/components/UpdatePassword.jsx";
 import AdminDashboard from "./pages/AdminDashboard.jsx";
 import UsersSocialPage from "./pages/UsersSocialPage.jsx";
 
@@ -74,6 +73,7 @@ const App = () => {
             <Route path="/users/users-by-role" element={<UsersSocialPage />} />
             <Route path="/map" element={<Map />} />
             <Route path="/itinerary-planner" element={<ItineraryPlanner />} />
+
           
           <Route path="/finalize-itinerary" element={<FinalizeItinerary />} />
 
@@ -81,8 +81,7 @@ const App = () => {
 
             {/* Profile Routes */}
             <Route path="/profile" element={<UserProfile />} />
-            <Route path="/profile/update-email" element={<UpdateEmail />} />
-            <Route path="/profile/update-password" element={<UpdatePassword />} />
+            <Route path="/profile/update-profile" element={<UpdateUserProfile />} />
           </Route>
 
           

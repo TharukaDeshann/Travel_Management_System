@@ -1,59 +1,52 @@
-import React from "react";
-import { Form, Input, Button, Card } from "antd";
-import { useNavigate } from "react-router-dom";
+import React, {useState} from "react";
+import { Form, Input, Button, Modal } from "antd";
 import { updateEmail } from "../../../services/userService";
 import { useNotification } from "../../../hooks/useNotification";
 import styled from "styled-components";
+import { set } from "date-fns";
 
 // Styled components
-const StyledCard = styled(Card)`
-  max-width: 500px;
-  margin: 0 auto;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-  border-radius: 8px;
-
-  .ant-card-head-title {
-    font-size: 20px;
-    font-weight: 600;
-  }
-`;
-
 const FormContainer = styled.div`
   .ant-form-item-label {
     font-weight: 500;
   }
-
   .ant-btn-primary {
     height: 48px;
     font-weight: 600;
   }
 `;
 
-const UpdateEmail = () => {
+const UpdateEmailModal = ({ visible, onClose }) => {
   const [form] = Form.useForm();
-  const navigate = useNavigate();
   const { showSuccess, showError } = useNotification();
-
+  const [loading, setLoading] = useState(false);
   const onFinish = async (values) => {
+    setLoading(true);
     try {
-      const response = await updateEmail({
-        newEmail: values.newEmail,
-      });
-      
-      if (response.status !== 200) {
-        throw new Error("Failed to update email.");
-      }
-      
-      // Show success message on successful email update
-      showSuccess("Verification email sent successfully. Please check your inbox.");
-      navigate("/verify-email-pending");
+      const response = await updateEmail({ newEmail: values.newEmail });
+      if (response.status !== 200) throw new Error("Failed to update email");
+
+      showSuccess("Email updated successfully. Verify your new email to activate the email.");
+      setLoading(false);
+      form.resetFields();
+      setTimeout(() => {
+        onClose(); // Close the modal after 5 seconds
+      }, 5000);
     } catch (error) {
-      showError(error.response?.data?.message || "Failed to update email. Try again.");
+      showError(
+        error.response?.data?.message || "Failed to update email. Try again."
+      );
     }
   };
 
   return (
-    <StyledCard title="Update Email">
+    <Modal
+      title="Update Email"
+      open={visible}
+      onCancel={onClose}
+      footer={null}
+      destroyOnClose
+    >
       <FormContainer>
         <Form
           layout="vertical"
@@ -74,14 +67,16 @@ const UpdateEmail = () => {
           </Form.Item>
 
           <Form.Item>
-            <Button type="primary" htmlType="submit" block size="large">
-              Send Verification Email
+            <Button  type="primary" htmlType="submit" block size="large" disabled={loading}>
+              {loading ? "Sending..." : "Send Verification Email"}
+              
+              {loading && <span className="loading-spinner"></span>}
             </Button>
           </Form.Item>
         </Form>
       </FormContainer>
-    </StyledCard>
+    </Modal>
   );
 };
 
-export default UpdateEmail;
+export default UpdateEmailModal;
