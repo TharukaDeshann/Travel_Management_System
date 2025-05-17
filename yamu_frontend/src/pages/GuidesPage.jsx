@@ -3,10 +3,11 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import GuideModal from '../components/GuideModal';
 import apiClient from '../services/axiosInstance';
 import { fetchUsersByRole } from '../services/userService';
+import { useUser } from '../context/UserContext';
 
 const GuidesPage = () => {
   const location = useLocation();
-  const currentUser = location.state?.currentUser;
+  const currentUser = useUser();
   const [guides, setGuides] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedGuide, setSelectedGuide] = useState(null);

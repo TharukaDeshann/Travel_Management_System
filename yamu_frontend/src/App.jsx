@@ -20,7 +20,7 @@ import Map from "./components/Map.jsx";
 import GuidesPage from "./pages/GuidesPage.jsx";         
 import WeatherCard from "./components/WeatherCard.jsx";
 import ItineraryPlanner from "./pages/ItineraryPlanner.jsx";
-import ItinerarySelection from "./pages/ItinerarySelection.jsx";
+
 import FinalizeItinerary from "./pages/FinalizeItinerary.jsx"; 
 import Inbox from "./pages/Inbox.jsx";// Import FinalizeItinerary
 import TravelerUpcomingTrips from "./pages/TravelerUpcomingTrips";
@@ -46,15 +46,12 @@ const App = () => {
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
 
-          <Route path="/map" element={<Map />} />
+          
           <Route path="/weather" element={<WeatherPage />} />
           <Route path="/weather-details" element={<Weather />} />
           <Route path="/weather-card" element={<WeatherCard />} />
 
           <Route path="/" element={<Login />} />
-          <Route path="/itinerary-planner" element={<ItineraryPlanner />} />
-          <Route path="/itinerary-selection" element={<ItinerarySelection />} />
-          <Route path="/finalize-itinerary" element={<FinalizeItinerary />} />
           
           {/* Email verification pending */}
           <Route
@@ -75,7 +72,12 @@ const App = () => {
             <Route path="/visit-plan" element={<VisitPlanPage />} />
             <Route path="/guides-page" element={<GuidesPage />} />
             <Route path="/users/users-by-role" element={<UsersSocialPage />} />
-            <Route path="/inbox" element={<Inbox />} />
+            <Route path="/map" element={<Map />} />
+            <Route path="/itinerary-planner" element={<ItineraryPlanner />} />
+          
+          <Route path="/finalize-itinerary" element={<FinalizeItinerary />} />
+
+            
 
             {/* Profile Routes */}
             <Route path="/profile" element={<UserProfile />} />
