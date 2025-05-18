@@ -69,6 +69,7 @@ const ProfileDetailItem = ({ label, value, icon }) => (
 
 const UserProfile = () => {
   const { user, setUser } = useUser();
+  console.log(user);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const { showError } = useNotification();

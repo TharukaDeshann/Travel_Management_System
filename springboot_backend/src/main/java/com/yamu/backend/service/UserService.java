@@ -57,7 +57,6 @@ public class UserService {
                 guideDto.setExpertiseCityRegion(guide.getExpertiseCityRegion());
                 guideDto.setLanguage(guide.getLanguage());
                 guideDto.setAbout(guide.getAbout());
-                guideDto.setVehicleAvailability(guide.isVehicleAvailability());
                 baseDto = guideDto;
             }
             case ADMIN -> {
