@@ -1,51 +1,45 @@
 package com.yamu.backend.service;
 
 import com.yamu.backend.dto.ItineraryRequest;
-import com.yamu.backend.model.*;
+import com.yamu.backend.model.Itinerary;
+import com.yamu.backend.model.User;
 import com.yamu.backend.repository.ItineraryRepository;
+import com.yamu.backend.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
 import java.util.UUID;
 
 @Service
 public class ItineraryService {
+
     @Autowired
     private ItineraryRepository itineraryRepository;
 
+    @Autowired
+    private UserRepository userRepository;
+
     public Itinerary saveItinerary(ItineraryRequest request) {
+        // Extract the authenticated user's email
+        String username = ((UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal()).getUsername();
+
+        // Fetch the user from the database
+        User user = userRepository.findByEmail(username)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        // Create a new itinerary
         Itinerary itinerary = new Itinerary();
-        itinerary.setId(UUID.randomUUID().toString());
-        itinerary.setUserId(request.getUserId());
+        itinerary.setId(UUID.randomUUID().toString()); // Generate a unique ID
         itinerary.setTripTitle(request.getTripTitle());
         itinerary.setStartDate(request.getStartDate());
         itinerary.setEndDate(request.getEndDate());
         itinerary.setBudget(request.getBudget());
         itinerary.setCurrency(request.getCurrency());
+        itinerary.setUser(user);
 
-        for (ItineraryRequest.DayPlanRequest dayPlanRequest : request.getDayPlans()) {
-            DayPlan dayPlan = new DayPlan();
-            dayPlan.setId(UUID.randomUUID().toString());
-            dayPlan.setDate(dayPlanRequest.getDate());
-            dayPlan.setItinerary(itinerary);
-
-            for (ItineraryRequest.DayPlanRequest.LocationRequest locationRequest : dayPlanRequest.getLocations()) {
-                Location location = new Location();
-                location.setName(locationRequest.getName());
-                location.setAddress(locationRequest.getAddress());
-                location.setLatitude(locationRequest.getLatitude());
-                location.setLongitude(locationRequest.getLongitude());
-                location.setPositionIndex(locationRequest.getPositionIndex());
-                location.setPlaceId(locationRequest.getPlaceId());
-                location.setNotes(locationRequest.getNotes());
-                location.setDayPlan(dayPlan);
-
-                dayPlan.getLocations().add(location);
-            }
-
-            itinerary.getDayPlans().add(dayPlan);
-        }
-
+        // Save the itinerary to the database
         return itineraryRepository.save(itinerary);
     }
 }
