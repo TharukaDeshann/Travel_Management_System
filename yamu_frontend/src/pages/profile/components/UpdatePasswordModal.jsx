@@ -15,14 +15,16 @@ const UpdatePasswordModal = ({ visible, onClose }) => {
         currentPassword: values.currentPassword,
         newPassword: values.newPassword,
       });
-      setLoading(false);
       showSuccess("Password updated successfully.");
-      form.resetFields();
-      setTimeout(() => {
-        onClose();
-      }, 5000);
+      
     } catch (error) {
       showError(error.response?.data?.message || "Failed to update password.");
+    } finally{
+      setLoading(false);
+      form.resetFields();
+      setTimeout(() => {
+        onClose(); // Close the modal after 5 seconds
+      }, 5000);
     }
   };
 

@@ -27,15 +27,16 @@ const UpdateEmailModal = ({ visible, onClose }) => {
       if (response.status !== 200) throw new Error("Failed to update email");
 
       showSuccess("Email updated successfully. Verify your new email to activate the email.");
+    } catch (error) {
+      showError(
+        error.response?.data?.message || "Failed to update email. Try again."
+      );
+    } finally {
       setLoading(false);
       form.resetFields();
       setTimeout(() => {
         onClose(); // Close the modal after 5 seconds
       }, 5000);
-    } catch (error) {
-      showError(
-        error.response?.data?.message || "Failed to update email. Try again."
-      );
     }
   };
 
