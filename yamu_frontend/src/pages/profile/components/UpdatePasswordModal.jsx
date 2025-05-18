@@ -1,4 +1,4 @@
-import React, {useState} from "react";
+import React, { useState } from "react";
 import { Form, Input, Button, Modal } from "antd";
 import { updatePassword } from "../../../services/userService";
 import { useNotification } from "../../../hooks/useNotification";
@@ -6,7 +6,7 @@ import { useNotification } from "../../../hooks/useNotification";
 const UpdatePasswordModal = ({ visible, onClose }) => {
   const [form] = Form.useForm();
   const { showSuccess, showError } = useNotification();
-  const [loading, setLoading] =  useState(false);
+  const [loading, setLoading] = useState(false);
 
   const onFinish = async (values) => {
     try {
@@ -71,8 +71,13 @@ const UpdatePasswordModal = ({ visible, onClose }) => {
           name="newPassword"
           label="New Password"
           rules={[
-            { required: true, message: "Enter your new password" },
-            { min: 8, message: "Password must be at least 8 characters" },
+            { required: true, message: "Password is required" },
+            { min: 8, message: "Must be at least 8 characters" },
+            {
+              pattern: /^(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])/,
+              message:
+                "Password Must contain 1 uppercase, 1 number, 1 special character",
+            },
           ]}
         >
           <Input.Password placeholder="New password" size="large" />
@@ -98,9 +103,14 @@ const UpdatePasswordModal = ({ visible, onClose }) => {
         </Form.Item>
 
         <Form.Item>
-          <Button type="primary" htmlType="submit" block size="large" disabled={loading}>
+          <Button
+            type="primary"
+            htmlType="submit"
+            block
+            size="large"
+            loading={loading}
+          >
             {loading ? "Updating..." : "Update Password"}
-            {loading && <span className="loading-spinner"> </span>}
           </Button>
         </Form.Item>
       </Form>

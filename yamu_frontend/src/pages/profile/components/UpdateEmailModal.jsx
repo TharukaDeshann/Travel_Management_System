@@ -67,10 +67,15 @@ const UpdateEmailModal = ({ visible, onClose }) => {
           </Form.Item>
 
           <Form.Item>
-            <Button  type="primary" htmlType="submit" block size="large" disabled={loading}>
+            <Button 
+             type="primary" 
+             htmlType="submit" 
+             block size="large"
+              loading={loading}
+              >
               {loading ? "Sending..." : "Send Verification Email"}
               
-              {loading && <span className="loading-spinner"></span>}
+          
             </Button>
           </Form.Item>
         </Form>

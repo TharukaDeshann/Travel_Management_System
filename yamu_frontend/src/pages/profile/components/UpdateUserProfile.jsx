@@ -7,6 +7,7 @@ import { useUser } from '../../../context/UserContext';
 import UpdatePasswordModal from './UpdatePasswordModal';
 import UpdateEmailModal from './UpdateEmailModal';
 import BackButton from '../../../components/BackButton';
+import { Button } from 'antd';
 
 
 const UpdateUserProfile = () => {
@@ -316,6 +317,7 @@ const UpdateUserProfile = () => {
                   Change Email
                 </button>
                 
+                
                 <button 
                   type="button" 
                   onClick={() => setShowPasswordModal(true)}
@@ -328,13 +330,17 @@ const UpdateUserProfile = () => {
             
             {/* Submit button */}
             <div className="mt-6 flex justify-end">
-              <button 
-                type="submit" 
-                disabled={isLoading}
-                className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors disabled:opacity-50"
-              >
-                {isLoading ? 'Updating...' : 'Save Changes'}
-              </button>
+              
+              
+                      <Button
+                        type="primary"
+                        htmlType="submit"
+                        loading={isLoading}
+                        size="large"
+                        >
+                        {isLoading ? "Updating..." : "Save Changes"}
+                      </Button>
+
             </div>
           </form>
         </div>
