@@ -5,8 +5,9 @@ import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import "leaflet-routing-machine";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
-import { searchLocations, saveRoute } from "../services/map/locationService";
+import { searchLocations } from "../services/map/locationService";
 import { fetchRoute, optimizeRoute, nearestNeighborOptimization } from "../services/map/routeService";
+import axios from "axios";
 
 // Marker icon configuration
 delete L.Icon.Default.prototype._getIconUrl;
@@ -80,6 +81,7 @@ const Map = () => {
   const [searchResults, setSearchResults] = useState([]);
   const [travelMode, setTravelMode] = useState("driving-car");
   const [showSearchResults, setShowSearchResults] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (dates.length === 0) navigate("/");
@@ -149,7 +151,60 @@ const Map = () => {
     }, 500);
   };
 
-  const handleNext = () => {
+  // Optimize route for the current day
+  const handleOptimizeRoute = async () => {
+    if (locations[currentIndex].length < 3) {
+      alert("Need at least 3 locations to optimize route.");
+      return;
+    }
+    try {
+      const optimized = await optimizeRoute(locations[currentIndex], travelMode);
+      const updatedLocations = [...locations];
+      updatedLocations[currentIndex] = optimized;
+      setLocations(updatedLocations);
+      alert("Route optimized!");
+    } catch (error) {
+      alert("Failed to optimize route.");
+    }
+  };
+
+  // Save route for the current day
+  const handleSaveRoute = async () => {
+    if (!locations[currentIndex] || locations[currentIndex].length === 0) {
+      alert("Add at least one location before saving.");
+      return;
+    }
+    setSaving(true);
+    try {
+      const routeData = {
+        name: `${tripTitle} - Day ${currentIndex + 1}`,
+        travelMode,
+        locations: locations[currentIndex].map((loc, idx) => ({
+          name: loc.name,
+          latitude: parseFloat(loc.lat),
+          longitude: parseFloat(loc.lon),
+          positionIndex: idx,
+        })),
+      };
+      await axios.post("/api/routes", routeData);
+      alert("Route saved successfully!");
+    } catch (error) {
+      console.error("Error saving route:", error);
+      alert("Failed to save route.");
+    }
+    setSaving(false);
+  };
+
+  // Save route before moving to next day or finalizing
+  const saveCurrentDayRoute = async () => {
+    if (locations[currentIndex] && locations[currentIndex].length > 0) {
+      await handleSaveRoute();
+    }
+  };
+
+  // Modified handleNext to save before navigating
+  const handleNext = async () => {
+    await saveCurrentDayRoute();
     if (currentIndex < dates.length - 1) {
       setCurrentIndex(currentIndex + 1);
     } else {
@@ -213,6 +268,24 @@ const Map = () => {
                     ))}
                   </div>
                 )}
+              </div>
+
+              {/* Optimize and Save Route buttons */}
+              <div className="flex gap-2 mt-2">
+                <button
+                  className="px-4 py-2 bg-yellow-500 text-white rounded hover:bg-yellow-600"
+                  onClick={handleOptimizeRoute}
+                  disabled={locations[currentIndex].length < 3}
+                >
+                  Optimize Route
+                </button>
+                <button
+                  className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                  onClick={handleSaveRoute}
+                  disabled={saving}
+                >
+                  {saving ? "Saving..." : "Save Route"}
+                </button>
               </div>
 
               <select
