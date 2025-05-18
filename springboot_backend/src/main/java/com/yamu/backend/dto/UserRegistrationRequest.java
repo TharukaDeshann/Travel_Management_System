@@ -1,10 +1,15 @@
 package com.yamu.backend.dto;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 import com.yamu.backend.enums.UserRole;
+import com.yamu.backend.model.Vehicle;
 import com.yamu.backend.validation.GuideRegistration;
 import com.yamu.backend.validation.TravelerRegistration;
+
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -55,9 +60,10 @@ public class UserRegistrationRequest {
     private String language;
     
     private String about;
+
+    @Valid
+    private List<Vehicle> vehicles = new ArrayList<>();
     
-    @NotNull(groups = GuideRegistration.class, message = "Vehicle availability is required for guides")
-    private Boolean vehicleAvailability;
 
     // Getters and Setters (unchanged)
     public String getFirstName() { return firstName; }
@@ -93,6 +99,5 @@ public class UserRegistrationRequest {
     public String getAbout() { return about; }
     public void setAbout(String about) { this.about = about; }
 
-    public Boolean getVehicleAvailability() { return vehicleAvailability; }
-    public void setVehicleAvailability(Boolean vehicleAvailability) { this.vehicleAvailability = vehicleAvailability; }
+    
 }

@@ -27,9 +27,10 @@ public class Guide extends User {
     private String about;
 
     @Column(nullable = false)
-    @NotNull(message = "Vehicle Availability is required")
     private boolean vehicleAvailability;
 
+    @OneToMany(mappedBy = "guide", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Vehicle> vehicles = new ArrayList<>();
     
     
 }
