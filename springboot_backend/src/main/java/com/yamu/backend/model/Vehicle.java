@@ -18,28 +18,30 @@ public class Vehicle {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "guide_id", nullable = false)
+    @NotNull(message = "Guide is required")
     private Guide guide;
 
     @Column(nullable = false, length = 50)
+    @NotNull(message = "Model is required")
     private String model;
 
     @Column(nullable = false, length = 30)
-    @NotBlank(message = "Vehicle type is required")
+    @NotNull(message = "Type is required")
     private String type;
 
     @Column(nullable = false)
-    @NotBlank(message = "Capacity is required")
+    @NotNull(message = "Capacity is required")
     private int capacity;
 
     @Column(nullable = false)
-    @NotBlank(message = "Air conditioning status is required")
+    @NotNull(message = "Air conditioning status is required")
     private boolean airConditioned;
 
     @Column(nullable = false)
-    @NotBlank(message = "Availability status is required")
+    @NotNull(message = "Availability status is required")
     private boolean available;
 
-    private String imageUrl; 
+    private String vehicleImageUrl; 
 
     
 }
