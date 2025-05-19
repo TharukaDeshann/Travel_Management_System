@@ -19,6 +19,6 @@ public class Traveler extends User {
     @NotNull(message = "Nationality is required")
     private String nationality;
 
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "traveler", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<Itinerary> itineraries = new ArrayList<>();
 }
