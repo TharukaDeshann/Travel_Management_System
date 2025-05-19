@@ -36,8 +36,8 @@ public class Itinerary {
     private String tripTitle;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
-    private Traveler user;
+    @JoinColumn(name = "traveler_id", nullable = false)
+    private Traveler traveler;
 
     @OneToMany(mappedBy = "itinerary", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<DayPlan> dayPlans = new ArrayList<>();

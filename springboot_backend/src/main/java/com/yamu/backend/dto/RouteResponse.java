@@ -6,12 +6,11 @@ import lombok.Getter;
 import lombok.Setter;
 
 @Getter
-@Setter 
+@Setter
 public class RouteResponse {
-    private long id;
+    private Long id;
     private String name;
     private String travelMode;
     private Double totalDistance;
     private Integer estimatedTime;
-    private List<LocationResponse> locations;
 }

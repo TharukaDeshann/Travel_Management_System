@@ -1,10 +1,15 @@
 package com.yamu.backend.service;
 
 import com.yamu.backend.dto.ItineraryRequest;
+import com.yamu.backend.dto.ItineraryResponse;
 import com.yamu.backend.model.Itinerary;
+import com.yamu.backend.model.Traveler;
 import com.yamu.backend.model.User;
 import com.yamu.backend.repository.ItineraryRepository;
+import com.yamu.backend.repository.TravelerRepository;
 import com.yamu.backend.repository.UserRepository;
+
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -14,32 +19,30 @@ import java.util.UUID;
 
 @Service
 public class ItineraryService {
+    private final ItineraryRepository itRepo;
+    private final TravelerRepository trRepo;
 
-    @Autowired
-    private ItineraryRepository itineraryRepository;
+    public ItineraryService(ItineraryRepository itRepo, TravelerRepository trRepo) {
+        this.itRepo = itRepo;
+        this.trRepo = trRepo;
+    }
 
-    @Autowired
-    private UserRepository userRepository;
+    public ItineraryResponse create(ItineraryRequest dto) {
+        Traveler traveler = trRepo.findById(dto.getTravelerId())
+            .orElseThrow(() -> new RuntimeException("Traveler not found"));
 
-    public Itinerary saveItinerary(ItineraryRequest request) {
-        // Extract the authenticated user's email
-        String username = ((UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal()).getUsername();
+        Itinerary it = new Itinerary();
+        it.setBudget(dto.getBudget());
+        it.setCurrency(dto.getCurrency());
+        it.setStartDate(dto.getStartDate());
+        it.setEndDate(dto.getEndDate());
+        it.setTripTitle(dto.getTripTitle());
+        it.setTraveler(traveler);
 
-        // Fetch the user from the database
-        User user = userRepository.findByEmail(username)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
-        // Create a new itinerary
-        Itinerary itinerary = new Itinerary();
-        itinerary.setId(UUID.randomUUID().toString()); // Generate a unique ID
-        itinerary.setTripTitle(request.getTripTitle());
-        itinerary.setStartDate(request.getStartDate());
-        itinerary.setEndDate(request.getEndDate());
-        itinerary.setBudget(request.getBudget());
-        itinerary.setCurrency(request.getCurrency());
-        itinerary.setUser(user);
-
-        // Save the itinerary to the database
-        return itineraryRepository.save(itinerary);
+        Itinerary saved = itRepo.save(it);
+        ItineraryResponse r = new ItineraryResponse();
+        BeanUtils.copyProperties(saved, r, "id");
+        r.setId(saved.getId());
+        return r;
     }
 }
