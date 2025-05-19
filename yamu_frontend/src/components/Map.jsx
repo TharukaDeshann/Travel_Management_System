@@ -195,6 +195,7 @@ const Map = () => {
     setSaving(false);
   };
 
+  
   // Save route before moving to next day or finalizing
   const saveCurrentDayRoute = async () => {
     if (locations[currentIndex] && locations[currentIndex].length > 0) {

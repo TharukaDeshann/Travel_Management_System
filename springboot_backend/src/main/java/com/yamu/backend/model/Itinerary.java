@@ -4,15 +4,19 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 
 @Entity
 @Getter
 @Setter
 public class Itinerary {
+
     @Id
-    private String id; // UUID for unique identification
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
     @Column(nullable = false)
     private double budget;
@@ -21,17 +25,20 @@ public class Itinerary {
     private String currency;
 
     @Temporal(TemporalType.DATE)
-    @Column(name = "start_date", nullable = false)
+    @Column(nullable = false)
     private Date startDate;
 
     @Temporal(TemporalType.DATE)
-    @Column(name = "end_date", nullable = false)
+    @Column(nullable = false)
     private Date endDate;
 
-    @Column(name = "trip_title", nullable = false)
+    @Column(nullable = false)
     private String tripTitle;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
-    private User user; // Foreign key relationship with the User table
+    private Traveler user;
+
+    @OneToMany(mappedBy = "itinerary", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<DayPlan> dayPlans = new ArrayList<>();
 }

@@ -11,25 +11,29 @@ import java.util.List;
 @Getter @Setter
 public class DayPlan {
     @Id
-    private String id;
-    
-    @ManyToOne
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "itinerary_id", nullable = false)
     private Itinerary itinerary;
-    
+
     @Temporal(TemporalType.DATE)
     @Column(nullable = false)
     private Date date;
-    
+
     @Column(columnDefinition = "JSON")
     private String hotelDetails;
-    
+
     @Column(columnDefinition = "JSON")
     private String transportDetails;
-    
+
     @Column(columnDefinition = "JSON")
     private String guideDetails;
-    
+
     @OneToMany(mappedBy = "dayPlan", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Location> locations = new ArrayList<>();
+
+    @OneToOne(mappedBy = "dayPlan", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Route route;
 }
