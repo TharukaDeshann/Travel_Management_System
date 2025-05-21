@@ -5,6 +5,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 @Entity
+@Table(name = "location")
 @Getter @Setter
 public class Location {
     @Id

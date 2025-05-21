@@ -70,6 +70,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.PUT, "/api/users/{id}").authenticated()
                         .requestMatchers(HttpMethod.PUT, "/api/users/{id}/update-email").authenticated()
                         .requestMatchers(HttpMethod.PUT, "/api/users/{id}/update-password").authenticated()
+                        .requestMatchers(HttpMethod.PUT, "/api/itineraries/{id}").authenticated()
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .requestMatchers("/api/guide/**").hasAnyRole("GUIDE", "ADMIN")
                         .requestMatchers("/api/traveler/**").hasRole("TRAVELER")

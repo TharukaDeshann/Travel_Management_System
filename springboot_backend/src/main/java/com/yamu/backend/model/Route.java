@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Entity
+@Table(name = "route")
 @Getter @Setter
 public class Route {
     @Id
