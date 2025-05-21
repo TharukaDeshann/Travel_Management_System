@@ -188,6 +188,8 @@ public class AuthController {
             Map<String, Object> response = new HashMap<>();
             response.put("message", "Login successful");
             response.put("role", authenticatedUser.getRole());
+            response.put("accessToken", accessToken);
+            response.put("refreshToken", refreshToken);
 
             return ResponseEntity.ok()
                     .header("Set-Cookie", accessTokenCookie.toString())

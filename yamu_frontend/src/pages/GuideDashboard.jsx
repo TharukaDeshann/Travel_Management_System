@@ -14,6 +14,11 @@ const GuideDashboard = ({ currentUser }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [showPricePrompt, setShowPricePrompt] = useState(false);
+  const [currentReservationId, setCurrentReservationId] = useState(null);
+  const [estimatedPrice, setEstimatedPrice] = useState('');
+  const [priceError, setPriceError] = useState('');
+  const [showCompletionConfirm, setShowCompletionConfirm] = useState(false);
   
   useEffect(() => {
     currentUser = JSON.parse(localStorage.getItem("user"));
@@ -69,33 +74,85 @@ const GuideDashboard = ({ currentUser }) => {
     }
   };
 
-  const handleStatusChange = async (reservationId, newStatus) => {
+  const handleConfirmClick = (reservationId) => {
+    setCurrentReservationId(reservationId);
+    setShowPricePrompt(true);
+    setEstimatedPrice('');
+    setPriceError('');
+  };
+
+  const handlePriceSubmit = async () => {
+    if (!estimatedPrice) {
+      setPriceError('Price is required');
+      return;
+    }
+    
+    const priceValue = parseFloat(estimatedPrice);
+    if (isNaN(priceValue)) {
+      setPriceError('Please enter a valid number');
+      return;
+    }
+    
+    if (priceValue <= 0) {
+      setPriceError('Price must be positive');
+      return;
+    }
+
     try {
-      currentUser = JSON.parse(localStorage.getItem("user"));
-      if (!currentUser?.id) {
-        setError("User information not available. Cannot update status.");
-        return;
-      }
+      await apiClient.put(`/api/reservations/${currentReservationId}/set-price`, {
+        estimatedPrice: priceValue
+      });
 
-      let endpoint;
-      switch (newStatus) {
-        case 'CONFIRMED': endpoint = 'confirm'; break;
-        case 'DECLINED': endpoint = 'decline'; break;
-        case 'COMPLETED': endpoint = 'complete'; break;
-        default: return;
-      }
-
-      const response = await apiClient.put(`/api/reservations/${reservationId}/${endpoint}`);
+      const response = await apiClient.put(`/api/reservations/${currentReservationId}/confirm`);
       
       const updatedReservations = reservations.map(res => 
-        res.id === reservationId ? response.data : res
+        res.id === currentReservationId ? response.data : res
       );
       
       setReservations(updatedReservations);
       localStorage.setItem(RESERVATIONS_STORAGE_KEY, JSON.stringify(updatedReservations));
+      setShowPricePrompt(false);
     } catch (err) {
       console.error("Status change failed:", err);
       setError("Failed to update status. Please try again.");
+      setShowPricePrompt(false);
+    }
+  };
+
+  const handleCompleteClick = (reservationId) => {
+    const reservation = reservations.find(r => r.id === reservationId);
+    if (!reservation) return;
+
+    const hasFutureDays = reservation.dayDetails?.some(day => {
+      const dayDate = new Date(day.date);
+      const today = new Date();
+      return dayDate > today;
+    });
+
+    if (hasFutureDays) {
+      setError("Cannot complete reservation with future dates");
+      return;
+    }
+
+    setCurrentReservationId(reservationId);
+    setShowCompletionConfirm(true);
+  };
+
+  const handleCompleteConfirm = async () => {
+    try {
+      const response = await apiClient.put(`/api/reservations/${currentReservationId}/complete`);
+      
+      const updatedReservations = reservations.map(res => 
+        res.id === currentReservationId ? response.data : res
+      );
+      
+      setReservations(updatedReservations);
+      localStorage.setItem(RESERVATIONS_STORAGE_KEY, JSON.stringify(updatedReservations));
+      setShowCompletionConfirm(false);
+    } catch (err) {
+      console.error("Status change failed:", err);
+      setError("Failed to update status. Please try again.");
+      setShowCompletionConfirm(false);
     }
   };
 
@@ -107,7 +164,7 @@ const GuideDashboard = ({ currentUser }) => {
     .filter(res => res.status === 'COMPLETED')
     .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
-  const ReservationCard = ({ reservation, onStatusChange, isPast = false }) => {
+  const ReservationCard = ({ reservation, isPast = false }) => {
     const statusColors = {
       'PENDING': '#FFA500',
       'CONFIRMED': '#4CAF50',
@@ -214,6 +271,16 @@ const GuideDashboard = ({ currentUser }) => {
             <p style={{ margin: "4px 0", fontSize: "14px" }}>
               <strong>Travelers:</strong> {reservation.dayDetails?.[0]?.numberOfTravelers || 'N/A'}
             </p>
+            {reservation.estimatedPrice && (
+              <p style={{ 
+                margin: "4px 0", 
+                fontSize: "14px",
+                color: "#2196F3",
+                fontWeight: "bold"
+              }}>
+                <strong>Estimated Price:</strong> LKR {reservation.estimatedPrice.toLocaleString()}
+              </p>
+            )}
           </div>
         </div>
 
@@ -254,7 +321,19 @@ const GuideDashboard = ({ currentUser }) => {
             {reservation.status === 'PENDING' && (
               <>
                 <button
-                  onClick={() => onStatusChange(reservation.id, 'DECLINED')}
+                  onClick={() => {
+                    const response = window.confirm("Are you sure you want to decline this reservation?");
+                    if (response) {
+                      apiClient.put(`/api/reservations/${reservation.id}/decline`)
+                        .then(res => {
+                          const updated = reservations.map(r => 
+                            r.id === reservation.id ? res.data : r
+                          );
+                          setReservations(updated);
+                          localStorage.setItem(RESERVATIONS_STORAGE_KEY, JSON.stringify(updated));
+                        });
+                    }
+                  }}
                   style={{
                     padding: "8px 16px",
                     backgroundColor: "#F44336",
@@ -270,7 +349,7 @@ const GuideDashboard = ({ currentUser }) => {
                   Decline
                 </button>
                 <button
-                  onClick={() => onStatusChange(reservation.id, 'CONFIRMED')}
+                  onClick={() => handleConfirmClick(reservation.id)}
                   style={{
                     padding: "8px 16px",
                     backgroundColor: "#4CAF50",
@@ -290,7 +369,7 @@ const GuideDashboard = ({ currentUser }) => {
 
             {reservation.status === 'CONFIRMED' && (
               <button
-                onClick={() => onStatusChange(reservation.id, 'COMPLETED')}
+                onClick={() => handleCompleteClick(reservation.id)}
                 style={{
                   padding: "8px 16px",
                   backgroundColor: "#2196F3",
@@ -363,22 +442,6 @@ const GuideDashboard = ({ currentUser }) => {
               {item}
             </button>
           ))}
-          <button
-            style={{
-              background: "none",
-              border: "none",
-              color: "#333",
-              fontSize: "16px",
-              cursor: "pointer",
-              padding: "5px 10px",
-              ':hover': {
-                color: "#532321"
-              }
-            }}
-            onClick={() => navigate('/guide-review')}
-          >
-            Reviews
-          </button>
         </div>
         
         <div style={{ position: 'relative' }}>
@@ -537,7 +600,6 @@ const GuideDashboard = ({ currentUser }) => {
                 <ReservationCard 
                   key={reservation.id}
                   reservation={reservation}
-                  onStatusChange={handleStatusChange}
                 />
               ))
             ) : (
@@ -576,6 +638,128 @@ const GuideDashboard = ({ currentUser }) => {
           </div>
         )}
       </div>
+
+      {showPricePrompt && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0,0,0,0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000
+        }}>
+          <div style={{
+            backgroundColor: 'white',
+            padding: '20px',
+            borderRadius: '8px',
+            width: '400px',
+            maxWidth: '90%'
+          }}>
+            <h3 style={{ marginTop: 0 }}>Enter Estimated Price</h3>
+            <p>Please provide the estimated cost for this reservation (LKR):</p>
+            <input
+              type="number"
+              value={estimatedPrice}
+              onChange={(e) => setEstimatedPrice(e.target.value)}
+              style={{
+                width: '100%',
+                padding: '8px',
+                margin: '10px 0',
+                border: `1px solid ${priceError ? '#F44336' : '#ddd'}`,
+                borderRadius: '4px'
+              }}
+              placeholder="Enter amount in LKR"
+            />
+            {priceError && (
+              <p style={{ color: '#F44336', margin: '5px 0' }}>{priceError}</p>
+            )}
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+              <button
+                onClick={() => setShowPricePrompt(false)}
+                style={{
+                  padding: '8px 16px',
+                  backgroundColor: '#f0f0f0',
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: 'pointer'
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handlePriceSubmit}
+                style={{
+                  padding: '8px 16px',
+                  backgroundColor: '#4CAF50',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: 'pointer'
+                }}
+              >
+                OK
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showCompletionConfirm && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0,0,0,0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000
+        }}>
+          <div style={{
+            backgroundColor: 'white',
+            padding: '20px',
+            borderRadius: '8px',
+            width: '400px',
+            maxWidth: '90%'
+          }}>
+            <h3 style={{ marginTop: 0 }}>Confirm Completion</h3>
+            <p>Are you sure you want to mark this reservation as completed?</p>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+              <button
+                onClick={() => setShowCompletionConfirm(false)}
+                style={{
+                  padding: '8px 16px',
+                  backgroundColor: '#f0f0f0',
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: 'pointer'
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleCompleteConfirm}
+                style={{
+                  padding: '8px 16px',
+                  backgroundColor: '#2196F3',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: 'pointer'
+                }}
+              >
+                Yes, mark as completed
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

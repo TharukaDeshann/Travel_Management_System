@@ -18,7 +18,7 @@ class WebSocketService {
     this.client = new Client({
       webSocketFactory: () => new SockJS('http://localhost:8080/ws'),
       connectHeaders: {
-        Authorization: `Bearer ${localStorage.getItem('token')}`
+        Authorization: `Bearer ${localStorage.getItem('accessToken')}`
       },
       reconnectDelay: this.connectionState.reconnectDelay,
       heartbeatIncoming: 10000,
@@ -27,6 +27,14 @@ class WebSocketService {
         if (str.includes('ERROR')) {
           console.error('WebSocket Error:', str);
         }
+      },
+      beforeConnect: () => {
+        const token = localStorage.getItem('accessToken');
+        if (!token) {
+          throw new Error('No authentication token available');
+        }
+        this.client.connectHeaders = { Authorization: `Bearer ${token}` };
+        return true;
       },
       onConnect: () => {
         this.connectionState.isConnected = true;
@@ -53,13 +61,11 @@ class WebSocketService {
     }
 
     return new Promise((resolve, reject) => {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('accessToken');
       if (!token) {
         reject(new Error('No authentication token available'));
         return;
       }
-
-      this.client.connectHeaders = { Authorization: `Bearer ${token}` };
 
       const onConnect = () => {
         this.connectionState.isConnected = true;
@@ -86,16 +92,16 @@ class WebSocketService {
     });
   }
 
-  handleConnectionError(error, reject) {
+  handleConnectionError(error) {
     this.connectionState.isConnected = false;
     this.connectionState.retryCount++;
 
     if (this.connectionState.retryCount <= this.connectionState.maxRetries) {
       console.warn(`Connection attempt ${this.connectionState.retryCount}/${this.connectionState.maxRetries}`);
-      setTimeout(() => this.connect().catch(reject), this.connectionState.reconnectDelay);
+      setTimeout(() => this.connect(), this.connectionState.reconnectDelay);
     } else {
       this.notifyConnectionChange(false);
-      reject(new Error('Max connection retries reached'));
+      console.error('Max connection retries reached');
     }
   }
 
@@ -111,7 +117,8 @@ class WebSocketService {
 
     const subscription = this.client.subscribe(destination, (message) => {
       try {
-        callback(JSON.parse(message.body));
+        const parsedMessage = JSON.parse(message.body);
+        callback(parsedMessage);
       } catch (error) {
         console.error('Error parsing message:', error);
       }
@@ -131,7 +138,7 @@ class WebSocketService {
       this.client.publish({
         destination,
         body: JSON.stringify(body),
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+        headers: { Authorization: `Bearer ${localStorage.getItem('accessToken')}` }
       });
       return true;
     } catch (error) {
@@ -163,7 +170,7 @@ class WebSocketService {
   }
 
   isConnected() {
-    return this.client?.connected || false;
+    return this.connectionState.isConnected;
   }
 }
 

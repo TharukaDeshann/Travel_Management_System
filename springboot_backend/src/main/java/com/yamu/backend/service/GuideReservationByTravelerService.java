@@ -91,4 +91,14 @@ public class GuideReservationByTravelerService {
         reservation.setUpdatedAt(LocalDateTime.now());
         return reservationRepository.save(reservation);
     }
+
+    @Transactional
+    public GuideReservationByTraveler setReservationPrice(Long reservationId, Double estimatedPrice) {
+        GuideReservationByTraveler reservation = reservationRepository.findById(reservationId)
+                .orElseThrow(() -> new RuntimeException("Reservation not found"));
+        
+        reservation.setEstimatedPrice(estimatedPrice);
+        reservation.setUpdatedAt(LocalDateTime.now());
+        return reservationRepository.save(reservation);
+    }
 }

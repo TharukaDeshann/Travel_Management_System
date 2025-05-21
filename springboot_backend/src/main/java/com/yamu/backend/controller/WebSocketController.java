@@ -2,6 +2,7 @@ package com.yamu.backend.controller;
 
 import com.yamu.backend.dto.MessageDto;
 import com.yamu.backend.dto.SendMessageDto;
+import com.yamu.backend.model.User;
 import com.yamu.backend.repository.UserRepository;
 import com.yamu.backend.service.MessageService;
 import org.springframework.messaging.handler.annotation.MessageMapping;
@@ -10,6 +11,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Controller;
+
+import java.security.Principal;
 
 @Controller
 public class WebSocketController {
@@ -26,27 +29,28 @@ public class WebSocketController {
     }
 
     @MessageMapping("/chat")
-    public void handleMessage(SendMessageDto messageDto, Authentication authentication) {
-        if (authentication == null || !authentication.isAuthenticated()) {
-            System.out.println("Unauthorized WebSocket message attempt");
-            return;
+    public void handleMessage(SendMessageDto messageDto, Principal principal) {
+        if (principal == null) {
+            throw new UsernameNotFoundException("User not authenticated");
         }
         
-        String email = authentication.getName();
-        Long senderId = userRepository.findByEmail(email)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found"))
-                .getId();
+        String email = principal.getName();
+        User sender = userRepository.findByEmail(email)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
         
         if (!userRepository.existsById(messageDto.getReceiverId())) {
-            System.out.println("Invalid receiver ID: " + messageDto.getReceiverId());
-            return;
+            throw new IllegalArgumentException("Invalid receiver ID: " + messageDto.getReceiverId());
         }
 
-        MessageDto sentMessage = messageService.sendMessage(messageDto, senderId);
+        // Set sender ID from authenticated user
+        messageDto.setSenderId(sender.getId());
+        
+        // Save message to database
+        MessageDto sentMessage = messageService.sendMessage(messageDto, sender.getId());
 
         // Send to sender's private queue
         messagingTemplate.convertAndSendToUser(
-                senderId.toString(),
+                sender.getId().toString(),
                 "/queue/messages",
                 sentMessage);
 

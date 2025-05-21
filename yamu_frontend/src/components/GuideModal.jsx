@@ -2,10 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import apiClient from '../services/axiosInstance';
 import { fetchLoggedInUser } from '../services/authService';
-import { refreshToken } from "../services/authService";
 import ReviewModal from './ReviewModal';
+import { Star } from 'react-feather';
 
-const GuideModal = ({ guide, onClose, currentUser }) => {
+const GuideModal = ({ guide, onClose }) => {
   const [currentStep, setCurrentStep] = useState(1);
   const [numberOfDays, setNumberOfDays] = useState(1);
   const [reservationDetails, setReservationDetails] = useState(
@@ -19,18 +19,36 @@ const GuideModal = ({ guide, onClose, currentUser }) => {
   );
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
+  const [currentUser, setCurrentUser] = useState(null);
+  const [isLoadingUser, setIsLoadingUser] = useState(true);
   const [showReviewModal, setShowReviewModal] = useState(false);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const loadUser = async () => {
+      try {
+        const user = await fetchLoggedInUser();
+        setCurrentUser(user);
+      } catch (err) {
+        console.error('Failed to fetch user:', err);
+        setCurrentUser(null);
+      } finally {
+        setIsLoadingUser(false);
+      }
+    };
+
+    loadUser();
+  }, []);
 
   const handleDayChange = (e) => {
     const days = parseInt(e.target.value);
     setNumberOfDays(days);
-    
+
     const newDetails = [];
     for (let i = 0; i < days; i++) {
-      newDetails.push(reservationDetails[i] || { 
-        place: '', 
-        date: '', 
+      newDetails.push(reservationDetails[i] || {
+        place: '',
+        date: '',
         travelers: 1,
         vehicleRequested: false,
         vehicleDetails: ''
@@ -60,11 +78,34 @@ const GuideModal = ({ guide, onClose, currentUser }) => {
       return;
     }
 
+    // Validate all fields are filled
     for (let i = 0; i < reservationDetails.length; i++) {
       const detail = reservationDetails[i];
       if (!detail.place || !detail.date || !detail.travelers) {
         setError(`Please fill all required fields for Day ${i + 1}`);
         return;
+      }
+    }
+
+    // Validate dates are not in the past and sequential
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Reset time part for accurate comparison
+
+    for (let i = 0; i < reservationDetails.length; i++) {
+      const detail = reservationDetails[i];
+      const selectedDate = new Date(detail.date);
+
+      if (selectedDate < today) {
+        setError(`Date for Day ${i + 1} cannot be in the past`);
+        return;
+      }
+
+      if (i > 0) {
+        const previousDate = new Date(reservationDetails[i - 1].date);
+        if (selectedDate <= previousDate) {
+          setError(`Date for Day ${i + 1} must be after Day ${i}`);
+          return;
+        }
       }
     }
 
@@ -86,7 +127,7 @@ const GuideModal = ({ guide, onClose, currentUser }) => {
       };
 
       const response = await apiClient.post('/api/reservations', reservationData);
-      
+
       if (response.status === 200) {
         onClose();
         alert('Reservation request sent successfully!');
@@ -103,8 +144,8 @@ const GuideModal = ({ guide, onClose, currentUser }) => {
   const renderGuideDetails = () => (
     <div style={{ display: 'flex', gap: '20px' }}>
       <div style={{ flex: 1 }}>
-        <img 
-          src={guide.profileImageUrl || '/src/images/default-profile.png'} 
+        <img
+          src={guide.profileImageUrl || '/src/images/default-profile.png'}
           alt={guide.name}
           style={{
             width: '100%',
@@ -114,9 +155,25 @@ const GuideModal = ({ guide, onClose, currentUser }) => {
           }}
         />
       </div>
-      
+
       <div style={{ flex: 2 }}>
         <h2 style={{ marginTop: 0 }}>{guide.firstName} {guide.lastName}</h2>
+
+        {guide.averageRating > 0 && (
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            marginBottom: '10px',
+            fontSize: '16px',
+            color: '#666'
+          }}>
+            <Star size={20} fill="#FFD700" color="#FFD700" />
+            <span style={{ marginLeft: '5px' }}>
+              {guide.averageRating.toFixed(1)} ⭐
+            </span>
+          </div>
+        )}
+
         <p><strong>Contact:</strong> {guide.contactNumber}</p>
         <p><strong>Email:</strong> {guide.email}</p>
         <p><strong>Address:</strong> {guide.address}</p>
@@ -155,7 +212,7 @@ const GuideModal = ({ guide, onClose, currentUser }) => {
               cursor: 'pointer'
             }}
           >
-            Reviews
+            Reviews ({guide.reviewCount || 0})
           </button>
           <button
             onClick={() => setCurrentStep(2)}
@@ -179,9 +236,9 @@ const GuideModal = ({ guide, onClose, currentUser }) => {
     <div style={{ padding: '20px' }}>
       <h2 style={{ marginTop: 0, color: '#532321' }}>Create Reservation</h2>
       <p style={{ color: '#666', marginBottom: '20px' }}>
-        Booking guide: {guide.name} ({guide.expertiseCityRegion})
+        Booking guide: {guide.firstName} {guide.lastName} ({guide.expertiseCityRegion})
       </p>
-      
+
       <div style={{ marginBottom: '20px' }}>
         <label style={{ display: 'block', marginBottom: '10px' }}>
           <strong>Number of Days:</strong>
@@ -200,7 +257,7 @@ const GuideModal = ({ guide, onClose, currentUser }) => {
             }}
           />
         </label>
-        
+
         {reservationDetails.map((detail, index) => (
           <div key={index} style={{
             border: '1px solid #ddd',
@@ -212,7 +269,7 @@ const GuideModal = ({ guide, onClose, currentUser }) => {
             <h4 style={{ marginTop: 0, marginBottom: '15px', color: '#532321' }}>
               Day {index + 1} Details
             </h4>
-            
+
             <div style={{ marginBottom: '15px' }}>
               <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>
                 Places to Visit:
@@ -232,7 +289,7 @@ const GuideModal = ({ guide, onClose, currentUser }) => {
                 required
               />
             </div>
-            
+
             <div style={{ marginBottom: '15px' }}>
               <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>
                 Date:
@@ -241,6 +298,11 @@ const GuideModal = ({ guide, onClose, currentUser }) => {
                 type="date"
                 value={detail.date}
                 onChange={(e) => handleDetailChange(index, 'date', e.target.value)}
+                min={
+                  index === 0
+                    ? new Date().toISOString().split('T')[0] // Today's date for Day 1
+                    : reservationDetails[index - 1]?.date // Previous day's date for subsequent days
+                }
                 style={{
                   width: '100%',
                   padding: '8px 12px',
@@ -251,7 +313,7 @@ const GuideModal = ({ guide, onClose, currentUser }) => {
                 required
               />
             </div>
-            
+
             <div style={{ marginBottom: '15px' }}>
               <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>
                 Number of Travelers:
@@ -271,12 +333,12 @@ const GuideModal = ({ guide, onClose, currentUser }) => {
                 required
               />
             </div>
-            
+
             {guide.vehicleAvailability && (
               <div style={{ marginBottom: '15px' }}>
-                <label style={{ 
-                  display: 'flex', 
-                  alignItems: 'center', 
+                <label style={{
+                  display: 'flex',
+                  alignItems: 'center',
                   marginBottom: '8px',
                   cursor: 'pointer'
                 }}>
@@ -284,7 +346,7 @@ const GuideModal = ({ guide, onClose, currentUser }) => {
                     type="checkbox"
                     checked={detail.vehicleRequested}
                     onChange={(e) => handleDetailChange(index, 'vehicleRequested', e.target.checked)}
-                    style={{ 
+                    style={{
                       marginRight: '10px',
                       width: '18px',
                       height: '18px',
@@ -293,7 +355,7 @@ const GuideModal = ({ guide, onClose, currentUser }) => {
                   />
                   <span style={{ fontWeight: '500' }}>Request Vehicle for this day</span>
                 </label>
-                
+
                 {detail.vehicleRequested && (
                   <div style={{ marginTop: '10px' }}>
                     <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>
@@ -319,10 +381,10 @@ const GuideModal = ({ guide, onClose, currentUser }) => {
           </div>
         ))}
       </div>
-      
+
       {error && (
-        <div style={{ 
-          color: 'red', 
+        <div style={{
+          color: 'red',
           margin: '15px 0',
           padding: '10px',
           backgroundColor: '#ffebee',
@@ -332,7 +394,7 @@ const GuideModal = ({ guide, onClose, currentUser }) => {
           {error}
         </div>
       )}
-      
+
       <div style={{
         display: 'flex',
         justifyContent: 'space-between',
@@ -410,7 +472,7 @@ const GuideModal = ({ guide, onClose, currentUser }) => {
         padding: '20px',
         position: 'relative'
       }}>
-        <button 
+        <button
           onClick={onClose}
           style={{
             position: 'absolute',
@@ -425,7 +487,18 @@ const GuideModal = ({ guide, onClose, currentUser }) => {
           ❌
         </button>
 
-        {currentStep === 1 ? renderGuideDetails() : renderReservationForm()}
+        {isLoadingUser ? (
+          <div style={{
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            height: '200px'
+          }}>
+            <p>Loading user information...</p>
+          </div>
+        ) : (
+          currentStep === 1 ? renderGuideDetails() : renderReservationForm()
+        )}
       </div>
 
       {showReviewModal && (

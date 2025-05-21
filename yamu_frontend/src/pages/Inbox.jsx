@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { websocketService } from '../services/websocketService';
+import { Client } from '@stomp/stompjs';
+import SockJS from 'sockjs-client';
 import apiClient from '../services/axiosInstance';
 import { useUser } from '../context/UserContext';
 
@@ -20,7 +21,7 @@ const Inbox = () => {
   const [allUsers, setAllUsers] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [isConnected, setIsConnected] = useState(false);
-  const [isLoadingChat, setIsLoadingChat] = useState(false);
+  const [stompClient, setStompClient] = useState(null);
 
   const handleIncomingMessage = useCallback((message) => {
     setMessages(prev => {
@@ -49,38 +50,52 @@ const Inbox = () => {
       return;
     }
 
-    const setupWebSocket = async () => {
-      try {
-        await websocketService.connect();
-        websocketService.subscribe(
-          `/user/${user.id}/queue/messages`,
-          handleIncomingMessage
-        );
-        setIsConnected(true);
-      } catch (error) {
-        console.error('WebSocket connection failed:', error);
-        setIsConnected(false);
-        setError('Realtime connection unavailable - using fallback');
-      }
+    const setupWebSocket = () => {
+      const client = new Client({
+        webSocketFactory: () =>  new SockJS('http://localhost:8080/ws'),
+            // new SockJS(`http://localhost:8080/ws?token=${localStorage.getItem('accessToken')}`),
+        reconnectDelay: 5000,
+        heartbeatIncoming: 10000,
+        heartbeatOutgoing: 10000,
+        debug: (str) => {
+          if (str.includes('ERROR')) {
+            console.log('WebSocket Error:', str);
+          }
+        },
+        onConnect: () => {
+          setIsConnected(true);
+          
+          // Subscribe to user's private queue
+          client.subscribe(`/user/${user.id}/queue/messages`, (message) => {
+            try {
+              const parsedMessage = JSON.parse(message.body);
+              handleIncomingMessage(parsedMessage);
+            } catch (error) {
+              console.error('Error parsing message:', error);
+            }
+          });
+        },
+        onStompError: (error) => {
+          console.error('STOMP error:', error);
+          setIsConnected(false);
+        },
+        onDisconnect: () => {
+          setIsConnected(false);
+        }
+      });
+
+      client.activate();
+      setStompClient(client);
+
+      return () => {
+        client.deactivate();
+      };
     };
 
-    const connectionListener = websocketService.addConnectionListener(
-      (connected) => {
-        setIsConnected(connected);
-        if (connected) {
-          websocketService.subscribe(
-            `/user/${user.id}/queue/messages`,
-            handleIncomingMessage
-          );
-        }
-      }
-    );
-
-    setupWebSocket();
+    const cleanup = setupWebSocket();
 
     return () => {
-      connectionListener();
-      websocketService.disconnect();
+      cleanup();
     };
   }, [user, navigate, handleIncomingMessage]);
 
@@ -111,14 +126,9 @@ const Inbox = () => {
   useEffect(() => {
     const userIdParam = searchParams.get('select');
     if (userIdParam) {
-      setIsLoadingChat(true);
       const userId = parseInt(userIdParam);
       if (!isNaN(userId)) {
         setSelectedPartner(userId);
-        setTimeout(() => {
-          messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-          setIsLoadingChat(false);
-        }, 100);
       }
     }
   }, [searchParams]);
@@ -134,6 +144,7 @@ const Inbox = () => {
           ...prev,
           [selectedPartner]: 0
         }));
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
       } catch (error) {
         setError('Failed to load messages');
       }
@@ -141,10 +152,6 @@ const Inbox = () => {
 
     loadMessages();
   }, [selectedPartner]);
-
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
 
   const handleSendMessage = async () => {
     if (!newMessage.trim() || !selectedPartner) return;
@@ -169,14 +176,26 @@ const Inbox = () => {
     setMessages(prev => [...prev, optimisticMessage]);
     setNewMessage('');
 
-    try {
-      const wsSuccess = websocketService.send('/app/chat', messageData);
+    console.log(stompClient, stompClient.connected);
+    
 
-      if (!wsSuccess) {
+    try {
+      if (stompClient && stompClient.connected) {
+        stompClient.publish({
+          destination: '/app/chat',
+          body: JSON.stringify(messageData),
+          headers: { 
+            Authorization: `Bearer ${localStorage.getItem('token')}`,
+            'content-type': 'application/json'
+          }
+        });
+        console.log("Web Socket")
+      } else {
         const response = await apiClient.post('/api/messages', messageData);
         setMessages(prev => prev.map(msg => 
           msg.id === tempId ? response.data : msg
         ));
+        console.log("Database endpoint")
       }
     } catch (error) {
       setMessages(prev => prev.filter(msg => msg.id !== tempId));
@@ -238,8 +257,8 @@ const Inbox = () => {
       top: '10px',
       right: '10px',
       padding: '8px 16px',
-      backgroundColor: '#FFC107',
-      color: 'black',
+      backgroundColor: isConnected ? '#4CAF50' : '#FFC107',
+      color: 'white',
       borderRadius: '20px',
       fontSize: '14px',
       zIndex: 100,
@@ -400,11 +419,9 @@ const Inbox = () => {
 
   return (
     <div style={styles.container}>
-      {!isConnected && (
-        <div style={styles.connectionBanner}>
-          Offline Mode - Messages may be delayed
-        </div>
-      )}
+      <div style={styles.connectionBanner}>
+        {isConnected ? 'Connected' : 'Offline Mode - Messages may be delayed'}
+      </div>
 
       <div style={styles.sidebar}>
         <div style={styles.searchContainer}>
@@ -495,9 +512,7 @@ const Inbox = () => {
             </div>
 
             <div style={styles.messagesContainer}>
-              {isLoadingChat ? (
-                <div style={styles.loadingIndicator}>Loading conversation...</div>
-              ) : messages.length === 0 ? (
+              {messages.length === 0 ? (
                 <div style={styles.emptyState}>
                   <p>No messages yet. Start the conversation!</p>
                 </div>
