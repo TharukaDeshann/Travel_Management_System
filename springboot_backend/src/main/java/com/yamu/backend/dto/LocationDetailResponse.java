@@ -1,12 +1,12 @@
 package com.yamu.backend.dto;
 
-import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
 
 @Getter
 @Setter
-public class LocationRequest {
+public class LocationDetailResponse {
+    private Long id;
     private String name;
     private String address;
     private Double latitude;

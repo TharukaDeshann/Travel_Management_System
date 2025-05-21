@@ -1,19 +1,20 @@
 package com.yamu.backend.dto;
 
-import java.sql.Date;
-import java.util.List;
 
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.Date;
+import java.util.List;
+
 @Getter
 @Setter
-public class DayPlanResponse {
+public class DayPlanDetailResponse {
     private Long id;
     private Date date;
     private String hotelDetails;
     private String transportDetails;
     private String guideDetails;
-    private List<LocationResponse> locations;
-    private RouteResponse route;
+    private List<LocationDetailResponse> locations;
+    private RouteDetailResponse route;
 }

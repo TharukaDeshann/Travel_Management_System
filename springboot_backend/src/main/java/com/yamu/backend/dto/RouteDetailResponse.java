@@ -1,13 +1,11 @@
 package com.yamu.backend.dto;
 
-import java.util.List;
-
 import lombok.Getter;
 import lombok.Setter;
 
-@Getter
+@Getter 
 @Setter
-public class RouteResponse {
+public class RouteDetailResponse {
     private Long id;
     private String name;
     private String travelMode;

@@ -1,48 +1,194 @@
 package com.yamu.backend.service;
 
-import com.yamu.backend.dto.ItineraryRequest;
-import com.yamu.backend.dto.ItineraryResponse;
+import com.yamu.backend.dto.DayPlanCreateRequest;
+import com.yamu.backend.dto.DayPlanDetailResponse;
+import com.yamu.backend.dto.ItineraryCreateRequest;
+import com.yamu.backend.dto.ItineraryDetailResponse;
+import com.yamu.backend.dto.LocationCreateRequest;
+import com.yamu.backend.dto.LocationDetailResponse;
+import com.yamu.backend.dto.RouteDetailResponse;
+import com.yamu.backend.dto.UserResponseDTO;
+import com.yamu.backend.exception.ResourceNotFoundException;
+import com.yamu.backend.model.DayPlan;
 import com.yamu.backend.model.Itinerary;
+import com.yamu.backend.model.Location;
+import com.yamu.backend.model.Route;
 import com.yamu.backend.model.Traveler;
-import com.yamu.backend.model.User;
 import com.yamu.backend.repository.ItineraryRepository;
 import com.yamu.backend.repository.TravelerRepository;
 import com.yamu.backend.repository.UserRepository;
 
-import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.util.UUID;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class ItineraryService {
-    private final ItineraryRepository itRepo;
-    private final TravelerRepository trRepo;
 
-    public ItineraryService(ItineraryRepository itRepo, TravelerRepository trRepo) {
-        this.itRepo = itRepo;
-        this.trRepo = trRepo;
+    @Autowired
+    private ItineraryRepository itineraryRepository;
+    
+    @Autowired
+    private TravelerRepository travelerRepository;
+
+    @Autowired 
+    private final UserRepository userRepository;
+
+    
+    
+    @Autowired
+    private ModelMapper modelMapper;  // You'll need to configure this bean
+    
+    /**
+     * Creates a complete itinerary with day plans, routes, and locations in a single transaction
+     */
+    @Transactional
+    public ItineraryDetailResponse createItinerary(ItineraryCreateRequest request) {
+        // Fetch the traveler
+        Traveler traveler = travelerRepository.findById(request.getTravelerId())
+                .orElseThrow(() -> new ResourceNotFoundException("Traveler not found with id: " + request.getTravelerId()));
+                
+        // Create the itinerary
+        Itinerary itinerary = new Itinerary();
+        itinerary.setBudget(request.getBudget());
+        itinerary.setCurrency(request.getCurrency());
+        itinerary.setStartDate(request.getStartDate());
+        itinerary.setEndDate(request.getEndDate());
+        itinerary.setTripTitle(request.getTripTitle());
+        itinerary.setTraveler(traveler);
+        
+        // Create day plans
+        List<DayPlan> dayPlans = new ArrayList<>();
+        
+        for (DayPlanCreateRequest dayPlanRequest : request.getDayPlans()) {
+            DayPlan dayPlan = new DayPlan();
+            dayPlan.setDate(dayPlanRequest.getDate());
+            dayPlan.setHotelDetails(dayPlanRequest.getHotelDetails());
+            dayPlan.setTransportDetails(dayPlanRequest.getTransportDetails());
+            dayPlan.setGuideDetails(dayPlanRequest.getGuideDetails());
+            dayPlan.setItinerary(itinerary);
+            
+            // Create locations
+            List<Location> locations = new ArrayList<>();
+            if (dayPlanRequest.getLocations() != null) {
+                for (LocationCreateRequest locationRequest : dayPlanRequest.getLocations()) {
+                    Location location = new Location();
+                    location.setName(locationRequest.getName());
+                    location.setAddress(locationRequest.getAddress());
+                    location.setLatitude(locationRequest.getLatitude());
+                    location.setLongitude(locationRequest.getLongitude());
+                    location.setPositionIndex(locationRequest.getPositionIndex());
+                    location.setPlaceId(locationRequest.getPlaceId());
+                    location.setNotes(locationRequest.getNotes());
+                    location.setDayPlan(dayPlan);
+                    locations.add(location);
+                }
+            }
+            
+            // Create route if needed (when there are multiple locations)
+            if (dayPlanRequest.getRoute() != null) {
+                Route route = new Route();
+                route.setName(dayPlanRequest.getRoute().getName());
+                route.setTravelMode(dayPlanRequest.getRoute().getTravelMode());
+                route.setTotalDistance(dayPlanRequest.getRoute().getTotalDistance());
+                route.setEstimatedTime(dayPlanRequest.getRoute().getEstimatedTime());
+                route.setDayPlan(dayPlan);
+                
+                // Associate route with its locations
+                if (locations.size() > 1) {
+                    for (Location location : locations) {
+                        location.setRoute(route);
+                    }
+                    route.setLocations(locations);
+                }
+                
+                dayPlan.setRoute(route);
+            }
+            
+            dayPlan.setLocations(locations);
+            dayPlans.add(dayPlan);
+        }
+        
+        itinerary.setDayPlans(dayPlans);
+        
+        // Save the entire object graph
+        Itinerary savedItinerary = itineraryRepository.save(itinerary);
+        
+        // Map to response DTO and return
+        return mapToDetailResponse(savedItinerary);
     }
-
-    public ItineraryResponse create(ItineraryRequest dto) {
-        Traveler traveler = trRepo.findById(dto.getTravelerId())
-            .orElseThrow(() -> new RuntimeException("Traveler not found"));
-
-        Itinerary it = new Itinerary();
-        it.setBudget(dto.getBudget());
-        it.setCurrency(dto.getCurrency());
-        it.setStartDate(dto.getStartDate());
-        it.setEndDate(dto.getEndDate());
-        it.setTripTitle(dto.getTripTitle());
-        it.setTraveler(traveler);
-
-        Itinerary saved = itRepo.save(it);
-        ItineraryResponse r = new ItineraryResponse();
-        BeanUtils.copyProperties(saved, r, "id");
-        r.setId(saved.getId());
-        return r;
+    
+    /**
+     * Maps the entity to a detailed response DTO
+     */
+    private ItineraryDetailResponse mapToDetailResponse(Itinerary itinerary) {
+        // This could be implemented with a mapping library like ModelMapper
+        // For now, a simple manual mapping implementation
+        ItineraryDetailResponse response = new ItineraryDetailResponse();
+        response.setId(itinerary.getId());
+        response.setBudget(itinerary.getBudget());
+        response.setCurrency(itinerary.getCurrency());
+        response.setStartDate(itinerary.getStartDate());
+        response.setEndDate(itinerary.getEndDate());
+        response.setTripTitle(itinerary.getTripTitle());
+        
+        List<DayPlanDetailResponse> dayPlanResponses = itinerary.getDayPlans().stream()
+                .map(this::mapToDayPlanResponse)
+                .collect(Collectors.toList());
+                
+        response.setDayPlans(dayPlanResponses);
+        
+        return response;
+    }
+    
+    private DayPlanDetailResponse mapToDayPlanResponse(DayPlan dayPlan) {
+        DayPlanDetailResponse response = new DayPlanDetailResponse();
+        response.setId(dayPlan.getId());
+        response.setDate(dayPlan.getDate());
+        response.setHotelDetails(dayPlan.getHotelDetails());
+        response.setTransportDetails(dayPlan.getTransportDetails());
+        response.setGuideDetails(dayPlan.getGuideDetails());
+        
+        // Map locations
+        if (dayPlan.getLocations() != null) {
+            List<LocationDetailResponse> locationResponses = dayPlan.getLocations().stream()
+                    .map(this::mapToLocationResponse)
+                    .collect(Collectors.toList());
+            response.setLocations(locationResponses);
+        }
+        
+        // Map route
+        if (dayPlan.getRoute() != null) {
+            response.setRoute(mapToRouteResponse(dayPlan.getRoute()));
+        }
+        
+        return response;
+    }
+    
+    private LocationDetailResponse mapToLocationResponse(Location location) {
+        LocationDetailResponse response = new LocationDetailResponse();
+        response.setId(location.getId());
+        response.setName(location.getName());
+        response.setAddress(location.getAddress());
+        response.setLatitude(location.getLatitude());
+        response.setLongitude(location.getLongitude());
+        response.setPositionIndex(location.getPositionIndex());
+        response.setPlaceId(location.getPlaceId());
+        response.setNotes(location.getNotes());
+        return response;
+    }
+    
+    private RouteDetailResponse mapToRouteResponse(Route route) {
+        RouteDetailResponse response = new RouteDetailResponse();
+        response.setId(route.getId());
+        response.setName(route.getName());
+        response.setTravelMode(route.getTravelMode());
+        response.setTotalDistance(route.getTotalDistance());
+        response.setEstimatedTime(route.getEstimatedTime());
+        return response;
     }
 }

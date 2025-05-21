@@ -4,17 +4,19 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.util.Date;
+import java.util.List;
 
-import jakarta.validation.constraints.NotNull;
-
-
-@Getter 
+@Getter
 @Setter
-public class ItineraryRequest {
-    private double budget;
+public class ItineraryDetailResponse {
+    private Long id;
+    private Double budget;
     private String currency;
     private Date startDate;
     private Date endDate;
     private String tripTitle;
-    private Long travelerId; // For assigning ownership
+    private List<DayPlanDetailResponse> dayPlans;
 }
+
+
+
