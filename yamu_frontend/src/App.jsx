@@ -32,6 +32,7 @@ import UpdateUserProfile from "./pages/profile/components/UpdateUserProfile.jsx"
 import ProfileView from "./pages/ProfileView.jsx";
 import AdminDashboard from "./pages/AdminDashboard.jsx";
 import UsersSocialPage from "./pages/UsersSocialPage.jsx";
+// import ProfileView from "./pages/ProfileView.jsx";
 
 
 
@@ -80,6 +81,7 @@ const App = () => {
             
 
             {/* Profile Routes */}
+            {/* <Route path="/users/profile/" */}
             <Route path="/profile" element={<UserProfile />} />
             <Route path="/profile/update-profile" element={<UpdateUserProfile />} />
           </Route>
