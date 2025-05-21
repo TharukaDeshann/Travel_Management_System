@@ -56,7 +56,7 @@ public class SecurityConfig {
                         .requestMatchers(
                                 "/api/auth/login", "/api/auth/register", "/api/auth/refresh-token", "/api/auth/user",
                                 "/api/users/user", "/api/locations/**", "/api/auth/verify-email",
-                                "/api/auth/resend-verification","/home/*")
+                                "/api/auth/resend-verification","/home/*","/api/hotels/**") 
                         .permitAll()
                         .requestMatchers(HttpMethod.PUT, "/api/users/{id}").authenticated()
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
