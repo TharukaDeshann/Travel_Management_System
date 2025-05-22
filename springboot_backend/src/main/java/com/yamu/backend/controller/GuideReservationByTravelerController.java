@@ -1,14 +1,13 @@
 package com.yamu.backend.controller;
 
-import com.yamu.backend.dto.CreateReservationRequest;
-import com.yamu.backend.dto.GuideReservationResponse;
-import com.yamu.backend.dto.UserDto;
+import com.yamu.backend.dto.*;
 import com.yamu.backend.model.*;
 import com.yamu.backend.service.GuideReservationByTravelerService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @RestController
@@ -32,12 +31,12 @@ public class GuideReservationByTravelerController {
         
         if (reservation.getGuide() != null) {
             dto.setGuideId(reservation.getGuide().getId());
-            // Add guide name and contact
             dto.setGuideName(reservation.getGuide().getFirstName() + " " + reservation.getGuide().getLastName());
             dto.setGuideContact(reservation.getGuide().getContactNumber());
         }
         
         dto.setNumberOfDays(reservation.getNumberOfDays());
+        dto.setEstimatedPrice(reservation.getEstimatedPrice());
         
         if (reservation.getStatus() != null) {
             dto.setStatus(reservation.getStatus().name());
@@ -122,6 +121,16 @@ public class GuideReservationByTravelerController {
         GuideReservationByTraveler reservation = reservationService.updateReservationStatus(
             reservationId, 
             GuideReservationByTraveler.ReservationStatus.COMPLETED);
+        return ResponseEntity.ok(convertToDto(reservation));
+    }
+
+    @PutMapping("/{reservationId}/set-price")
+    public ResponseEntity<GuideReservationResponse> setReservationPrice(
+            @PathVariable Long reservationId,
+            @RequestBody Map<String, Double> request) {
+        GuideReservationByTraveler reservation = reservationService.setReservationPrice(
+            reservationId, 
+            request.get("estimatedPrice"));
         return ResponseEntity.ok(convertToDto(reservation));
     }
 }

@@ -22,8 +22,9 @@ import WeatherCard from "./components/WeatherCard.jsx";
 import ItineraryPlanner from "./pages/ItineraryPlanner.jsx";
 
 import FinalizeItinerary from "./pages/FinalizeItinerary.jsx"; 
-import Inbox from "./pages/Inbox.jsx";// Import FinalizeItinerary
+import Inbox from "./pages/Inbox.jsx";
 import TravelerUpcomingTrips from "./pages/TravelerUpcomingTrips";
+import CancellationModal from "./components/CancellationModal.jsx"; // Import CancellationModal
 
 import VerifyEmail from "./pages/VerifyEmail.jsx";
 import VerifyEmailPending from "./pages/VerifyEmailPending.jsx";
@@ -33,8 +34,6 @@ import ProfileView from "./pages/ProfileView.jsx";
 import AdminDashboard from "./pages/AdminDashboard.jsx";
 import UsersSocialPage from "./pages/UsersSocialPage.jsx";
 // import ProfileView from "./pages/ProfileView.jsx";
-
-
 
 const App = () => {
   return (
@@ -54,10 +53,7 @@ const App = () => {
           <Route path="/" element={<Login />} />
           
           {/* Email verification pending */}
-          <Route
-            path="/verify-email-pending"
-            element={<VerifyEmailPending />}
-          />
+          <Route path="/verify-email-pending" element={<VerifyEmailPending />} />
           {/* Email verification */}
           <Route path="/verify-email" element={<VerifyEmail />} />
 
@@ -65,6 +61,7 @@ const App = () => {
           <Route element={<ProtectedRoute />}>
             <Route path="/home" element={<Home />} />
             <Route path="/traveler-dashboard" element={<TravelerDashboard />} />
+            <Route path="/traveler-upcoming-trips" element={<TravelerUpcomingTrips />} />
             <Route path="/guide-dashboard" element={<GuideDashboard />} />
             <Route path="/admin-dashboard" element={<AdminDashboard />} />
             <Route path="/guide-reviews" element={<GuideReview />} />
@@ -83,10 +80,17 @@ const App = () => {
             {/* Profile Routes */}
             {/* <Route path="/users/profile/" */}
             <Route path="/profile" element={<UserProfile />} />
+
+            <Route path="/profile/update-email" element={<UpdateEmail />} />
+            <Route path="/profile/update-password" element={<UpdatePassword />} />
+
             <Route path="/profile/update-profile" element={<UpdateUserProfile />} />
           </Route>
 
-          
+
+            {/* Cancellation Modal Route */}
+            <Route path="/cancellation-modal" element={<CancellationModal isOpen={true} />} />
+          </Route>
 
           {/* Fallback Route */}
           <Route path="*" element={<div>404 Not Found</div>} />

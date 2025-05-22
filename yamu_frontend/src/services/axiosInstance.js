@@ -37,24 +37,30 @@ setTokenExpiration();
 // Check if token needs refresh before each request
 apiClient.interceptors.request.use(
   async (config) => {
-    // If token is about to expire, refresh it before proceeding
+    const token = localStorage.getItem("token");
+    if (token) {
+      config.headers["Authorization"] = `Bearer ${token}`;
+    }
+
     if (tokenExpirationTime && Date.now() > tokenExpirationTime && !isRefreshing) {
       isRefreshing = true;
-      
+
       try {
-        await refreshToken();
-        // Reset expiration timer after successful refresh
+        await refreshToken(); // must update localStorage or auth state
         setTokenExpiration();
         isRefreshing = false;
+        processQueue(null);
       } catch (error) {
         isRefreshing = false;
-        // If refresh fails, user will be logged out in the response interceptor
+        processQueue(error); // <- This line was missing
       }
     }
+
     return config;
   },
   (error) => Promise.reject(error)
 );
+
 
 // Handle 401 errors for cases where token validation fails on server
 apiClient.interceptors.response.use(
