@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
+import apiClient from "../services/axiosInstance";
 
 const ItineraryPlanner = () => {
-    const navigate = useNavigate();
+  const navigate = useNavigate();
   const [startDate, setStartDate] = useState(null);
   const [endDate, setEndDate] = useState(null);
   const [budget, setBudget] = useState("");
@@ -36,21 +37,43 @@ const ItineraryPlanner = () => {
     return true;
   };
 
-  const handleStartPlanning = () => {
+  const handleStartPlanning = async () => {
     if (!validateInputs()) return;
 
+    try {
+      const response = await apiClient.post("/api/itineraries", {
+        tripTitle,
+        startDate,
+        endDate,
+        budget,
+        currency,
+      });
+
+      console.log("Itinerary saved:", response.data);
+
+      // Generate the date range
+      const dateRange = getDateRange(startDate, endDate);
+
+      // Navigate to the map page with the date range as query parameters
+      navigate(`/map?dates=${JSON.stringify(dateRange)}`);
+    } catch (error) {
+      console.error("Error saving itinerary:", error);
+      setError("Failed to save itinerary. Please try again.");
+    }
+  };
+
+  const getDateRange = (start, end) => {
     const dates = [];
-    let currentDate = new Date(startDate);
-    while (currentDate <= endDate) {
-      dates.push(currentDate.toISOString().split("T")[0]);
+    let currentDate = new Date(start);
+    while (currentDate <= end) {
+      dates.push(currentDate.toISOString().split("T")[0]); // Format as YYYY-MM-DD
       currentDate.setDate(currentDate.getDate() + 1);
     }
+    return dates;
+  };
 
-    navigate(`/itinerary-selection?dates=${JSON.stringify(dates)}&title=${tripTitle}&budget=${budget}&currency=${currency}`);
-    };
-
-    return (
-        <div className="container mx-auto p-6 max-w-2xl">
+  return (
+    <div className="container mx-auto p-6 max-w-2xl">
       <h1 className="text-3xl font-bold text-blue-600 mb-8 text-center">
         Plan Your Journey with Yamu
       </h1>
@@ -60,7 +83,6 @@ const ItineraryPlanner = () => {
       )}
 
       <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-        {/* Trip Title Input */}
         <div className="mb-6">
           <label className="block text-gray-700 mb-2 font-medium">
             Trip Title
@@ -74,7 +96,6 @@ const ItineraryPlanner = () => {
           />
         </div>
 
-        {/* Travel Dates and Budget */}
         <div className="grid md:grid-cols-2 gap-6 mb-6">
           <div>
             <label className="block text-gray-700 mb-2 font-medium">
@@ -83,14 +104,14 @@ const ItineraryPlanner = () => {
             <div className="space-y-3">
               <DatePicker
                 selected={startDate}
-                onChange={date => setStartDate(date)}
+                onChange={(date) => setStartDate(date)}
                 minDate={new Date()}
                 placeholderText="Select start date"
                 className="w-full p-3 border rounded-lg"
               />
               <DatePicker
                 selected={endDate}
-                onChange={date => setEndDate(date)}
+                onChange={(date) => setEndDate(date)}
                 minDate={startDate || new Date()}
                 placeholderText="Select end date"
                 className="w-full p-3 border rounded-lg"
@@ -131,8 +152,8 @@ const ItineraryPlanner = () => {
           Start Planning Your Trip
         </button>
       </div>
-        </div>
-    );
+    </div>
+  );
 };
 
 export default ItineraryPlanner;

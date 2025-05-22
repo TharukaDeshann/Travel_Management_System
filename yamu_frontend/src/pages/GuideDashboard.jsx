@@ -4,7 +4,7 @@ import { Mail } from "lucide-react";
 import yamuLogo from '../images/yamu-logo.png';
 import profileIcon from '../images/profile.png';
 import apiClient from "../services/axiosInstance";
-
+import { useUser } from "../context/UserContext";
 const RESERVATIONS_STORAGE_KEY = 'guideReservations';
 
 const GuideDashboard = ({ currentUser }) => {
@@ -14,11 +14,16 @@ const GuideDashboard = ({ currentUser }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [unreadCount, setUnreadCount] = useState(0);
+
   const [showPricePrompt, setShowPricePrompt] = useState(false);
   const [currentReservationId, setCurrentReservationId] = useState(null);
   const [estimatedPrice, setEstimatedPrice] = useState('');
   const [priceError, setPriceError] = useState('');
   const [showCompletionConfirm, setShowCompletionConfirm] = useState(false);
+
+
+  const loggedUser = useUser().user;
+
   
   useEffect(() => {
     currentUser = JSON.parse(localStorage.getItem("user"));
@@ -484,7 +489,7 @@ const GuideDashboard = ({ currentUser }) => {
         
         <div style={{ display: "flex", alignItems: "center", gap: "20px" }}>
           <img 
-            src={profileIcon} 
+            src={loggedUser.profileImageUrl} 
             alt="Profile" 
             style={{
               width: "40px",

@@ -9,6 +9,7 @@ import profileIcon from '../images/profile.png';
 import botImage from '../images/bot-image.png';
 import apiClient from "../services/axiosInstance";
 import GuideModal from "../components/GuideModal";
+import { useUser } from "../context/UserContext";
 
 const currencies = [
   { code: 'USD', symbol: '$' },
@@ -25,6 +26,9 @@ export default function TravelerDashboard({ currentUser }) {
   const [guides, setGuides] = useState([]);
   const [showLeftButton, setShowLeftButton] = useState({});
   const [selectedGuide, setSelectedGuide] = useState(null);
+  
+  const loggedUser = useUser().user;
+  
 
   useEffect(() => {
     const fetchGuides = async () => {
@@ -213,7 +217,7 @@ export default function TravelerDashboard({ currentUser }) {
           </div>
           <div className="icon-container">
 
-            <img src={profileIcon} alt="Profile" className="profile-image" onClick={() => navigate('/profile')} />
+            <img src={loggedUser.profileImageUrl} alt="Profile" className="profile-image" onClick={() => navigate('/profile')} />
 
           </div>
         </div>
@@ -238,7 +242,7 @@ export default function TravelerDashboard({ currentUser }) {
             </button>
             <button 
               className="action-button start-planning-button"
-              onClick={() => navigate('/visit-planner')}
+              onClick={() => navigate('/itinerary-planner')}
             >
               Start Planning
             </button>

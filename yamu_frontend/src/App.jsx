@@ -20,7 +20,7 @@ import Map from "./components/Map.jsx";
 import GuidesPage from "./pages/GuidesPage.jsx";         
 import WeatherCard from "./components/WeatherCard.jsx";
 import ItineraryPlanner from "./pages/ItineraryPlanner.jsx";
-import ItinerarySelection from "./pages/ItinerarySelection.jsx";
+
 import FinalizeItinerary from "./pages/FinalizeItinerary.jsx"; 
 import Inbox from "./pages/Inbox.jsx";
 import TravelerUpcomingTrips from "./pages/TravelerUpcomingTrips";
@@ -29,11 +29,11 @@ import CancellationModal from "./components/CancellationModal.jsx"; // Import Ca
 import VerifyEmail from "./pages/VerifyEmail.jsx";
 import VerifyEmailPending from "./pages/VerifyEmailPending.jsx";
 import UserProfile from "./pages/profile/UserProfile.jsx";
+import UpdateUserProfile from "./pages/profile/components/UpdateUserProfile.jsx";
 import ProfileView from "./pages/ProfileView.jsx";
-import UpdateEmail from "./pages/profile/components/UpdateEmail.jsx";
-import UpdatePassword from "./pages/profile/components/UpdatePassword.jsx";
 import AdminDashboard from "./pages/AdminDashboard.jsx";
 import UsersSocialPage from "./pages/UsersSocialPage.jsx";
+// import ProfileView from "./pages/ProfileView.jsx";
 
 const App = () => {
   return (
@@ -45,15 +45,12 @@ const App = () => {
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
 
-          <Route path="/map" element={<Map />} />
+          
           <Route path="/weather" element={<WeatherPage />} />
           <Route path="/weather-details" element={<Weather />} />
           <Route path="/weather-card" element={<WeatherCard />} />
 
           <Route path="/" element={<Login />} />
-          <Route path="/itinerary-planner" element={<ItineraryPlanner />} />
-          <Route path="/itinerary-selection" element={<ItinerarySelection />} />
-          <Route path="/finalize-itinerary" element={<FinalizeItinerary />} />
           
           {/* Email verification pending */}
           <Route path="/verify-email-pending" element={<VerifyEmailPending />} />
@@ -72,12 +69,24 @@ const App = () => {
             <Route path="/visit-plan" element={<VisitPlanPage />} />
             <Route path="/guides-page" element={<GuidesPage />} />
             <Route path="/users/users-by-role" element={<UsersSocialPage />} />
-            <Route path="/inbox" element={<Inbox />} />
+            <Route path="/map" element={<Map />} />
+            <Route path="/itinerary-planner" element={<ItineraryPlanner />} />
+
+          
+          <Route path="/finalize-itinerary" element={<FinalizeItinerary />} />
+
+            
 
             {/* Profile Routes */}
+            {/* <Route path="/users/profile/" */}
             <Route path="/profile" element={<UserProfile />} />
+
             <Route path="/profile/update-email" element={<UpdateEmail />} />
             <Route path="/profile/update-password" element={<UpdatePassword />} />
+
+            <Route path="/profile/update-profile" element={<UpdateUserProfile />} />
+          </Route>
+
 
             {/* Cancellation Modal Route */}
             <Route path="/cancellation-modal" element={<CancellationModal isOpen={true} />} />

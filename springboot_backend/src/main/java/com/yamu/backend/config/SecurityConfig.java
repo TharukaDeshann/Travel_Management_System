@@ -57,6 +57,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/reviews/**").authenticated()
                         .requestMatchers(HttpMethod.DELETE, "/api/reviews/**").authenticated()
                         .requestMatchers("/ws/**", "/app/**", "/topic/**", "/queue/**", "/user/**").permitAll()
+
                         .requestMatchers(
                                 "/api/auth/login", 
                                 "/api/auth/register",
@@ -65,18 +66,27 @@ public class SecurityConfig {
                                 "/api/auth/me", 
                                 "/api/locations/**", 
                                 "/api/auth/verify-email", 
-                                "/api/auth/resend-verification"
+                                "/api/auth/resend-verification",
+                                "/api/itineraries/**",
+                                "/api/dayplans/**"
+                          
                         ).permitAll()
                         .requestMatchers(HttpMethod.PUT, "/api/users/{id}").authenticated()
                         .requestMatchers(HttpMethod.PUT, "/api/users/{id}/update-email").authenticated()
                         .requestMatchers(HttpMethod.PUT, "/api/users/{id}/update-password").authenticated()
+                        .requestMatchers(HttpMethod.PUT, "/api/itineraries/{id}").authenticated()
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
-                        .requestMatchers("/api/guide/**").hasRole("GUIDE")
+                        .requestMatchers("/api/guide/**").hasAnyRole("GUIDE", "ADMIN")
                         .requestMatchers("/api/traveler/**").hasRole("TRAVELER")
                         .requestMatchers("/api/users/**").hasAnyRole("ADMIN", "GUIDE", "TRAVELER")
+
                         .requestMatchers("/api/reservations/**").authenticated()
                         .anyRequest().authenticated()
                 )
+
+                        .requestMatchers("/api/itineraries/**").hasRole("TRAVELER") // Restrict itineraries to TRAVELER
+                        .anyRequest().authenticated())
+>
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint((req, res, ex2) -> res.sendError(
                                 HttpServletResponse.SC_UNAUTHORIZED,
