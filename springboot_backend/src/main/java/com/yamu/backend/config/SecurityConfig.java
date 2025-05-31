@@ -56,6 +56,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/weather/**").permitAll()
                         .requestMatchers("/h2-console/**").permitAll()
+                        .requestMatchers("/api/facebook-events/**").permitAll()
                         .requestMatchers("/api/auth/login", "/api/auth/register",
                                 "/api/auth/refresh-token", "/api/auth/user", "api/auth/current-user", "/api/users/user",
                                 "/api/locations/**", "/api/auth/verify-email", "api/auth/resend-verification")

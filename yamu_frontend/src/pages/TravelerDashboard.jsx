@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ChevronRight } from "lucide-react";
 import '../styles/TravelerDashboard.css';
 import WeatherCard from "../components/WeatherCard";
 import yamuLogo from '../images/yamu-logo.png';
@@ -9,6 +8,8 @@ import profileIcon from '../images/profile.png';
 import botImage from '../images/bot-image.png';
 import apiClient from "../services/axiosInstance";
 import GuideModal from "../components/GuideModal";
+import EventModal from "../components/EventModal";
+import eventService from "../services/eventService";
 
 const currencies = [
   { code: 'USD', symbol: '$' },
@@ -25,6 +26,10 @@ export default function TravelerDashboard({ currentUser }) {
   const [guides, setGuides] = useState([]);
   const [showLeftButton, setShowLeftButton] = useState({});
   const [selectedGuide, setSelectedGuide] = useState(null);
+  const [selectedEvent, setSelectedEvent] = useState(null);
+  const [facebookEvents, setFacebookEvents] = useState([]);
+  const [isLoadingEvents, setIsLoadingEvents] = useState(true);
+  const [sections, setSections] = useState([]);
 
   useEffect(() => {
     const fetchGuides = async () => {
@@ -36,49 +41,135 @@ export default function TravelerDashboard({ currentUser }) {
       }
     };
 
+
+    // Try loading real Facebook events, fallback to mock data if error occurs
+    const fetchFacebookEvents = async () => {
+      try {
+        setIsLoadingEvents(true);
+        console.log("TravelerDashboard: Fetching Facebook events...");
+        
+        let eventsData;
+        try {
+          // First try to get real Facebook events
+          eventsData = await eventService.getFacebookEvents();
+          console.log("TravelerDashboard: Received Facebook events:", eventsData);
+        } catch (facebookError) {
+          console.error("TravelerDashboard: Error with Facebook events, falling back to mock data:", facebookError);
+          
+          // If that fails, fall back to mock events
+          try {
+            eventsData = await eventService.getMockEvents();
+            console.log("TravelerDashboard: Received mock events:", eventsData);
+          } catch (mockError) {
+            console.error("TravelerDashboard: Even mock events failed:", mockError);
+            throw mockError; // Re-throw to be caught by the outer catch
+          }
+        }
+        
+        setFacebookEvents(eventsData || []);// Ensure we set an empty array if no events are returned
+      } catch (error) {
+        console.error("TravelerDashboard: Error fetching events:", error);
+        // Still set an empty array even on error to avoid undefined issues
+        setFacebookEvents([]);
+      } finally {
+        setIsLoadingEvents(false);
+      }
+    };
+
     fetchGuides();
+    fetchFacebookEvents();
   }, []);
 
-  const sections = [
-    {
-      title: "Discover Places",
-      items: [
-        { name: "Sigiriya", image: "/src/images/sigiriya.jpg" },
-        { name: "Hiriketiya", image: "/src/images/hiriketiya.jpg" },
-        { name: "Ambuluwawa", image: "/src/images/ambuluwawa.jpg" },
-        { name: "Nagapooshani Amman Temple", image: "/src/images/amman_temple.jpg" },
-        { name: "Adams Peak", image: "/src/images/adams-peak.jpg" }
-      ]
-    },
-    {
-      title: "Discover Accommodations",
-      items: [
-        { name: "Wild Coast Tented Lodge", image: "/src/images/wild_coast.jpg" },
-        { name: "98 Acre Resort & Spa", image: "/src/images/98_acre.jpg" },
-        { name: "Anantara Resort & Spa", image: "/src/images/anantaya.jpg" },
-        { name: "Jetwing Colombo Seven", image: "/src/images/jetwing.jpg" },
-        { name: "The Lake Forest Hotel", image: "/src/images/lake_forest.jpg" }
-      ]
-    },
-    {
-      title: "Discover Tour Guides",
-      items: guides.slice(0, 5).map(guide => ({
-        name: `${guide.firstName} ${guide.lastName}`,
-        image: "/src/images/default-profile.png",
-        guide: guide
-      }))
-    },
-    {
-      title: "Event & Festival Highlights",
-      items: [
-        { name: "Esala Perahera", image: "/src/images/asala_perahera.webp" },
-        { name: "Nallur Kovil Festival", image: "/src/images/nallur_festival.jpg" },
-        { name: "Sinhala Tamil New Year", image: "/src/images/new_year.jpeg" },
-        { name: "Kuweni The Musical", image: "/src/images/kuweni.jpg" },
-        { name: "Whale Watching Season", image: "/src/images/whale_watching.jpg" }
-      ]
-    }
-  ];
+  // Generate sections dynamically, including Facebook events if available
+  useEffect(() => {
+    const generateSections = () => {
+      const staticSections = [
+        {
+          title: "Discover Places",
+          items: [
+            { name: "Sigiriya", image: "/src/images/sigiriya.jpg" },
+            { name: "Hiriketiya", image: "/src/images/hiriketiya.jpg" },
+            { name: "Ambuluwawa", image: "/src/images/ambuluwawa.jpg" },
+            { name: "Nagapooshani Amman Temple", image: "/src/images/amman_temple.jpg" },
+            { name: "Adams Peak", image: "/src/images/adams-peak.jpg" }
+          ]
+        },
+        {
+          title: "Discover Accommodations",
+          items: [
+            { name: "Wild Coast Tented Lodge", image: "/src/images/wild_coast.jpg" },
+            { name: "98 Acre Resort & Spa", image: "/src/images/98_acre.jpg" },
+            { name: "Anantara Resort & Spa", image: "/src/images/anantaya.jpg" },
+            { name: "Jetwing Colombo Seven", image: "/src/images/jetwing.jpg" },
+            { name: "The Lake Forest Hotel", image: "/src/images/lake_forest.jpg" }
+          ]
+        },
+        {
+          title: "Discover Tour Guides",
+          items: guides.slice(0, 5).map(guide => ({
+            name: `${guide.firstName} ${guide.lastName}`,
+            image: "/src/images/default-profile.png",
+            guide: guide
+          }))
+        }
+      ];
+
+      // Prepare Event & Festival Highlights section
+      let eventSection = {
+        title: "Event & Festival Highlights",
+        items: []
+      };
+
+      if (isLoadingEvents) {
+        // Show loading placeholder if events are still loading
+        eventSection.items = [
+          { name: "Loading events...", image: "https://dummyimage.com/300x200/cccccc/666666&text=Loading..." }
+        ];
+      } else if (facebookEvents && facebookEvents.length > 0) {
+        // Filter out past events and sort the remainder by date
+        const now = new Date();
+        const filteredEvents = facebookEvents.filter(event => {
+          // If no start_time, keep the event to be safe
+          if (!event.start_time) return true;
+          
+          //only keep future events
+          const eventDate = new Date(event.start_time);
+          return eventDate > now;
+        });
+        
+        console.log(`TravelerDashboard: Filtered out ${facebookEvents.length - filteredEvents.length} past events`);
+        
+        // Sort the filtered events by date
+        const sortedEvents = [...filteredEvents].sort((a, b) => {
+          // Extract dates for sorting
+          const dateA = new Date(a.start_time || '2099-01-01');
+          const dateB = new Date(b.start_time || '2099-01-01');
+          return dateA - dateB;// Sort by date
+        });
+        
+        // Use the sorted Facebook events
+        eventSection.items = sortedEvents.slice(0, 5).map(event => ({
+          name: event.name,
+          image: event.image_url || "https://dummyimage.com/300x200/cccccc/666666&text=Event",
+          date: event.formatted_date,
+          fbEvent: event
+        }));
+      } else {
+        // Use default events if no Facebook events available
+        eventSection.items = [
+          { name: "Esala Perahera", image: "/src/images/asala_perahera.webp" },
+          { name: "Nallur Kovil Festival", image: "/src/images/nallur_festival.jpg" },
+          { name: "Sinhala Tamil New Year", image: "/src/images/new_year.jpeg" },
+          { name: "Kuweni The Musical", image: "/src/images/kuweni.jpg" },
+          { name: "Whale Watching Season", image: "/src/images/whale_watching.jpg" }
+        ];
+      }
+
+      return [...staticSections, eventSection];
+    };
+
+    setSections(generateSections());
+  }, [guides, facebookEvents, isLoadingEvents]);
 
   const packages = [
     { name: "Package 1", price: 50000, image: "/src/images/sigiriya.jpg", description: "3 Days Sigiriya Adventure" },
@@ -90,6 +181,7 @@ export default function TravelerDashboard({ currentUser }) {
     packages.map(pkg => ({ ...pkg, convertedPrice: pkg.price }))
   );
 
+  // Fetch exchange rates and convert package prices based on selected currency
   const fetchExchangeRates = async () => {
     if (selectedCurrency === 'LKR') {
       setConvertedPackages(packages.map(pkg => ({
@@ -100,9 +192,11 @@ export default function TravelerDashboard({ currentUser }) {
     }
 
     try {
-      const response = await fetch(`https://v6.exchangerate-api.com/v6/ee302ff3be157ca6a021f6a0/pair/LKR/${selectedCurrency}`);
+      // Replace with your ExchangeRate API key
+      const response = await fetch(`https://v6.exchangerate-api.com/v6/ee302ff3be157ca6a021f6a0/pair/LKR/${selectedCurrency}`);// Replace with your API key
       const data = await response.json();
-      
+
+      // Check if the response is valid and has a conversion rate
       if (data && data.conversion_rate) {
         const rate = data.conversion_rate;
         const updatedPackages = packages.map(pkg => ({
@@ -118,10 +212,12 @@ export default function TravelerDashboard({ currentUser }) {
 
   useEffect(() => {
     fetchExchangeRates();
+    // Set up an interval to fetch exchange rates every minute to ensure the exchange rates are up-to-date
     const intervalId = setInterval(fetchExchangeRates, 60000);
     return () => clearInterval(intervalId);
   }, [selectedCurrency]);
 
+  // Handle scroll for the cards-scroll-container
   const handleScroll = (e, title) => {
     const { scrollLeft } = e.target;
     setShowLeftButton(prev => ({
@@ -131,11 +227,7 @@ export default function TravelerDashboard({ currentUser }) {
   };
 
   const handleNavigateToGuides = () => {
-<<<<<<< HEAD
     navigate('/guides-page', { state: { currentUser } });
-=======
-    navigate('/users/users-by-role', { state: { currentUser } });
->>>>>>> 0da65856030fb21be05a0c1b4541f6f1126092ba
   };
 
   const CurrencyDropdown = () => (
@@ -144,8 +236,8 @@ export default function TravelerDashboard({ currentUser }) {
         type="button"
         className="currency-button"
         onClick={(e) => {
-          e.stopPropagation();
-          setIsDropdownOpen(!isDropdownOpen);
+          e.stopPropagation();//prevent the click event from bubbling up
+          setIsDropdownOpen(!isDropdownOpen);//toggle the dropdown
         }}
       >
         <span>{currencies.find(c => c.code === selectedCurrency)?.symbol}</span>
@@ -196,7 +288,6 @@ export default function TravelerDashboard({ currentUser }) {
               {item}
             </li>
           ))}
-          {/* Add this to the nav-links array */}
           <li
             key="Inbox"
             className="nav-link"
@@ -213,11 +304,7 @@ export default function TravelerDashboard({ currentUser }) {
             <span className="notification-badge">3</span>
           </div>
           <div className="icon-container">
-<<<<<<< HEAD
             <img src={profileIcon} alt="Profile" className="profile-image" onClick={() => navigate('/profile')} />
-=======
-            <img src={profileIcon} alt="Profile" className="profile-image" onClick={() => (window.location.href = "/profile")} />
->>>>>>> 0da65856030fb21be05a0c1b4541f6f1126092ba
           </div>
         </div>
       </nav>
@@ -275,13 +362,29 @@ export default function TravelerDashboard({ currentUser }) {
                   <div 
                     key={item.name} 
                     className="card-container"
-                    onClick={() => section.title === "Discover Tour Guides" && setSelectedGuide(item.guide)}
+                    onClick={() => {
+                      if (section.title === "Discover Tour Guides") {
+                        setSelectedGuide(item.guide);
+                      } else if (section.title === "Event & Festival Highlights" && item.fbEvent) {
+                        setSelectedEvent(item.fbEvent);
+                      }
+                    }}
                   >
-                    <img src={item.image} alt={item.name} className="card-image" />
+                    <img 
+                      src={item.image} 
+                      alt={item.name} 
+                      className="card-image" 
+                      onError={(e) => {
+                        e.target.src = "https://dummyimage.com/300x200/cccccc/666666&text=Image+Not+Found";
+                      }}
+                    />
                     <div className="card-overlay">
                       <h3 className="card-title">{item.name}</h3>
                       {section.title === "Discover Tour Guides" && (
                         <p style={{ color: 'white', fontSize: '14px' }}>{item.guide.expertiseCityRegion}</p>
+                      )}
+                      {section.title === "Event & Festival Highlights" && item.date && (
+                        <p style={{ color: 'white', fontSize: '14px' }}>{item.date}</p>
                       )}
                     </div>
                   </div>
@@ -335,6 +438,13 @@ export default function TravelerDashboard({ currentUser }) {
           guide={selectedGuide} 
           onClose={() => setSelectedGuide(null)}
           currentUser={currentUser}
+        />
+      )}
+      
+      {selectedEvent && (
+        <EventModal 
+          event={selectedEvent} 
+          onClose={() => setSelectedEvent(null)}
         />
       )}
     </div>

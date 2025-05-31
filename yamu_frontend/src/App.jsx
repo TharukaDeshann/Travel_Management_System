@@ -23,6 +23,7 @@ import ItineraryPlanner from "./pages/ItineraryPlanner.jsx";
 import ItinerarySelection from "./pages/ItinerarySelection.jsx";
 import FinalizeItinerary from "./pages/FinalizeItinerary.jsx"; 
 import Inbox from "./pages/Inbox.jsx";// Import FinalizeItinerary
+import TestFacebookEvents from "./pages/TestFacebookEvents.jsx"; // Import Test Facebook Events page
 
 import VerifyEmail from "./pages/VerifyEmail.jsx";
 import VerifyEmailPending from "./pages/VerifyEmailPending.jsx";
@@ -47,11 +48,13 @@ const App = () => {
           <Route path="/weather" element={<WeatherPage />} />
           <Route path="/weather-details" element={<Weather />} />
           <Route path="/weather-card" element={<WeatherCard />} />
+          <Route path="/test-facebook-events" element={<TestFacebookEvents />} />
 
           <Route path="/" element={<Login />} />
           <Route path="/itinerary-planner" element={<ItineraryPlanner />} />
           <Route path="/itinerary-selection" element={<ItinerarySelection />} />
           <Route path="/finalize-itinerary" element={<FinalizeItinerary />} />
+          <Route path="/traveler-dashboard" element={<TravelerDashboard />} />
 
           {/* Email verification pending */}
           <Route
@@ -64,19 +67,15 @@ const App = () => {
           {/* Protected Routes */}
           <Route element={<ProtectedRoute />}>
             <Route path="/home" element={<Home />} />
-            <Route path="/traveler-dashboard" element={<TravelerDashboard />} />
+            
             <Route path="/guide-dashboard" element={<GuideDashboard />} />
             <Route path="/admin-dashboard" element={<AdminDashboard />} />
             <Route path="/guide-review" element={<GuideReview />} />
             <Route path="/guide-calendar" element={<GuideCalendar />} />
             <Route path="/visit-plan" element={<VisitPlanPage />} />
             <Route path="/guides-page" element={<GuidesPage />} />
-<<<<<<< HEAD
             <Route path="/inbox" element={<Inbox />} />
-
-=======
             <Route path="/users/users-by-role" element={<UsersSocialPage />} />
->>>>>>> 0da65856030fb21be05a0c1b4541f6f1126092ba
 
             {/* Profile Routes */}
             <Route path="/profile" element={<UserProfile />} />
