@@ -3,7 +3,7 @@ package com.yamu.backend.dto;
 import lombok.Getter;
 import lombok.Setter;
 
-@Getter 
+@Getter
 @Setter
 public class RouteDetailResponse {
     private Long id;

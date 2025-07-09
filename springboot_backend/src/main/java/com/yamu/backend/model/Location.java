@@ -6,7 +6,8 @@ import lombok.Setter;
 
 @Entity
 @Table(name = "location")
-@Getter @Setter
+@Getter
+@Setter
 public class Location {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -15,11 +16,11 @@ public class Location {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "day_plan_id")
-    private DayPlan dayPlan;  // For travel day's location
+    private DayPlan dayPlan;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "route_id")
-    private Route route; // For mapping route points
+    private Route route;
 
     @Column(nullable = false)
     private String name;

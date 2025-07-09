@@ -10,7 +10,7 @@ export const fetchRoute = async (locations, travelMode) => {
     const coords = locations.map((loc) => [loc.lon, loc.lat]);
     
     const response = await axios.post(
-      `https://api.openrouteservice.org/v2/directions/${travelMode}/geojson`,
+      'https://api.openrouteservice.org/v2/directions/${travelMode}/geojson',
       { coordinates: coords },
       {
         headers: {

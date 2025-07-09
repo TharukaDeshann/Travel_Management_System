@@ -1,10 +1,13 @@
 package com.yamu.backend.dto;
+
+// DTO for representing details of a single day in a reservation
 public class DayDetailDto {
     private int dayNumber;
     private String place;
     private String date;
     private int numberOfTravelers;
 
+    // Getters and Setters
     public int getDayNumber() {
         return dayNumber;
     }

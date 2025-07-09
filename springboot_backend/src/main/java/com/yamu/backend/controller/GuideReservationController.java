@@ -20,42 +20,53 @@ public class GuideReservationController {
     private final GuideReservationService reservationService;
     private final UserRepository userRepository;
 
+    // Constructor to inject dependencies
     public GuideReservationController(GuideReservationService reservationService, 
                                     UserRepository userRepository) {
         this.reservationService = reservationService;
         this.userRepository = userRepository;
     }
 
+    // Endpoint to get reservations for the authenticated guide
     @GetMapping
     public ResponseEntity<List<GuideReservation>> getGuideReservations(
             @AuthenticationPrincipal UserDetails userDetails) {
+        // Fetch the authenticated user
         User user = userRepository.findByEmail(userDetails.getUsername())
                 .orElseThrow(() -> new ResourceNotFoundException("User not found", null));
+        // Retrieve reservations for the guide
         List<GuideReservation> reservations = reservationService.getGuideReservations(user.getId());
         return ResponseEntity.ok(reservations);
     }
 
+    // Endpoint to create a new reservation
     @PostMapping
     public ResponseEntity<GuideReservation> createReservation(
             @AuthenticationPrincipal UserDetails userDetails,
             @RequestBody GuideReservationRequest request) {
+        // Fetch the authenticated user
         User user = userRepository.findByEmail(userDetails.getUsername())
                 .orElseThrow(() -> new ResourceNotFoundException("User not found", null));
         
+        // Validate the request
         if (request.getDate() == null) {
             throw new IllegalArgumentException("Date cannot be null");
         }
         
+        // Create a new reservation
         GuideReservation reservation = reservationService.createReservation(user.getId(), request);
         return ResponseEntity.ok(reservation);
     }
 
+    // Endpoint to delete a reservation
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteReservation(
             @AuthenticationPrincipal UserDetails userDetails,
             @PathVariable Long id) {
+        // Fetch the authenticated user
         User user = userRepository.findByEmail(userDetails.getUsername())
                 .orElseThrow(() -> new ResourceNotFoundException("User not found", null));
+        // Delete the reservation
         reservationService.deleteReservation(id, user.getId());
         return ResponseEntity.noContent().build();
     }

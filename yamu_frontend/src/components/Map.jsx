@@ -6,7 +6,7 @@ import L from "leaflet";
 import "leaflet-routing-machine";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import { searchLocations } from "../services/map/locationService";
-import { fetchRoute, optimizeRoute, nearestNeighborOptimization } from "../services/map/routeService";
+import { fetchRoute, optimizeRoute } from "../services/map/routeService";
 import axios from "axios";
 
 // Marker icon configuration
@@ -21,7 +21,7 @@ const RoutingMachine = ({ locations, travelMode }) => {
   const map = useMap();
 
   useEffect(() => {
-    if (locations.length > 1) {
+    if (locations && locations.length > 1) {
       const drawRoute = async () => {
         try {
           const data = await fetchRoute(locations, travelMode);
@@ -55,7 +55,7 @@ const FitBoundsControl = ({ locations }) => {
   const map = useMap();
 
   useEffect(() => {
-    if (locations.length > 0) {
+    if (locations && locations.length > 0) {
       const bounds = L.latLngBounds(locations.map(loc => [loc.lat, loc.lon]));
       map.fitBounds(bounds, { padding: [50, 50] });
     }
@@ -68,15 +68,17 @@ const Map = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const searchParams = new URLSearchParams(location.search);
-  const dates = JSON.parse(searchParams.get("dates")) || [];
+  
+  // Safely parse dates with fallback to empty array
+  const dates = JSON.parse(searchParams.get("dates") || []);
   const tripTitle = searchParams.get("title") || "";
   const budget = searchParams.get("budget") || "";
   const currency = searchParams.get("currency") || "LKR";
 
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [locations, setLocations] = useState(Array(dates.length).fill([]));
-  const [hotelBooked, setHotelBooked] = useState(Array(dates.length).fill(false));
-  const [transportBooked, setTransportBooked] = useState(Array(dates.length).fill(false));
+  const [locations, setLocations] = useState(dates.length > 0 ? Array(dates.length).fill([]) : [[]]);
+  const [hotelBooked, setHotelBooked] = useState(dates.length > 0 ? Array(dates.length).fill(false) : [false]);
+  const [transportBooked, setTransportBooked] = useState(dates.length > 0 ? Array(dates.length).fill(false) : [false]);
   const [searchTerm, setSearchTerm] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const [travelMode, setTravelMode] = useState("driving-car");
@@ -84,7 +86,9 @@ const Map = () => {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    if (dates.length === 0) navigate("/");
+    if (dates.length === 0) {
+      navigate("/");
+    }
   }, [dates, navigate]);
 
   const handleSearch = async (query) => {
@@ -105,6 +109,9 @@ const Map = () => {
 
   const addLocation = (lat, lon, name) => {
     const updatedLocations = [...locations];
+    if (!updatedLocations[currentIndex]) {
+      updatedLocations[currentIndex] = [];
+    }
     updatedLocations[currentIndex] = [...updatedLocations[currentIndex], { lat, lon, name }];
     setLocations(updatedLocations);
     setSearchTerm("");
@@ -114,12 +121,15 @@ const Map = () => {
 
   const removeLocation = (index) => {
     const updatedLocations = [...locations];
-    updatedLocations[currentIndex] = updatedLocations[currentIndex].filter((_, i) => i !== index);
-    setLocations(updatedLocations);
+    if (updatedLocations[currentIndex]) {
+      updatedLocations[currentIndex] = updatedLocations[currentIndex].filter((_, i) => i !== index);
+      setLocations(updatedLocations);
+    }
   };
 
   const onDragEnd = (result) => {
-    if (!result.destination) return;
+    if (!result.destination || !locations[currentIndex]) return;
+    
     const reordered = Array.from(locations[currentIndex]);
     const [moved] = reordered.splice(result.source.index, 1);
     reordered.splice(result.destination.index, 0, moved);
@@ -151,9 +161,8 @@ const Map = () => {
     }, 500);
   };
 
-  // Optimize route for the current day
   const handleOptimizeRoute = async () => {
-    if (locations[currentIndex].length < 3) {
+    if (!locations[currentIndex] || locations[currentIndex].length < 3) {
       alert("Need at least 3 locations to optimize route.");
       return;
     }
@@ -164,11 +173,11 @@ const Map = () => {
       setLocations(updatedLocations);
       alert("Route optimized!");
     } catch (error) {
+      console.error("Optimization error:", error);
       alert("Failed to optimize route.");
     }
   };
 
-  // Save route for the current day
   const handleSaveRoute = async () => {
     if (!locations[currentIndex] || locations[currentIndex].length === 0) {
       alert("Add at least one location before saving.");
@@ -195,15 +204,12 @@ const Map = () => {
     setSaving(false);
   };
 
-  
-  // Save route before moving to next day or finalizing
   const saveCurrentDayRoute = async () => {
     if (locations[currentIndex] && locations[currentIndex].length > 0) {
       await handleSaveRoute();
     }
   };
 
-  // Modified handleNext to save before navigating
   const handleNext = async () => {
     await saveCurrentDayRoute();
     if (currentIndex < dates.length - 1) {
@@ -212,7 +218,7 @@ const Map = () => {
       navigate("/finalize-itinerary", {
         state: {
           dates,
-          locations: locations.map(day => day.map(loc => loc.name)),
+          locations: locations.map(day => day ? day.map(loc => loc.name) : []),
           tripTitle,
           budget,
           currency
@@ -220,6 +226,10 @@ const Map = () => {
       });
     }
   };
+
+  if (dates.length === 0) {
+    return <div className="container mx-auto p-6 text-center">Loading trip data...</div>;
+  }
 
   return (
     <div className="container mx-auto p-6 bg-gray-100 min-h-screen">
@@ -276,7 +286,7 @@ const Map = () => {
                 <button
                   className="px-4 py-2 bg-yellow-500 text-white rounded hover:bg-yellow-600"
                   onClick={handleOptimizeRoute}
-                  disabled={locations[currentIndex].length < 3}
+                  disabled={!locations[currentIndex] || locations[currentIndex].length < 3}
                 >
                   Optimize Route
                 </button>
@@ -354,7 +364,7 @@ const Map = () => {
                     attribution="© Google Maps"
                   />
 
-                  {locations[currentIndex].map((loc, index) => (
+                  {locations[currentIndex] && locations[currentIndex].map((loc, index) => (
                     <Marker key={index} position={[loc.lat, loc.lon]}>
                       <Popup>
                         <div className="font-semibold">{loc.name.split(",")[0]}</div>
@@ -363,7 +373,7 @@ const Map = () => {
                     </Marker>
                   ))}
 
-                  {locations[currentIndex].length > 1 && (
+                  {locations[currentIndex] && locations[currentIndex].length > 1 && (
                     <RoutingMachine locations={locations[currentIndex]} travelMode={travelMode} />
                   )}
                   <FitBoundsControl locations={locations[currentIndex]} />
@@ -375,7 +385,7 @@ const Map = () => {
                 <div className="flex items-center justify-between mb-2">
                   <h3 className="text-lg font-semibold">Daily Stops</h3>
                   <span className="bg-blue-500 text-white px-2 py-0.5 rounded-full text-sm">
-                    {locations[currentIndex].length} stops
+                    {locations[currentIndex] ? locations[currentIndex].length : 0} stops
                   </span>
                 </div>
 
@@ -383,7 +393,7 @@ const Map = () => {
                   <Droppable droppableId="locations">
                     {(provided) => (
                       <div {...provided.droppableProps} ref={provided.innerRef} className="space-y-1">
-                        {locations[currentIndex].map((loc, index) => (
+                        {locations[currentIndex] && locations[currentIndex].map((loc, index) => (
                           <Draggable key={index} draggableId={String(index)} index={index}>
                             {(provided) => (
                               <div

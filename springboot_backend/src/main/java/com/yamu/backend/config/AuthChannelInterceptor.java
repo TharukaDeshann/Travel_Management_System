@@ -7,10 +7,15 @@ import org.springframework.messaging.simp.stomp.StompHeaderAccessor;
 import org.springframework.messaging.support.ChannelInterceptor;
 import org.springframework.messaging.support.MessageHeaderAccessor;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.userdetails.User;
 import org.springframework.stereotype.Component;
 import com.yamu.backend.util.JwtUtil;
 import org.springframework.messaging.MessagingException;
+
+import java.util.Collections;
 
 @Component
 public class AuthChannelInterceptor implements ChannelInterceptor {
@@ -27,23 +32,31 @@ public class AuthChannelInterceptor implements ChannelInterceptor {
         
         if (StompCommand.CONNECT.equals(accessor.getCommand())) {
             String token = accessor.getFirstNativeHeader("Authorization");
-            if (token != null && token.startsWith("Bearer ")) {
-                token = token.substring(7);
-                try {
-                    String username = jwtUtil.extractEmail(token);
-                    if (username != null && jwtUtil.validateToken(token, username)) {
-                        // Get existing authentication from security context
-                        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-                        if (authentication != null && authentication.isAuthenticated()) {
-                            accessor.setUser(authentication);
-                            return message;
-                        }
-                    }
-                } catch (Exception e) {
-                    throw new MessagingException("Authentication failed");
-                }
+            if (token == null || !token.startsWith("Bearer ")) {
+                throw new MessagingException("Authorization header is missing or invalid");
             }
-            throw new MessagingException("Authentication required");
+            
+            token = token.substring(7);
+            try {
+                String username = jwtUtil.extractEmail(token);
+                if (username == null || !jwtUtil.validateToken(token, username)) {
+                    throw new MessagingException("Invalid or expired token");
+                }
+                
+                // Create authentication with proper authorities
+                User userDetails = new User(
+                    username, "", 
+                    Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER"))
+                );
+                
+                UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
+                    userDetails, null, userDetails.getAuthorities());
+                
+                accessor.setUser(auth);
+                SecurityContextHolder.getContext().setAuthentication(auth);
+            } catch (Exception e) {
+                throw new MessagingException("Authentication failed: " + e.getMessage());
+            }
         }
         return message;
     }

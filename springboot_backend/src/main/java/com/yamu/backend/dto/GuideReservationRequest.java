@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import com.yamu.backend.model.GuideReservation;
 import java.time.LocalDate;
 
+// DTO for creating a guide reservation request
 public class GuideReservationRequest {
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
     private LocalDate date;
@@ -12,6 +13,7 @@ public class GuideReservationRequest {
     private String place;
     private String timePeriod;
 
+    // Getters and Setters
     public LocalDate getDate() {
         return date;
     }

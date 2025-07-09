@@ -1,18 +1,13 @@
 package com.yamu.backend.dto;
 
-import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
 import lombok.Setter;
-
-
 
 @Getter
 @Setter
 public class RouteCreateRequest {
-    @NotBlank(message = "Route name is required")
     private String name;
-    
     private String travelMode;
-    private Double totalDistance;
-    private Integer estimatedTime;
+    private Double totalDistance; // Keep for future, backend ignores for now
+    private Integer estimatedTime; // Keep for future, backend ignores for now
 }
