@@ -1,22 +1,25 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Mail } from "lucide-react";
 import yamuLogo from '../images/yamu-logo.png';
-import profileIcon from '../images/profile.png';
 import apiClient from "../services/axiosInstance";
 import { useUser } from "../context/UserContext";
+import { Layout } from "../components/Layout";
+
 const RESERVATIONS_STORAGE_KEY = 'guideReservations';
 
 const GuideDashboard = ({ currentUser }) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [activeTab, setActiveTab] = useState('upcoming');
   const [reservations, setReservations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [selectedCurrency, setSelectedCurrency] = useState('LKR');
 
   const loggedUser = useUser().user;
-  
+
   useEffect(() => {
     currentUser = JSON.parse(localStorage.getItem("user"));
     const loadReservations = async () => {
@@ -88,11 +91,9 @@ const GuideDashboard = ({ currentUser }) => {
       }
 
       const response = await apiClient.put(`/api/reservations/${reservationId}/${endpoint}`);
-      
-      const updatedReservations = reservations.map(res => 
+      const updatedReservations = reservations.map(res =>
         res.id === reservationId ? response.data : res
       );
-      
       setReservations(updatedReservations);
       localStorage.setItem(RESERVATIONS_STORAGE_KEY, JSON.stringify(updatedReservations));
     } catch (err) {
@@ -134,10 +135,7 @@ const GuideDashboard = ({ currentUser }) => {
           alignItems: "center",
           justifyContent: "center",
           gap: "6px",
-          transition: "all 0.2s ease",
-          ':hover': {
-            backgroundColor: "#e0e0e0"
-          }
+          transition: "all 0.2s ease"
         }}
       >
         <Mail size={16} />
@@ -263,10 +261,7 @@ const GuideDashboard = ({ currentUser }) => {
                     color: "white",
                     border: "none",
                     borderRadius: "4px",
-                    cursor: "pointer",
-                    ':hover': {
-                      backgroundColor: "#d32f2f"
-                    }
+                    cursor: "pointer"
                   }}
                 >
                   Decline
@@ -279,10 +274,7 @@ const GuideDashboard = ({ currentUser }) => {
                     color: "white",
                     border: "none",
                     borderRadius: "4px",
-                    cursor: "pointer",
-                    ':hover': {
-                      backgroundColor: "#3e8e41"
-                    }
+                    cursor: "pointer"
                   }}
                 >
                   Confirm
@@ -299,10 +291,7 @@ const GuideDashboard = ({ currentUser }) => {
                   color: "white",
                   border: "none",
                   borderRadius: "4px",
-                  cursor: "pointer",
-                  ':hover': {
-                    backgroundColor: "#1976D2"
-                  }
+                  cursor: "pointer"
                 }}
               >
                 Mark as Completed
@@ -315,128 +304,12 @@ const GuideDashboard = ({ currentUser }) => {
   };
 
   return (
-    <div style={{
-      minHeight: "100vh",
-      backgroundColor: "#f5f5f5",
-      fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif"
-    }}>
-      <nav style={{
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "center",
-        padding: "20px 40px",
-        backgroundColor: "white",
-        boxShadow: "0 2px 10px rgba(0,0,0,0.1)",
-        position: "sticky",
-        top: 0,
-        zIndex: 100
-      }}>
-        <div style={{
-          display: "flex",
-          alignItems: "center",
-          gap: "10px",
-          cursor: "pointer"
-        }} onClick={() => navigate('/')}>
-          <img src={yamuLogo} alt="Yamu Logo" style={{ height: "40px" }} />
-          <span style={{
-            fontSize: "24px",
-            fontWeight: "bold",
-            color: "#532321"
-          }}>YAMU</span>
-        </div>
-        
-        <div style={{ display: "flex", gap: "30px" }}>
-          {['Dashboard', 'Calendar', 'Reviews', 'Emergency Contacts'].map((item) => (
-            <button
-              key={item}
-              style={{
-                background: "none",
-                border: "none",
-                color: "#333",
-                fontSize: "16px",
-                cursor: "pointer",
-                padding: "5px 10px",
-                ':hover': {
-                  color: "#532321"
-                }
-              }}
-              onClick={() => navigate(`/guide-${item.toLowerCase().replace(' ', '-')}`)}
-            >
-              {item}
-            </button>
-          ))}
-          <button
-            style={{
-              background: "none",
-              border: "none",
-              color: "#333",
-              fontSize: "16px",
-              cursor: "pointer",
-              padding: "5px 10px",
-              ':hover': {
-                color: "#532321"
-              }
-            }}
-            onClick={() => navigate('/guide-review')}
-          >
-            Reviews
-          </button>
-        </div>
-        
-        <div style={{ position: 'relative' }}>
-          <button
-            style={{
-              background: "none",
-              border: "none",
-              color: "#333",
-              fontSize: "16px",
-              cursor: "pointer",
-              padding: "5px 10px",
-              ':hover': {
-                color: "#532321"
-              }
-            }}
-            onClick={() => navigate('/inbox')}
-            aria-label="Inbox"
-          >
-            <Mail size={20} />
-          </button>
-          {unreadCount > 0 && (
-            <span style={{
-              position: 'absolute',
-              top: '-5px',
-              right: '-5px',
-              backgroundColor: '#532321',
-              color: 'white',
-              borderRadius: '50%',
-              width: '18px',
-              height: '18px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '10px'
-            }}>
-              {unreadCount}
-            </span>
-          )}
-        </div>
-        
-        <div style={{ display: "flex", alignItems: "center", gap: "20px" }}>
-          <img 
-            src={loggedUser.profileImageUrl} 
-            alt="Profile" 
-            style={{
-              width: "40px",
-              height: "40px",
-              borderRadius: "50%",
-              objectFit: "cover",
-              cursor: "pointer"
-            }}
-            onClick={() => navigate('/profile')}
-          />
-        </div>
-      </nav>
-
+    <Layout
+      user={loggedUser}
+      unreadCount={unreadCount}
+      onCurrencyChange={setSelectedCurrency}
+      selectedCurrency={selectedCurrency}
+    >
       <div style={{
         padding: "40px",
         maxWidth: "1200px",
@@ -454,7 +327,7 @@ const GuideDashboard = ({ currentUser }) => {
             fontWeight: "600",
             margin: 0
           }}>My Tours</h3>
-          
+
           <div style={{ display: "flex", gap: "10px" }}>
             <button onClick={refreshData} style={{
               padding: "8px 16px",
@@ -464,14 +337,11 @@ const GuideDashboard = ({ currentUser }) => {
               cursor: "pointer",
               display: "flex",
               alignItems: "center",
-              gap: "5px",
-              ':hover': {
-                backgroundColor: "#e0e0e0"
-              }
+              gap: "5px"
             }}>
               <span>↻</span> Refresh
             </button>
-            
+
             <div style={{
               display: "flex",
               gap: "10px",
@@ -536,7 +406,7 @@ const GuideDashboard = ({ currentUser }) => {
           <div style={{ display: "grid", gap: "20px" }}>
             {upcomingReservations.length > 0 ? (
               upcomingReservations.map(reservation => (
-                <ReservationCard 
+                <ReservationCard
                   key={reservation.id}
                   reservation={reservation}
                   onStatusChange={handleStatusChange}
@@ -558,7 +428,7 @@ const GuideDashboard = ({ currentUser }) => {
           <div style={{ display: "grid", gap: "20px" }}>
             {pastReservations.length > 0 ? (
               pastReservations.map(reservation => (
-                <ReservationCard 
+                <ReservationCard
                   key={reservation.id}
                   reservation={reservation}
                   isPast={true}
@@ -578,7 +448,7 @@ const GuideDashboard = ({ currentUser }) => {
           </div>
         )}
       </div>
-    </div>
+    </Layout>
   );
 };
 
