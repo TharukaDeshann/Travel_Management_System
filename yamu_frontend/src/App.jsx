@@ -34,6 +34,8 @@ import AdminDashboard from "./pages/AdminDashboard.jsx";
 import UsersSocialPage from "./pages/UsersSocialPage.jsx";
 // import ProfileView from "./pages/ProfileView.jsx";
 
+import EmergencyContacts from "./pages/EmergencyContacts.jsx";
+
 
 
 const App = () => {
@@ -60,6 +62,7 @@ const App = () => {
           />
           {/* Email verification */}
           <Route path="/verify-email" element={<VerifyEmail />} />
+          <Route path="/emergency-contacts" element={<EmergencyContacts />} />
 
           {/* Protected Routes */}
           <Route element={<ProtectedRoute />}>

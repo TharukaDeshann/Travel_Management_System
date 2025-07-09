@@ -2,13 +2,14 @@ import React, { useState, useEffect } from "react";
 import Calendar from "react-calendar";
 import "react-calendar/dist/Calendar.css";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
+import { Layout } from "../components/Layout";
 import apiClient from "../services/axiosInstance";
-import yamuLogo from '../images/yamu-logo.png';
-import { refreshToken } from "../services/authService";
+import { refreshToken, fetchLoggedInUser } from "../services/authService";
 
 const GuideCalendar = () => {
   const [date, setDate] = useState(new Date());
   const [reservations, setReservations] = useState([]);
+  const [currentUser, setCurrentUser] = useState(null);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
@@ -39,7 +40,17 @@ const GuideCalendar = () => {
   ];
 
   useEffect(() => {
-    fetchReservations();
+    const loadData = async () => {
+      try {
+        const user = await fetchLoggedInUser();
+        setCurrentUser(user);
+        await fetchReservations();
+      } catch (error) {
+        console.error('Error loading user data:', error);
+      }
+    };
+    
+    loadData();
   }, []);
 
   const fetchReservations = async () => {
@@ -97,7 +108,7 @@ const GuideCalendar = () => {
   const handleCloseModal = () => {
     setShowViewModal(false);
     setShowDeleteConfirm(false);
-    setLastClickedDate(null); // Reset the last clicked date to avoid styling issues
+    setLastClickedDate(null);
   };
 
   const handleConfirmReservation = () => {
@@ -337,326 +348,275 @@ const GuideCalendar = () => {
   `;
 
   return (
-    <div style={{
-      fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
-      maxWidth: '1200px',
-      margin: '0 auto',
-      padding: '20px',
-      backgroundColor: '#f5f7fa',
-      minHeight: '100vh'
-    }}>
-      <style>{calendarStyles}</style>
-
-      <nav style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        padding: '15px 25px',
-        backgroundColor: '#ffffff',
-        marginBottom: '30px',
-        borderRadius: '10px',
-        boxShadow: '0 2px 15px rgba(0,0,0,0.1)'
+    <Layout 
+      user={currentUser} 
+      unreadCount={0} // You can pass actual unread count from your state
+      onCurrencyChange={() => {}} // Add currency change handler if needed
+      selectedCurrency="LKR" // Set default currency
+    >
+      <div style={{
+        fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
+        maxWidth: '1200px',
+        margin: '0 auto',
+        padding: '20px',
+        backgroundColor: '#f5f7fa',
+        minHeight: '100vh'
       }}>
-        <div style={{ display: 'flex', alignItems: 'center' }}>
-          <img 
-            src={yamuLogo} 
-            alt="Yamu Logo" 
-            style={{ 
-              height: '45px', 
-              marginRight: '15px',
-              borderRadius: '5px'
-            }}
-          />
-          <span style={{ 
-            fontSize: '24px', 
-            fontWeight: 'bold',
-            color: '#007bff'
-          }}>YAMU</span>
-        </div>
-        <div style={{ 
-          display: 'flex', 
-          gap: '25px',
-          alignItems: 'center'
-        }}>
-          <a href="/guide-dashboard" style={{ 
-            textDecoration: 'none',
-            color: '#555',
-            fontWeight: '600',
-            fontSize: '16px'
-          }}>Dashboard</a>
-          <a href="#" style={{ 
-            textDecoration: 'none',
-            color: '#007bff',
-            fontWeight: '700',
-            fontSize: '16px'
-          }}>Calendar</a>
-          <a href="/guide-review" style={{ 
-            textDecoration: 'none',
-            color: '#555',
-            fontWeight: '600',
-            fontSize: '16px'
-          }}>Reviews</a>
-          <a href="#" style={{ 
-            textDecoration: 'none',
-            color: '#555',
-            fontWeight: '600',
-            fontSize: '16px'
-          }}>Emergency</a>
-        </div>
-      </nav>
+        <style>{calendarStyles}</style>
 
-      <div style={{ 
-        backgroundColor: '#fff', 
-        padding: '30px', 
-        borderRadius: '12px', 
-        boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
-        marginBottom: '30px'
-      }}>
-        <h2 style={{ 
-          color: '#2c3e50', 
-          marginBottom: '25px',
-          fontSize: '24px',
-          fontWeight: '600',
-          borderBottom: '2px solid #f0f0f0',
-          paddingBottom: '10px'
-        }}>Guide Calendar</h2>
-        
         <div style={{ 
-          margin: '25px 0',
-          padding: '20px',
-          backgroundColor: '#f9f9f9',
-          borderRadius: '10px'
+          backgroundColor: '#fff', 
+          padding: '30px', 
+          borderRadius: '12px', 
+          boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+          marginBottom: '30px'
         }}>
-          <Calendar
-            onChange={setDate}
-            value={date}
-            onClickDay={handleDateClick}
-            tileClassName={tileClassName}
-          />
-        </div>
-
-        <h2 style={{ 
-          color: '#2c3e50', 
-          margin: '30px 0 20px 0',
-          fontSize: '24px',
-          fontWeight: '600',
-          borderBottom: '2px solid #f0f0f0',
-          paddingBottom: '10px'
-        }}>Year Plan</h2>
-        <div style={{ 
-          height: '350px', 
-          marginBottom: '40px',
-          backgroundColor: '#fff',
-          padding: '20px',
-          borderRadius: '10px',
-          boxShadow: '0 2px 15px rgba(0,0,0,0.05)'
-        }}>
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={tourData}>
-              <XAxis 
-                dataKey="month" 
-                tick={{ fill: '#7f8c8d' }}
-              />
-              <YAxis 
-                tick={{ fill: '#7f8c8d' }}
-              />
-              <Tooltip 
-                contentStyle={{
-                  backgroundColor: '#fff',
-                  borderRadius: '6px',
-                  boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
-                  border: 'none'
-                }}
-              />
-              <Bar 
-                dataKey="tours" 
-                fill="#3498db" 
-                radius={[4, 4, 0, 0]}
-              />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-
-        {showConfirmModal && (
-          <div style={modalOverlayStyle}>
-            <div style={modalContentStyle}>
-              <div style={modalHeaderStyle}>
-                <h3 style={modalTitleStyle}>Reserve Date</h3>
-              </div>
-              <p style={{ marginBottom: '20px' }}>
-                Do you want to reserve {formatDateForDisplay(selectedDate)}?
-              </p>
-              <div style={modalFooterStyle}>
-                <button 
-                  onClick={() => setShowConfirmModal(false)}
-                  style={secondaryButtonStyle}
-                >
-                  Cancel
-                </button>
-                <button 
-                  onClick={handleConfirmReservation}
-                  style={primaryButtonStyle}
-                >
-                  Yes, Reserve
-                </button>
-              </div>
-            </div>
+          <h2 style={{ 
+            color: '#2c3e50', 
+            marginBottom: '25px',
+            fontSize: '24px',
+            fontWeight: '600',
+            borderBottom: '2px solid #f0f0f0',
+            paddingBottom: '10px'
+          }}>Guide Calendar</h2>
+          
+          <div style={{ 
+            margin: '25px 0',
+            padding: '20px',
+            backgroundColor: '#f9f9f9',
+            borderRadius: '10px'
+          }}>
+            <Calendar
+              onChange={setDate}
+              value={date}
+              onClickDay={handleDateClick}
+              tileClassName={tileClassName}
+            />
           </div>
-        )}
 
-        {showDetailsModal && (
-          <div style={modalOverlayStyle}>
-            <div style={modalContentStyle}>
-              <div style={modalHeaderStyle}>
-                <h3 style={modalTitleStyle}>Reservation Details</h3>
-              </div>
-              <div style={formGroupStyle}>
-                <label style={formLabelStyle}>Reservation Type</label>
-                <select
-                  value={reservationForm.type}
-                  onChange={(e) => setReservationForm({...reservationForm, type: e.target.value})}
-                  style={formControlStyle}
-                >
-                  <option value="TOUR">Tour Reservation</option>
-                  <option value="PERSONAL">Personal</option>
-                </select>
-              </div>
-
-              {reservationForm.type === "TOUR" && (
-                <>
-                  <div style={formGroupStyle}>
-                    <label style={formLabelStyle}>Traveler Name</label>
-                    <input
-                      type="text"
-                      value={reservationForm.travelerName}
-                      onChange={(e) => setReservationForm({...reservationForm, travelerName: e.target.value})}
-                      style={formControlStyle}
-                      placeholder="Enter traveler's name"
-                    />
-                  </div>
-                  <div style={formGroupStyle}>
-                    <label style={formLabelStyle}>Place</label>
-                    <input
-                      type="text"
-                      value={reservationForm.place}
-                      onChange={(e) => setReservationForm({...reservationForm, place: e.target.value})}
-                      style={formControlStyle}
-                      placeholder="Enter location"
-                    />
-                  </div>
-                  <div style={formGroupStyle}>
-                    <label style={formLabelStyle}>Time Period</label>
-                    <input
-                      type="text"
-                      value={reservationForm.timePeriod}
-                      onChange={(e) => setReservationForm({...reservationForm, timePeriod: e.target.value})}
-                      style={formControlStyle}
-                      placeholder="e.g., 9:00 AM - 5:00 PM"
-                    />
-                  </div>
-                </>
-              )}
-              <div style={modalFooterStyle}>
-                <button 
-                  onClick={() => setShowDetailsModal(false)}
-                  style={secondaryButtonStyle}
-                >
-                  Cancel
-                </button>
-                <button 
-                  onClick={handleReserveSubmit}
-                  style={primaryButtonStyle}
-                >
-                  Confirm Reservation
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {showViewModal && (
-          <div style={modalOverlayStyle}>
-            <div style={modalContentStyle}>
-              <div style={modalHeaderStyle}>
-                <h3 style={modalTitleStyle}>Reservation Details</h3>
-              </div>
-              {selectedReservation && (
-                <div>
-                  <div style={{ marginBottom: '15px' }}>
-                    <span style={{ fontWeight: '600', color: '#2c3e50' }}>Date: </span>
-                    <span>{formatDateForDisplay(selectedReservation.date)}</span>
-                  </div>
-                  <div style={{ marginBottom: '15px' }}>
-                    <span style={{ fontWeight: '600', color: '#2c3e50' }}>Type: </span>
-                    <span>{selectedReservation.type}</span>
-                  </div>
-                  
-                  {selectedReservation.type === "TOUR" && (
-                    <>
-                      <div style={{ marginBottom: '15px' }}>
-                        <span style={{ fontWeight: '600', color: '#2c3e50' }}>Traveler: </span>
-                        <span>{selectedReservation.travelerName}</span>
-                      </div>
-                      <div style={{ marginBottom: '15px' }}>
-                        <span style={{ fontWeight: '600', color: '#2c3e50' }}>Place: </span>
-                        <span>{selectedReservation.place}</span>
-                      </div>
-                      <div style={{ marginBottom: '15px' }}>
-                        <span style={{ fontWeight: '600', color: '#2c3e50' }}>Time: </span>
-                        <span>{selectedReservation.timePeriod}</span>
-                      </div>
-                    </>
-                  )}
-                </div>
-              )}
-              <div style={modalFooterStyle}>
-                <button 
-                  onClick={() => {
-                    setShowDeleteConfirm(true);
+          <h2 style={{ 
+            color: '#2c3e50', 
+            margin: '30px 0 20px 0',
+            fontSize: '24px',
+            fontWeight: '600',
+            borderBottom: '2px solid #f0f0f0',
+            paddingBottom: '10px'
+          }}>Year Plan</h2>
+          <div style={{ 
+            height: '350px', 
+            marginBottom: '40px',
+            backgroundColor: '#fff',
+            padding: '20px',
+            borderRadius: '10px',
+            boxShadow: '0 2px 15px rgba(0,0,0,0.05)'
+          }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={tourData}>
+                <XAxis 
+                  dataKey="month" 
+                  tick={{ fill: '#7f8c8d' }}
+                />
+                <YAxis 
+                  tick={{ fill: '#7f8c8d' }}
+                />
+                <Tooltip 
+                  contentStyle={{
+                    backgroundColor: '#fff',
+                    borderRadius: '6px',
+                    boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
+                    border: 'none'
                   }}
-                  style={dangerButtonStyle}
-                >
-                  Remove Reservation
-                </button>
-                <button 
-                  onClick={handleCloseModal}
-                  style={secondaryButtonStyle}
-                >
-                  Close
-                </button>
-              </div>
-            </div>
+                />
+                <Bar 
+                  dataKey="tours" 
+                  fill="#3498db" 
+                  radius={[4, 4, 0, 0]}
+                />
+              </BarChart>
+            </ResponsiveContainer>
           </div>
-        )}
 
-        {showDeleteConfirm && (
-          <div style={modalOverlayStyle}>
-            <div style={modalContentStyle}>
-              <div style={modalHeaderStyle}>
-                <h3 style={modalTitleStyle}>Confirm Removal</h3>
-              </div>
-              <p style={{ marginBottom: '20px' }}>
-                Are you sure you want to remove this reservation for {selectedReservation && formatDateForDisplay(selectedReservation.date)}?
-              </p>
-              <div style={modalFooterStyle}>
-                <button 
-                  onClick={() => setShowDeleteConfirm(false)}
-                  style={secondaryButtonStyle}
-                >
-                  Cancel
-                </button>
-                <button 
-                  onClick={handleDeleteReservation}
-                  style={dangerButtonStyle}
-                >
-                  Remove
-                </button>
+          {showConfirmModal && (
+            <div style={modalOverlayStyle}>
+              <div style={modalContentStyle}>
+                <div style={modalHeaderStyle}>
+                  <h3 style={modalTitleStyle}>Reserve Date</h3>
+                </div>
+                <p style={{ marginBottom: '20px' }}>
+                  Do you want to reserve {formatDateForDisplay(selectedDate)}?
+                </p>
+                <div style={modalFooterStyle}>
+                  <button 
+                    onClick={() => setShowConfirmModal(false)}
+                    style={secondaryButtonStyle}
+                  >
+                    Cancel
+                  </button>
+                  <button 
+                    onClick={handleConfirmReservation}
+                    style={primaryButtonStyle}
+                  >
+                    Yes, Reserve
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
-        )}
+          )}
+
+          {showDetailsModal && (
+            <div style={modalOverlayStyle}>
+              <div style={modalContentStyle}>
+                <div style={modalHeaderStyle}>
+                  <h3 style={modalTitleStyle}>Reservation Details</h3>
+                </div>
+                <div style={formGroupStyle}>
+                  <label style={formLabelStyle}>Reservation Type</label>
+                  <select
+                    value={reservationForm.type}
+                    onChange={(e) => setReservationForm({...reservationForm, type: e.target.value})}
+                    style={formControlStyle}
+                  >
+                    <option value="TOUR">Tour Reservation</option>
+                    <option value="PERSONAL">Personal</option>
+                  </select>
+                </div>
+
+                {reservationForm.type === "TOUR" && (
+                  <>
+                    <div style={formGroupStyle}>
+                      <label style={formLabelStyle}>Traveler Name</label>
+                      <input
+                        type="text"
+                        value={reservationForm.travelerName}
+                        onChange={(e) => setReservationForm({...reservationForm, travelerName: e.target.value})}
+                        style={formControlStyle}
+                        placeholder="Enter traveler's name"
+                      />
+                    </div>
+                    <div style={formGroupStyle}>
+                      <label style={formLabelStyle}>Place</label>
+                      <input
+                        type="text"
+                        value={reservationForm.place}
+                        onChange={(e) => setReservationForm({...reservationForm, place: e.target.value})}
+                        style={formControlStyle}
+                        placeholder="Enter location"
+                      />
+                    </div>
+                    <div style={formGroupStyle}>
+                      <label style={formLabelStyle}>Time Period</label>
+                      <input
+                        type="text"
+                        value={reservationForm.timePeriod}
+                        onChange={(e) => setReservationForm({...reservationForm, timePeriod: e.target.value})}
+                        style={formControlStyle}
+                        placeholder="e.g., 9:00 AM - 5:00 PM"
+                      />
+                    </div>
+                  </>
+                )}
+                <div style={modalFooterStyle}>
+                  <button 
+                    onClick={() => setShowDetailsModal(false)}
+                    style={secondaryButtonStyle}
+                  >
+                    Cancel
+                  </button>
+                  <button 
+                    onClick={handleReserveSubmit}
+                    style={primaryButtonStyle}
+                  >
+                    Confirm Reservation
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {showViewModal && (
+            <div style={modalOverlayStyle}>
+              <div style={modalContentStyle}>
+                <div style={modalHeaderStyle}>
+                  <h3 style={modalTitleStyle}>Reservation Details</h3>
+                </div>
+                {selectedReservation && (
+                  <div>
+                    <div style={{ marginBottom: '15px' }}>
+                      <span style={{ fontWeight: '600', color: '#2c3e50' }}>Date: </span>
+                      <span>{formatDateForDisplay(selectedReservation.date)}</span>
+                    </div>
+                    <div style={{ marginBottom: '15px' }}>
+                      <span style={{ fontWeight: '600', color: '#2c3e50' }}>Type: </span>
+                      <span>{selectedReservation.type}</span>
+                    </div>
+                    
+                    {selectedReservation.type === "TOUR" && (
+                      <>
+                        <div style={{ marginBottom: '15px' }}>
+                          <span style={{ fontWeight: '600', color: '#2c3e50' }}>Traveler: </span>
+                          <span>{selectedReservation.travelerName}</span>
+                        </div>
+                        <div style={{ marginBottom: '15px' }}>
+                          <span style={{ fontWeight: '600', color: '#2c3e50' }}>Place: </span>
+                          <span>{selectedReservation.place}</span>
+                        </div>
+                        <div style={{ marginBottom: '15px' }}>
+                          <span style={{ fontWeight: '600', color: '#2c3e50' }}>Time: </span>
+                          <span>{selectedReservation.timePeriod}</span>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                )}
+                <div style={modalFooterStyle}>
+                  <button 
+                    onClick={() => {
+                      setShowDeleteConfirm(true);
+                    }}
+                    style={dangerButtonStyle}
+                  >
+                    Remove Reservation
+                  </button>
+                  <button 
+                    onClick={handleCloseModal}
+                    style={secondaryButtonStyle}
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {showDeleteConfirm && (
+            <div style={modalOverlayStyle}>
+              <div style={modalContentStyle}>
+                <div style={modalHeaderStyle}>
+                  <h3 style={modalTitleStyle}>Confirm Removal</h3>
+                </div>
+                <p style={{ marginBottom: '20px' }}>
+                  Are you sure you want to remove this reservation for {selectedReservation && formatDateForDisplay(selectedReservation.date)}?
+                </p>
+                <div style={modalFooterStyle}>
+                  <button 
+                    onClick={() => setShowDeleteConfirm(false)}
+                    style={secondaryButtonStyle}
+                  >
+                    Cancel
+                  </button>
+                  <button 
+                    onClick={handleDeleteReservation}
+                    style={dangerButtonStyle}
+                  >
+                    Remove
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
-    </div>
+    </Layout>
   );
 };
 
