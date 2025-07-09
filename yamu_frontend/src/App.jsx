@@ -33,8 +33,11 @@ import UpdateUserProfile from "./pages/profile/components/UpdateUserProfile.jsx"
 import ProfileView from "./pages/ProfileView.jsx";
 import AdminDashboard from "./pages/AdminDashboard.jsx";
 import UsersSocialPage from "./pages/UsersSocialPage.jsx";
+import DirectionsPage from "./pages/DirectionsPage.jsx";
 
 // import ProfileView from "./pages/ProfileView.jsx";
+
+import EmergencyContacts from "./pages/EmergencyContacts.jsx";
 
 const App = () => {
   return (
@@ -57,6 +60,7 @@ const App = () => {
           <Route path="/verify-email-pending" element={<VerifyEmailPending />} />
           {/* Email verification */}
           <Route path="/verify-email" element={<VerifyEmail />} />
+          <Route path="/emergency-contacts" element={<EmergencyContacts />} />
 
           {/* Protected Routes */}
           <Route element={<ProtectedRoute />}>
@@ -74,7 +78,7 @@ const App = () => {
             <Route path="/itinerary-planner" element={<ItineraryPlanner />} />
             <Route path="/inbox" element={<Inbox />} />
             <Route path="/profile-view" element={<ProfileView />} />
-
+            <Route path="/directions" element={<DirectionsPage />} /> 
           
           <Route path="/finalize-itinerary" element={<FinalizeItinerary />} />
 

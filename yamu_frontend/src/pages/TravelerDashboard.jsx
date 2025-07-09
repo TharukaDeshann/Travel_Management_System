@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { ChevronRight, Mail } from "lucide-react";
 import '../styles/TravelerDashboard.css';
 import WeatherCard from "../components/WeatherCard";
@@ -10,6 +10,7 @@ import botImage from '../images/bot-image.png';
 import apiClient from "../services/axiosInstance";
 import GuideModal from "../components/GuideModal";
 import { useUser } from "../context/UserContext";
+import { Layout } from "../components/Layout";
 
 const currencies = [
   { code: 'USD', symbol: '$' },
@@ -20,6 +21,7 @@ const currencies = [
 
 export default function TravelerDashboard({ currentUser }) {
   const navigate = useNavigate();
+  const location = useLocation();
   const [selectedCurrency, setSelectedCurrency] = useState('LKR');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [exchangeRates, setExchangeRates] = useState({});
@@ -35,8 +37,10 @@ export default function TravelerDashboard({ currentUser }) {
   const [relatedPlaces, setRelatedPlaces] = useState([]);
   const [isProcessingImage, setIsProcessingImage] = useState(false);
   const [placesData, setPlacesData] = useState([]);
-  
+  const [uploadError, setUploadError] = useState(null);
+
   const loggedUser = useUser().user;
+  const unreadCount = 0;
 
   useEffect(() => {
     const fetchPlaces = async () => {
@@ -183,26 +187,35 @@ export default function TravelerDashboard({ currentUser }) {
   const handleImageUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
-  
+
+    setUploadError(null);
+    const imageUrl = URL.createObjectURL(file);
+
     if (!file.type.startsWith("image/")) {
-      alert("Please upload a valid image file.");
+      setUploadError({
+        message: "Please upload a valid image file (JPEG, PNG, etc.)",
+        image: imageUrl
+      });
       return;
     }
     if (file.size > 5 * 1024 * 1024) {
-      alert("File size exceeds the 5MB limit.");
+      setUploadError({
+        message: "File size exceeds the 5MB limit. Please choose a smaller image.",
+        image: imageUrl
+      });
       return;
     }
-  
+
     try {
       setIsProcessingImage(true);
       setVisionResults(null);
-  
+
       const formData = new FormData();
       formData.append("image", file);
-  
+
       const endpoint = "https://southeastasia.api.cognitive.microsoft.com/customvision/v3.0/Prediction/0b950bb8-98a3-42d8-bc95-011f5c6efc99/detect/iterations/Iteration3/image";
       const predictionKey = "4d3e08b59e25443ab5f3d26e5c428a05";
-  
+
       const response = await fetch(endpoint, {
         method: "POST",
         body: formData,
@@ -210,39 +223,61 @@ export default function TravelerDashboard({ currentUser }) {
           "Prediction-Key": predictionKey,
         },
       });
-  
+
+      if (!response.ok) {
+        throw new Error(`API request failed with status ${response.status}`);
+      }
+
       const result = await response.json();
       setVisionResults(result);
-  
-      const sortedPredictions = result.predictions.sort((a, b) => b.probability - a.probability);
-      const topPrediction = sortedPredictions[0];
-  
-      if (topPrediction) {
-        setImageSearchResult({
-          name: topPrediction.tagName,
-          probability: (topPrediction.probability * 100).toFixed(2),
-          image: URL.createObjectURL(file)
+
+      const highConfidencePredictions = result.predictions.filter(
+        prediction => prediction.probability >= 0.9
+      );
+
+      if (highConfidencePredictions.length === 0) {
+        setUploadError({
+          message: "Sorry, we couldn't confidently identify this image. Please try another clear image of a recognizable landmark.",
+          image: imageUrl
         });
-        
-        const exactMatches = placesData.filter(item => 
-          item.type === "place" && 
-          item.name.toLowerCase() === topPrediction.tagName.toLowerCase()
-        );
-        
-        const matches = exactMatches.length > 0 ? exactMatches : 
-          placesData.filter(item => 
-            item.type === "place" && 
-            item.name.toLowerCase().includes(topPrediction.tagName.toLowerCase())
-          );
-        
-        setRelatedPlaces(matches);
-        setShowImageSearchModal(true);
-      } else {
-        alert("No objects detected in the image");
+        return;
       }
+
+      const topPrediction = highConfidencePredictions[0];
+
+      setImageSearchResult({
+        name: topPrediction.tagName,
+        probability: (topPrediction.probability * 100).toFixed(2),
+        image: imageUrl
+      });
+
+      const exactMatches = placesData.filter(item =>
+        item.type === "place" &&
+        item.name.toLowerCase() === topPrediction.tagName.toLowerCase()
+      );
+
+      const matches = exactMatches.length > 0 ? exactMatches :
+        placesData.filter(item =>
+          item.type === "place" &&
+          item.name.toLowerCase().includes(topPrediction.tagName.toLowerCase())
+        );
+
+      if (matches.length === 0) {
+        setUploadError({
+          message: `We recognized "${topPrediction.tagName}" but couldn't find matching places in our database.`,
+          image: imageUrl
+        });
+        return;
+      }
+
+      setRelatedPlaces(matches);
+      setShowImageSearchModal(true);
     } catch (error) {
-      console.error("Error calling Azure Custom Vision:", error);
-      alert("Error processing image. Please try again later.");
+      console.error("Error processing image:", error);
+      setUploadError({
+        message: "An error occurred while processing your image. Please try again later.",
+        image: imageUrl
+      });
     } finally {
       setIsProcessingImage(false);
     }
@@ -274,44 +309,69 @@ export default function TravelerDashboard({ currentUser }) {
   };
 
   const handleGetDirections = (place) => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const { latitude, longitude } = position.coords;
-          navigate('/map', { 
-            state: { 
+    const cleanedPlaceName = place.name.replace(/\s*\([^)]*\)/g, '').trim();
+    
+    console.log('Passing to DirectionsPage:', {
+      placeName: cleanedPlaceName,
+      hasCoordinates: !!(place.latitude && place.longitude),
+      coordinates: {
+        lat: place.latitude,
+        lon: place.longitude
+      },
+      originalPlace: place
+    });
+  
+    if (place.latitude && place.longitude) {
+      const destination = {
+        lat: parseFloat(place.latitude),
+        lon: parseFloat(place.longitude),
+        name: cleanedPlaceName
+      };
+  
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            const { latitude, longitude } = position.coords;
+            console.log('Navigating with current location:', {
               currentLocation: { lat: latitude, lon: longitude },
-              destination: {
-                lat: place.latitude,
-                lon: place.longitude,
-                name: place.name
-              }
-            } 
-          });
-        },
-        (error) => {
-          console.error("Error getting current location:", error);
-          // Fallback to just the destination if location can't be determined
-          navigate('/map', { 
-            state: { 
-              initialLocation: {
-                lat: place.latitude,
-                lon: place.longitude,
-                name: place.name
-              }
-            } 
-          });
-        }
-      );
-    } else {
-      // Browser doesn't support Geolocation
-      navigate('/map', { 
-        state: { 
-          initialLocation: {
-            lat: place.latitude,
-            lon: place.longitude,
-            name: place.name
+              destination: destination
+            });
+            navigate('/directions', { 
+              state: { 
+                currentLocation: { lat: latitude, lon: longitude },
+                destination: destination
+              } 
+            });
+          },
+          (error) => {
+            console.error("Error getting current location:", error);
+            console.log('Navigating with destination only:', {
+              initialLocation: destination
+            });
+            navigate('/directions', { 
+              state: { 
+                initialLocation: destination
+              } 
+            });
           }
+        );
+      } else {
+        console.log('Navigating with destination only (no geolocation):', {
+          initialLocation: destination
+        });
+        navigate('/directions', { 
+          state: { 
+            initialLocation: destination
+          } 
+        });
+      }
+    } else {
+      console.log('Navigating with place name only:', {
+        placeName: cleanedPlaceName
+      });
+      navigate('/directions', { 
+        state: { 
+          placeName: cleanedPlaceName
         } 
       });
     }
@@ -353,382 +413,430 @@ export default function TravelerDashboard({ currentUser }) {
   );
 
   return (
-    <div className="traveler-dashboard-container">
-      <nav className="nav-container">
-        <div className="logo-container">
-          <img src={yamuLogo} alt="YAMU Logo" className="nav-logo-image" />
-          <h1 className="nav-logo">YAMU</h1>
-        </div>
-        <ul className="nav-links">
-          {['Dashboard', 'Hotels', 'Guides', 'Places', 'Emergency Contacts'].map((item) => (
+    <Layout 
+      user={loggedUser}
+      unreadCount={unreadCount}
+      onCurrencyChange={setSelectedCurrency}
+      selectedCurrency={selectedCurrency}
+      navigate={navigate}
+      location={location}
+    >
+      <div className="traveler-dashboard-container">
+        <nav className="nav-container">
+          <div className="logo-container">
+            <img src={yamuLogo} alt="YAMU Logo" className="nav-logo-image" />
+            <h1 className="nav-logo">YAMU</h1>
+          </div>
+          <ul className="nav-links">
+            {['Dashboard', 'Hotels', 'Guides', 'Places', 'Emergency Contacts'].map((item) => (
+              <li
+                key={item}
+                className="nav-link"
+                onClick={() => {
+                  if (item === 'Guides') {
+                    handleNavigateToGuides();
+                  } else if (item === 'Dashboard') {
+                    navigate('/traveler-dashboard');
+                  } else if (item === 'Places') {
+                    navigate('/places');
+                  } else if (item === 'Hotels') {
+                    navigate('/hotels');
+                  } else if (item === 'Emergency Contacts') {
+                    navigate('/emergency-contacts');
+                  }
+                }}
+              >
+                {item}
+              </li>
+            ))}
             <li
-              key={item}
+              key="Inbox"
               className="nav-link"
-              onClick={() => {
-                if (item === 'Guides') {
-                  handleNavigateToGuides();
-                } else if (item === 'Dashboard') {
-                  navigate('/traveler-dashboard');
-                } else if (item === 'Places') {
-                  navigate('/places');
-                } else if (item === 'Hotels') {
-                  navigate('/hotels');
-                } else if (item === 'Emergency Contacts') {
-                  navigate('/emergency-contacts');
-                }
-              }}
+              onClick={() => navigate('/inbox', { state: { currentUser } })}
+              style={{ display: 'flex', alignItems: 'center', padding: '0 12px' }}
             >
-              {item}
+              <Mail size={20} />
             </li>
-          ))}
-          <li
-            key="Inbox"
-            className="nav-link"
-            onClick={() => navigate('/inbox', { state: { currentUser } })}
-            style={{ display: 'flex', alignItems: 'center', padding: '0 12px' }}
-          >
-            <Mail size={20} />
-          </li>
-        </ul>
-        <div className="flex items-center space-x-4">
-          <CurrencyDropdown />
-          <WeatherCard />
-          <div className="icon-container">
-            <img src={notificationIcon} alt="Notifications" className="w-6 h-6" />
-            <span className="notification-badge">3</span>
-          </div>
-          <div className="icon-container">
-            <img src={loggedUser.profileImageUrl || profileIcon} alt="Profile" className="profile-image" onClick={() => navigate('/profile')} />
-          </div>
-        </div>
-      </nav>
-
-      <div className="main-content">
-        <div className="search-container">
-          <div className="search-bar">
-            <input 
-              type="text" 
-              placeholder="Search destinations, hotels, or events..." 
-              className="search-input"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onFocus={() => searchQuery && setShowSearchResults(true)}
-            />
-            <div className="search-icons">
-              <button className="search-icon-button" onClick={() => setShowSearchResults(true)}>
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <circle cx="11" cy="11" r="8"></circle>
-                  <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-                </svg>
-              </button>
-              
-              <label htmlFor="image-upload" className="image-upload-button">
-                <input 
-                  id="image-upload" 
-                  type="file" 
-                  accept="image/*" 
-                  style={{ display: 'none' }}
-                  onChange={handleImageUpload}
-                />
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                  <circle cx="8.5" cy="8.5" r="1.5"></circle>
-                  <polyline points="21 15 16 10 5 21"></polyline>
-                </svg>
-              </label>
+          </ul>
+          <div className="flex items-center space-x-4">
+            <CurrencyDropdown />
+            <WeatherCard />
+            <div className="icon-container">
+              <img src={notificationIcon} alt="Notifications" className="w-6 h-6" />
+              <span className="notification-badge">3</span>
+            </div>
+            <div className="icon-container">
+              <img src={loggedUser.profileImageUrl || profileIcon} alt="Profile" className="profile-image" onClick={() => navigate('/profile')} />
             </div>
           </div>
-          
-          {showSearchResults && (
-            <div className="search-results-popup">
-              <div className="search-results-header">
-                <h3>Search Results</h3>
+        </nav>
+
+        <div className="main-content">
+          <div className="search-container">
+            <div className="search-bar">
+              <input 
+                type="text" 
+                placeholder="Search destinations, hotels, or events..." 
+                className="search-input"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onFocus={() => searchQuery && setShowSearchResults(true)}
+              />
+              <div className="search-icons">
+                <button className="search-icon-button" onClick={() => setShowSearchResults(true)}>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                  </svg>
+                </button>
+                
+                <label htmlFor="image-upload" className="image-upload-button">
+                  <input 
+                    id="image-upload" 
+                    type="file" 
+                    accept="image/*" 
+                    style={{ display: 'none' }}
+                    onChange={handleImageUpload}
+                  />
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                    <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                    <polyline points="21 15 16 10 5 21"></polyline>
+                  </svg>
+                </label>
+              </div>
+            </div>
+            
+            {showSearchResults && (
+              <div className="search-results-popup">
+                <div className="search-results-header">
+                  <h3>Search Results</h3>
+                  <button 
+                    className="close-search-results"
+                    onClick={() => setShowSearchResults(false)}
+                  >
+                    ×
+                  </button>
+                </div>
+                <div className="search-results-list">
+                  {searchResults.length > 0 ? (
+                    searchResults.map((item) => (
+                      <div 
+                        key={item.id} 
+                        className="search-result-item"
+                        onClick={() => handleSearchItemClick(item)}
+                      >
+                        <img 
+                          src={item.imageUrl || item.image || '/src/images/default-image.jpg'} 
+                          alt={item.name} 
+                          className="search-result-image"
+                          onError={(e) => {
+                            e.target.src = '/src/images/default-image.jpg';
+                          }}
+                        />
+                        <div className="search-result-details">
+                          <h4>{item.name}</h4>
+                          <p className="search-result-type">{item.type}</p>
+                          <p className="search-result-description">{item.description}</p>
+                          {item.location && (
+                            <p className="search-result-location">
+                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                                <circle cx="12" cy="10" r="3"></circle>
+                              </svg>
+                              {item.location}
+                            </p>
+                          )}
+                          {item.latitude && item.longitude && (
+                            <button
+                              className="directions-button-small"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleGetDirections(item);
+                              }}
+                            >
+                              Get Directions
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="no-results">
+                      <p>No results found for "{searchQuery}"</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            <div className="buttons-container">
+              <button 
+                className="action-button upcoming-trips-button"
+                onClick={() => navigate('/traveler-upcoming-trips')}
+              >
+                Upcoming Trips
+              </button>
+              <button 
+                className="action-button start-planning-button"
+                onClick={() => navigate('/itinerary-planner')}
+              >
+                Start Planning
+              </button>
+            </div>
+          </div>
+
+          {sections.map((section) => (
+            <div key={section.title} className="section-container">
+              <div className="flex justify-between items-center">
+                <h2 className="text-lg font-bold">{section.title}</h2>
                 <button 
-                  className="close-search-results"
-                  onClick={() => setShowSearchResults(false)}
+                  className="text-blue-500"
+                  onClick={() => {
+                    if (section.title === "Discover Tour Guides") {
+                      navigate('/guides-page');
+                    } else if (section.title === "Discover Places") {
+                      navigate('/places');
+                    } else if (section.title === "Discover Accommodations") {
+                      navigate('/hotels');
+                    } else if (section.title === "Event & Festival Highlights") {
+                      navigate('/events');
+                    }
+                  }}
                 >
-                  ×
+                  See more →
                 </button>
               </div>
-              <div className="search-results-list">
-                {searchResults.length > 0 ? (
-                  searchResults.map((item) => (
+              <div className={`cards-scroll-container ${showLeftButton[section.title] ? 'scrolled' : ''}`}>
+                {showLeftButton[section.title] && (
+                  <button 
+                    className="scroll-button left"
+                    onClick={(e) => {
+                      const container = e.target.closest('.cards-scroll-container').querySelector('.flex');
+                      container.scrollBy({ left: -339 - 16, behavior: 'smooth' });
+                    }}
+                  >
+                    ←
+                  </button>
+                )}
+                <div 
+                  className="flex space-x-4"
+                  onScroll={(e) => handleScroll(e, section.title)}
+                >
+                  {section.items.map((item) => (
                     <div 
-                      key={item.id} 
-                      className="search-result-item"
+                      key={item.name} 
+                      className="card-container"
                       onClick={() => handleSearchItemClick(item)}
                     >
                       <img 
                         src={item.imageUrl || item.image || '/src/images/default-image.jpg'} 
                         alt={item.name} 
-                        className="search-result-image"
+                        className="card-image"
                         onError={(e) => {
                           e.target.src = '/src/images/default-image.jpg';
                         }}
                       />
-                      <div className="search-result-details">
-                        <h4>{item.name}</h4>
-                        <p className="search-result-type">{item.type}</p>
-                        <p className="search-result-description">{item.description}</p>
+                      <div className="card-overlay">
+                        <h3 className="card-title">{item.name}</h3>
                         {item.location && (
-                          <p className="search-result-location">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
-                              <circle cx="12" cy="10" r="3"></circle>
-                            </svg>
-                            {item.location}
-                          </p>
+                          <p style={{ color: 'white', fontSize: '14px' }}>{item.location}</p>
                         )}
                         {item.latitude && item.longitude && (
                           <button
-                            className="directions-button-small"
+                            className="directions-button-card"
                             onClick={(e) => {
                               e.stopPropagation();
                               handleGetDirections(item);
                             }}
                           >
-                            Get Directions
+                            Directions
                           </button>
                         )}
                       </div>
                     </div>
-                  ))
-                ) : (
-                  <div className="no-results">
-                    <p>No results found for "{searchQuery}"</p>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
-          <div className="buttons-container">
-            <button 
-              className="action-button upcoming-trips-button"
-              onClick={() => navigate('/traveler-upcoming-trips')}
-            >
-              Upcoming Trips
-            </button>
-            <button 
-              className="action-button start-planning-button"
-              onClick={() => navigate('/itinerary-planner')}
-            >
-              Start Planning
-            </button>
-          </div>
-        </div>
-
-        {sections.map((section) => (
-          <div key={section.title} className="section-container">
-            <div className="flex justify-between items-center">
-              <h2 className="text-lg font-bold">{section.title}</h2>
-              <button 
-                className="text-blue-500"
-                onClick={() => {
-                  if (section.title === "Discover Tour Guides") {
-                    navigate('/guides-page');
-                  } else if (section.title === "Discover Places") {
-                    navigate('/places');
-                  } else if (section.title === "Discover Accommodations") {
-                    navigate('/hotels');
-                  } else if (section.title === "Event & Festival Highlights") {
-                    navigate('/events');
-                  }
-                }}
-              >
-                See more →
-              </button>
-            </div>
-            <div className={`cards-scroll-container ${showLeftButton[section.title] ? 'scrolled' : ''}`}>
-              {showLeftButton[section.title] && (
+                  ))}
+                </div>
                 <button 
-                  className="scroll-button left"
+                  className="scroll-button right"
                   onClick={(e) => {
                     const container = e.target.closest('.cards-scroll-container').querySelector('.flex');
-                    container.scrollBy({ left: -339 - 16, behavior: 'smooth' });
+                    container.scrollBy({ left: 339 + 16, behavior: 'smooth' });
                   }}
                 >
-                  ←
+                  →
                 </button>
-              )}
-              <div 
-                className="flex space-x-4"
-                onScroll={(e) => handleScroll(e, section.title)}
-              >
-                {section.items.map((item) => (
-                  <div 
-                    key={item.name} 
-                    className="card-container"
-                    onClick={() => handleSearchItemClick(item)}
-                  >
+              </div>
+            </div>
+          ))}
+
+          <div className="section-container">
+            <h2 className="text-lg font-bold">Discover Packages</h2>
+            <div className="cards-scroll-container">
+              <div className="flex space-x-4">
+                {convertedPackages.map((pkg) => (
+                  <div key={pkg.name} className="card-container" onClick={() => handleSearchItemClick(pkg)}>
                     <img 
-                      src={item.imageUrl || item.image || '/src/images/default-image.jpg'} 
-                      alt={item.name} 
+                      src={pkg.image} 
+                      alt={pkg.name} 
                       className="card-image"
                       onError={(e) => {
                         e.target.src = '/src/images/default-image.jpg';
                       }}
                     />
                     <div className="card-overlay">
-                      <h3 className="card-title">{item.name}</h3>
-                      {item.location && (
-                        <p style={{ color: 'white', fontSize: '14px' }}>{item.location}</p>
-                      )}
-                      {item.latitude && item.longitude && (
-                        <button
-                          className="directions-button-card"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleGetDirections(item);
-                          }}
-                        >
-                          Directions
-                        </button>
-                      )}
+                      <h3 className="card-title">{pkg.name}</h3>
+                      <p className="text-white text-lg">
+                        {selectedCurrency === 'LKR' ? 'Rs. ' : currencies.find(c => c.code === selectedCurrency)?.symbol}
+                        {pkg.convertedPrice?.toLocaleString()}
+                      </p>
+                      <p className="text-white text-sm">{pkg.description}</p>
                     </div>
                   </div>
                 ))}
               </div>
-              <button 
-                className="scroll-button right"
-                onClick={(e) => {
-                  const container = e.target.closest('.cards-scroll-container').querySelector('.flex');
-                  container.scrollBy({ left: 339 + 16, behavior: 'smooth' });
-                }}
-              >
-                →
-              </button>
             </div>
           </div>
-        ))}
 
-        <div className="section-container">
-          <h2 className="text-lg font-bold">Discover Packages</h2>
-          <div className="cards-scroll-container">
-            <div className="flex space-x-4">
-              {convertedPackages.map((pkg) => (
-                <div key={pkg.name} className="card-container" onClick={() => handleSearchItemClick(pkg)}>
-                  <img 
-                    src={pkg.image} 
-                    alt={pkg.name} 
-                    className="card-image"
-                    onError={(e) => {
-                      e.target.src = '/src/images/default-image.jpg';
-                    }}
-                  />
-                  <div className="card-overlay">
-                    <h3 className="card-title">{pkg.name}</h3>
-                    <p className="text-white text-lg">
-                      {selectedCurrency === 'LKR' ? 'Rs. ' : currencies.find(c => c.code === selectedCurrency)?.symbol}
-                      {pkg.convertedPrice?.toLocaleString()}
-                    </p>
-                    <p className="text-white text-sm">{pkg.description}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
+          <img 
+            src={botImage}
+            alt="Bot Assistant"
+            type="button"
+            className="fixed-bottom-image"
+            onClick={() => navigate('/chatbot')}
+          />
         </div>
 
-        <img 
-          src={botImage}
-          alt="Bot Assistant"
-          type="button"
-          className="fixed-bottom-image"
-          onClick={() => navigate('/chatbot')}
-        />
-      </div>
+        {selectedGuide && (
+          <GuideModal 
+            guide={selectedGuide} 
+            onClose={() => setSelectedGuide(null)}
+            currentUser={currentUser}
+          />
+        )}
 
-      {selectedGuide && (
-        <GuideModal 
-          guide={selectedGuide} 
-          onClose={() => setSelectedGuide(null)}
-          currentUser={currentUser}
-        />
-      )}
-
-      {showImageSearchModal && imageSearchResult && (
-        <div className="image-search-modal">
-          <div className="image-search-modal-content">
-            <button 
-              className="close-modal-button"
-              onClick={() => setShowImageSearchModal(false)}
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="18" y1="6" x2="6" y2="18"></line>
-                <line x1="6" y1="6" x2="18" y2="18"></line>
-              </svg>
-            </button>
-            
-            <div className="image-search-header">
-              <h2>Image Search Results</h2>
-              <div className={`prediction-badge ${
-                imageSearchResult.probability > 65 ? 'high-confidence' : 
-                imageSearchResult.probability > 35 ? 'medium-confidence' : 'low-confidence'
-              }`}>
-                {imageSearchResult.probability}% confidence
-              </div>
-            </div>
-            
-            <div className="image-search-main-content">
-              <div className="image-preview-container">
-                <img 
-                  src={imageSearchResult.image} 
-                  alt="Uploaded content" 
-                  className="uploaded-image-preview"
-                />
+        {showImageSearchModal && imageSearchResult && (
+          <div className="image-search-modal">
+            <div className="image-search-modal-content">
+              <button 
+                className="close-modal-button"
+                onClick={() => setShowImageSearchModal(false)}
+              >
+                ×
+              </button>
+              
+              <div className="image-search-header">
+                <h2>Image Search Results</h2>
+                <div className={`prediction-badge ${
+                  imageSearchResult.probability > 65 ? 'high-confidence' : 
+                  imageSearchResult.probability > 35 ? 'medium-confidence' : 'low-confidence'
+                }`}>
+                  {imageSearchResult.probability}% confidence
+                </div>
               </div>
               
-              <div className="image-search-details">
-                <h3 className="result-title">{imageSearchResult.name}</h3>
-                
-                <div className="result-description">
-                  <h4>Description</h4>
-                  <p>
-                    {relatedPlaces.length > 0 
-                      ? relatedPlaces[0].description 
-                      : "No description available for this location."}
-                  </p>
+              <div className="image-search-main-content">
+                <div className="image-preview-container">
+                  <img 
+                    src={imageSearchResult.image} 
+                    alt="Uploaded content" 
+                    className="uploaded-image-preview"
+                  />
                 </div>
                 
-                <div className="button-group">
-                  <button 
-                    className="view-location-button"
-                    onClick={() => {
-                      if (relatedPlaces.length > 0) {
-                        setShowImageSearchModal(false);
-                        navigate(`/place-details/${relatedPlaces[0].id}`);
-                      }
-                    }}
-                    disabled={relatedPlaces.length === 0}
-                  >
-                    View Location Details
-                  </button>
+                <div className="image-search-details">
+                  <h3 className="result-title">{imageSearchResult.name}</h3>
                   
-                  {relatedPlaces.length > 0 && (
+                  <div className="result-description">
+                    <h4>Description</h4>
+                    <p>
+                      {relatedPlaces.length > 0 
+                        ? relatedPlaces[0].description 
+                        : "No description available for this location."}
+                    </p>
+                  </div>
+                  
+                  <div className="button-group">
                     <button 
-                      className="directions-button"
+                      className="view-location-button"
                       onClick={() => {
-                        setShowImageSearchModal(false);
-                        handleGetDirections(relatedPlaces[0]);
+                        if (relatedPlaces.length > 0) {
+                          setShowImageSearchModal(false);
+                          navigate(`/place-details/${relatedPlaces[0].id}`);
+                        }
                       }}
+                      disabled={relatedPlaces.length === 0}
                     >
-                      Get Directions
+                      View Location Details
                     </button>
-                  )}
+                    
+                    {relatedPlaces.length > 0 && (
+                      <button 
+                        className="directions-button"
+                        onClick={() => {
+                          setShowImageSearchModal(false);
+                          handleGetDirections(relatedPlaces[0]);
+                        }}
+                      >
+                        Get Directions
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {isProcessingImage && (
-        <div className="processing-overlay">
-          <div className="processing-spinner"></div>
-          <p>Processing your image...</p>
-        </div>
-      )}
-    </div>
+        {isProcessingImage && (
+          <div className="processing-overlay">
+            <div className="processing-spinner"></div>
+            <p>Processing your image...</p>
+          </div>
+        )}
+
+        {uploadError && (
+          <div className="error-modal">
+            <div className="error-modal-content">
+              <button 
+                className="close-modal-button"
+                onClick={() => setUploadError(null)}
+              >
+                ×
+              </button>
+              <div className="error-modal-header">
+                <h2>Image Recognition Error</h2>
+              </div>
+              <div className="error-modal-body">
+                {uploadError.image && (
+                  <div className="error-image-preview">
+                    <img 
+                      src={uploadError.image} 
+                      alt="Uploaded content" 
+                      className="uploaded-image-preview"
+                    />
+                  </div>
+                )}
+                <p className="error-message">{uploadError.message}</p>
+                <p className="error-tip">Tips for better results:</p>
+                <ul className="error-tips-list">
+                  <li>Use clear, well-lit photos of landmarks</li>
+                  <li>Avoid blurry or cropped images</li>
+                  <li>Try different angles of the same location</li>
+                </ul>
+              </div>
+              <div className="error-modal-footer">
+                <button 
+                  className="error-modal-ok-button"
+                  onClick={() => setUploadError(null)}
+                >
+                  Try Again
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </Layout>
   );
 }

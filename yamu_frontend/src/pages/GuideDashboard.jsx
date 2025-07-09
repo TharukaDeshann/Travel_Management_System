@@ -1,14 +1,16 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Mail } from "lucide-react";
 import yamuLogo from '../images/yamu-logo.png';
-import profileIcon from '../images/profile.png';
 import apiClient from "../services/axiosInstance";
 import { useUser } from "../context/UserContext";
+import { Layout } from "../components/Layout";
+
 const RESERVATIONS_STORAGE_KEY = 'guideReservations';
 
-const GuideDashboard = ({ currentUser }) => {
+const GuideDashboard = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [activeTab, setActiveTab] = useState('upcoming');
   const [reservations, setReservations] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -21,12 +23,10 @@ const GuideDashboard = ({ currentUser }) => {
   const [priceError, setPriceError] = useState('');
   const [showCompletionConfirm, setShowCompletionConfirm] = useState(false);
 
+  const [selectedCurrency, setSelectedCurrency] = useState('LKR');
+  const { user: loggedUser } = useUser();
 
-  const loggedUser = useUser().user;
-
-  
   useEffect(() => {
-    currentUser = JSON.parse(localStorage.getItem("user"));
     const loadReservations = async () => {
       try {
         const savedReservations = localStorage.getItem(RESERVATIONS_STORAGE_KEY);
@@ -37,8 +37,8 @@ const GuideDashboard = ({ currentUser }) => {
           }
         }
 
-        if (currentUser?.id) {
-          const response = await apiClient.get(`/api/reservations/guide/${currentUser.id}`);
+        if (loggedUser?.id) {
+          const response = await apiClient.get(`/api/reservations/guide/${loggedUser.id}`);
           const freshData = response.data;
           setReservations(freshData);
           localStorage.setItem(RESERVATIONS_STORAGE_KEY, JSON.stringify(freshData));
@@ -50,30 +50,31 @@ const GuideDashboard = ({ currentUser }) => {
         }
       } catch (err) {
         console.error("Error loading reservations:", err);
+        setError("Failed to load reservations. Please try again later.");
       } finally {
         setLoading(false);
       }
     };
 
     loadReservations();
-  }, [currentUser]);
+  }, [loggedUser]);
 
   const refreshData = async () => {
     try {
-      currentUser = JSON.parse(localStorage.getItem("user"));
-      if (!currentUser?.id) {
+      if (!loggedUser?.id) {
         setError("User information not available. Cannot refresh.");
         return;
       }
 
       setLoading(true);
-      const response = await apiClient.get(`/api/reservations/guide/${currentUser.id}`);
+      const response = await apiClient.get(`/api/reservations/guide/${loggedUser.id}`);
       const freshData = response.data;
       setReservations(freshData);
       localStorage.setItem(RESERVATIONS_STORAGE_KEY, JSON.stringify(freshData));
       setError(null);
     } catch (err) {
       console.error("Refresh failed:", err);
+      setError("Failed to refresh data. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -146,11 +147,9 @@ const GuideDashboard = ({ currentUser }) => {
   const handleCompleteConfirm = async () => {
     try {
       const response = await apiClient.put(`/api/reservations/${currentReservationId}/complete`);
-      
-      const updatedReservations = reservations.map(res => 
+      const updatedReservations = reservations.map(res =>
         res.id === currentReservationId ? response.data : res
       );
-      
       setReservations(updatedReservations);
       localStorage.setItem(RESERVATIONS_STORAGE_KEY, JSON.stringify(updatedReservations));
       setShowCompletionConfirm(false);
@@ -194,10 +193,7 @@ const GuideDashboard = ({ currentUser }) => {
           alignItems: "center",
           justifyContent: "center",
           gap: "6px",
-          transition: "all 0.2s ease",
-          ':hover': {
-            backgroundColor: "#e0e0e0"
-          }
+          transition: "all 0.2s ease"
         }}
       >
         <Mail size={16} />
@@ -336,6 +332,10 @@ const GuideDashboard = ({ currentUser }) => {
                           );
                           setReservations(updated);
                           localStorage.setItem(RESERVATIONS_STORAGE_KEY, JSON.stringify(updated));
+                        })
+                        .catch(err => {
+                          console.error("Failed to decline reservation:", err);
+                          setError("Failed to decline reservation. Please try again.");
                         });
                     }
                   }}
@@ -345,10 +345,7 @@ const GuideDashboard = ({ currentUser }) => {
                     color: "white",
                     border: "none",
                     borderRadius: "4px",
-                    cursor: "pointer",
-                    ':hover': {
-                      backgroundColor: "#d32f2f"
-                    }
+                    cursor: "pointer"
                   }}
                 >
                   Decline
@@ -361,10 +358,7 @@ const GuideDashboard = ({ currentUser }) => {
                     color: "white",
                     border: "none",
                     borderRadius: "4px",
-                    cursor: "pointer",
-                    ':hover': {
-                      backgroundColor: "#3e8e41"
-                    }
+                    cursor: "pointer"
                   }}
                 >
                   Confirm
@@ -381,10 +375,7 @@ const GuideDashboard = ({ currentUser }) => {
                   color: "white",
                   border: "none",
                   borderRadius: "4px",
-                  cursor: "pointer",
-                  ':hover': {
-                    backgroundColor: "#1976D2"
-                  }
+                  cursor: "pointer"
                 }}
               >
                 Mark as Completed
@@ -397,375 +388,280 @@ const GuideDashboard = ({ currentUser }) => {
   };
 
   return (
-    <div style={{
-      minHeight: "100vh",
-      backgroundColor: "#f5f5f5",
-      fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif"
-    }}>
-      <nav style={{
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "center",
-        padding: "20px 40px",
-        backgroundColor: "white",
-        boxShadow: "0 2px 10px rgba(0,0,0,0.1)",
-        position: "sticky",
-        top: 0,
-        zIndex: 100
-      }}>
-        <div style={{
-          display: "flex",
-          alignItems: "center",
-          gap: "10px",
-          cursor: "pointer"
-        }} onClick={() => navigate('/')}>
-          <img src={yamuLogo} alt="Yamu Logo" style={{ height: "40px" }} />
-          <span style={{
-            fontSize: "24px",
-            fontWeight: "bold",
-            color: "#532321"
-          }}>YAMU</span>
-        </div>
-        
-        <div style={{ display: "flex", gap: "30px" }}>
-          {['Dashboard', 'Calendar', 'Reviews', 'Emergency Contacts'].map((item) => (
-            <button
-              key={item}
-              style={{
-                background: "none",
-                border: "none",
-                color: "#333",
-                fontSize: "16px",
-                cursor: "pointer",
-                padding: "5px 10px",
-                ':hover': {
-                  color: "#532321"
-                }
-              }}
-              onClick={() => navigate(`/guide-${item.toLowerCase().replace(' ', '-')}`)}
-            >
-              {item}
-            </button>
-          ))}
-        </div>
-        
-        <div style={{ position: 'relative' }}>
-          <button
-            style={{
-              background: "none",
-              border: "none",
-              color: "#333",
-              fontSize: "16px",
-              cursor: "pointer",
-              padding: "5px 10px",
-              ':hover': {
-                color: "#532321"
-              }
-            }}
-            onClick={() => navigate('/inbox')}
-            aria-label="Inbox"
-          >
-            <Mail size={20} />
-          </button>
-          {unreadCount > 0 && (
-            <span style={{
-              position: 'absolute',
-              top: '-5px',
-              right: '-5px',
-              backgroundColor: '#532321',
-              color: 'white',
-              borderRadius: '50%',
-              width: '18px',
-              height: '18px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '10px'
-            }}>
-              {unreadCount}
-            </span>
-          )}
-        </div>
-        
-        <div style={{ display: "flex", alignItems: "center", gap: "20px" }}>
-          <img 
-            src={loggedUser.profileImageUrl} 
-            alt="Profile" 
-            style={{
-              width: "40px",
-              height: "40px",
-              borderRadius: "50%",
-              objectFit: "cover",
-              cursor: "pointer"
-            }}
-            onClick={() => navigate('/profile')}
-          />
-        </div>
-      </nav>
-
+    <Layout 
+      user={loggedUser}
+      unreadCount={unreadCount}
+      onCurrencyChange={setSelectedCurrency}
+      selectedCurrency={selectedCurrency}
+      navigate={navigate}
+      location={location}
+    >
       <div style={{
-        padding: "40px",
-        maxWidth: "1200px",
-        margin: "0 auto"
+        minHeight: "100vh",
+        backgroundColor: "#f5f5f5",
+        fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif"
       }}>
         <div style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: "30px"
+          padding: "40px",
+          maxWidth: "1200px",
+          margin: "0 auto"
         }}>
-          <h3 style={{
-            fontSize: "24px",
-            color: "#532321",
-            fontWeight: "600",
-            margin: 0
-          }}>My Tours</h3>
-          
-          <div style={{ display: "flex", gap: "10px" }}>
-            <button onClick={refreshData} style={{
-              padding: "8px 16px",
-              backgroundColor: "#f0f0f0",
-              border: "none",
-              borderRadius: "6px",
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              gap: "5px",
-              ':hover': {
-                backgroundColor: "#e0e0e0"
-              }
-            }}>
-              <span>↻</span> Refresh
-            </button>
-            
-            <div style={{
-              display: "flex",
-              gap: "10px",
-              backgroundColor: "#f0f0f0",
-              borderRadius: "8px",
-              padding: "4px"
-            }}>
-              <button
-                onClick={() => setActiveTab('upcoming')}
-                style={{
-                  padding: "8px 16px",
-                  borderRadius: "6px",
-                  border: "none",
-                  background: activeTab === 'upcoming' ? "#532321" : "transparent",
-                  color: activeTab === 'upcoming' ? "white" : "#333",
-                  cursor: "pointer",
-                  fontWeight: "500"
-                }}
-              >
-                Upcoming
+          <div style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginBottom: "30px"
+          }}>
+            <h3 style={{
+              fontSize: "24px",
+              color: "#532321",
+              fontWeight: "600",
+              margin: 0
+            }}>My Tours</h3>
+
+            <div style={{ display: "flex", gap: "10px" }}>
+              <button onClick={refreshData} style={{
+                padding: "8px 16px",
+                backgroundColor: "#f0f0f0",
+                border: "none",
+                borderRadius: "6px",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                gap: "5px"
+              }}>
+                <span>↻</span> Refresh
               </button>
-              <button
-                onClick={() => setActiveTab('past')}
-                style={{
-                  padding: "8px 16px",
-                  borderRadius: "6px",
-                  border: "none",
-                  background: activeTab === 'past' ? "#532321" : "transparent",
-                  color: activeTab === 'past' ? "white" : "#333",
-                  cursor: "pointer",
-                  fontWeight: "500"
-                }}
-              >
-                Past
-              </button>
+
+              <div style={{
+                display: "flex",
+                gap: "10px",
+                backgroundColor: "#f0f0f0",
+                borderRadius: "8px",
+                padding: "4px"
+              }}>
+                <button
+                  onClick={() => setActiveTab('upcoming')}
+                  style={{
+                    padding: "8px 16px",
+                    borderRadius: "6px",
+                    border: "none",
+                    background: activeTab === 'upcoming' ? "#532321" : "transparent",
+                    color: activeTab === 'upcoming' ? "white" : "#333",
+                    cursor: "pointer",
+                    fontWeight: "500"
+                  }}
+                >
+                  Upcoming
+                </button>
+                <button
+                  onClick={() => setActiveTab('past')}
+                  style={{
+                    padding: "8px 16px",
+                    borderRadius: "6px",
+                    border: "none",
+                    background: activeTab === 'past' ? "#532321" : "transparent",
+                    color: activeTab === 'past' ? "white" : "#333",
+                    cursor: "pointer",
+                    fontWeight: "500"
+                  }}
+                >
+                  Past
+                </button>
+              </div>
             </div>
           </div>
+
+          {error && (
+            <div style={{
+              padding: "15px",
+              backgroundColor: "#ffebee",
+              color: "#d32f2f",
+              borderRadius: "4px",
+              marginBottom: "20px"
+            }}>
+              {error}
+            </div>
+          )}
+
+          {loading ? (
+            <div style={{
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              height: "200px"
+            }}>
+              <p>Loading reservations...</p>
+            </div>
+          ) : activeTab === 'upcoming' ? (
+            <div style={{ display: "grid", gap: "20px" }}>
+              {upcomingReservations.length > 0 ? (
+                upcomingReservations.map(reservation => (
+                  <ReservationCard
+                    key={reservation.id}
+                    reservation={reservation}
+                  />
+                ))
+              ) : (
+                <div style={{
+                  padding: "40px",
+                  textAlign: "center",
+                  backgroundColor: "white",
+                  borderRadius: "8px",
+                  boxShadow: "0 2px 8px rgba(0,0,0,0.1)"
+                }}>
+                  <p>No upcoming reservations found</p>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div style={{ display: "grid", gap: "20px" }}>
+              {pastReservations.length > 0 ? (
+                pastReservations.map(reservation => (
+                  <ReservationCard
+                    key={reservation.id}
+                    reservation={reservation}
+                    isPast={true}
+                  />
+                ))
+              ) : (
+                <div style={{
+                  padding: "40px",
+                  textAlign: "center",
+                  backgroundColor: "white",
+                  borderRadius: "8px",
+                  boxShadow: "0 2px 8px rgba(0,0,0,0.1)"
+                }}>
+                  <p>No past reservations found</p>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
-        {error && (
+        {showPricePrompt && (
           <div style={{
-            padding: "15px",
-            backgroundColor: "#ffebee",
-            color: "#d32f2f",
-            borderRadius: "4px",
-            marginBottom: "20px"
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0,0,0,0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000
           }}>
-            {error}
+            <div style={{
+              backgroundColor: 'white',
+              padding: '20px',
+              borderRadius: '8px',
+              width: '400px',
+              maxWidth: '90%'
+            }}>
+              <h3 style={{ marginTop: 0 }}>Enter Estimated Price</h3>
+              <p>Please provide the estimated cost for this reservation (LKR):</p>
+              <input
+                type="number"
+                value={estimatedPrice}
+                onChange={(e) => setEstimatedPrice(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '8px',
+                  margin: '10px 0',
+                  border: `1px solid ${priceError ? '#F44336' : '#ddd'}`,
+                  borderRadius: '4px'
+                }}
+                placeholder="Enter amount in LKR"
+              />
+              {priceError && (
+                <p style={{ color: '#F44336', margin: '5px 0' }}>{priceError}</p>
+              )}
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+                <button
+                  onClick={() => setShowPricePrompt(false)}
+                  style={{
+                    padding: '8px 16px',
+                    backgroundColor: '#f0f0f0',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handlePriceSubmit}
+                  style={{
+                    padding: '8px 16px',
+                    backgroundColor: '#4CAF50',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Submit
+                </button>
+              </div>
+            </div>
           </div>
         )}
 
-        {loading ? (
+        {showCompletionConfirm && (
           <div style={{
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            height: "200px"
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0,0,0,0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000
           }}>
-            <p>Loading reservations...</p>
-          </div>
-        ) : activeTab === 'upcoming' ? (
-          <div style={{ display: "grid", gap: "20px" }}>
-            {upcomingReservations.length > 0 ? (
-              upcomingReservations.map(reservation => (
-                <ReservationCard 
-                  key={reservation.id}
-                  reservation={reservation}
-                />
-              ))
-            ) : (
-              <div style={{
-                padding: "40px",
-                textAlign: "center",
-                backgroundColor: "white",
-                borderRadius: "8px",
-                boxShadow: "0 2px 8px rgba(0,0,0,0.1)"
-              }}>
-                <p>No upcoming reservations found</p>
+            <div style={{
+              backgroundColor: 'white',
+              padding: '20px',
+              borderRadius: '8px',
+              width: '400px',
+              maxWidth: '90%'
+            }}>
+              <h3 style={{ marginTop: 0 }}>Confirm Completion</h3>
+              <p>Are you sure you want to mark this reservation as completed?</p>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+                <button
+                  onClick={() => setShowCompletionConfirm(false)}
+                  style={{
+                    padding: '8px 16px',
+                    backgroundColor: '#f0f0f0',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleCompleteConfirm}
+                  style={{
+                    padding: '8px 16px',
+                    backgroundColor: '#2196F3',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Yes, mark as completed
+                </button>
               </div>
-            )}
-          </div>
-        ) : (
-          <div style={{ display: "grid", gap: "20px" }}>
-            {pastReservations.length > 0 ? (
-              pastReservations.map(reservation => (
-                <ReservationCard 
-                  key={reservation.id}
-                  reservation={reservation}
-                  isPast={true}
-                />
-              ))
-            ) : (
-              <div style={{
-                padding: "40px",
-                textAlign: "center",
-                backgroundColor: "white",
-                borderRadius: "8px",
-                boxShadow: "0 2px 8px rgba(0,0,0,0.1)"
-              }}>
-                <p>No past reservations found</p>
-              </div>
-            )}
+            </div>
           </div>
         )}
       </div>
-
-      {showPricePrompt && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: 'rgba(0,0,0,0.5)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 1000
-        }}>
-          <div style={{
-            backgroundColor: 'white',
-            padding: '20px',
-            borderRadius: '8px',
-            width: '400px',
-            maxWidth: '90%'
-          }}>
-            <h3 style={{ marginTop: 0 }}>Enter Estimated Price</h3>
-            <p>Please provide the estimated cost for this reservation (LKR):</p>
-            <input
-              type="number"
-              value={estimatedPrice}
-              onChange={(e) => setEstimatedPrice(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '8px',
-                margin: '10px 0',
-                border: `1px solid ${priceError ? '#F44336' : '#ddd'}`,
-                borderRadius: '4px'
-              }}
-              placeholder="Enter amount in LKR"
-            />
-            {priceError && (
-              <p style={{ color: '#F44336', margin: '5px 0' }}>{priceError}</p>
-            )}
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
-              <button
-                onClick={() => setShowPricePrompt(false)}
-                style={{
-                  padding: '8px 16px',
-                  backgroundColor: '#f0f0f0',
-                  border: 'none',
-                  borderRadius: '4px',
-                  cursor: 'pointer'
-                }}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handlePriceSubmit}
-                style={{
-                  padding: '8px 16px',
-                  backgroundColor: '#4CAF50',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '4px',
-                  cursor: 'pointer'
-                }}
-              >
-                OK
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {showCompletionConfirm && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: 'rgba(0,0,0,0.5)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 1000
-        }}>
-          <div style={{
-            backgroundColor: 'white',
-            padding: '20px',
-            borderRadius: '8px',
-            width: '400px',
-            maxWidth: '90%'
-          }}>
-            <h3 style={{ marginTop: 0 }}>Confirm Completion</h3>
-            <p>Are you sure you want to mark this reservation as completed?</p>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
-              <button
-                onClick={() => setShowCompletionConfirm(false)}
-                style={{
-                  padding: '8px 16px',
-                  backgroundColor: '#f0f0f0',
-                  border: 'none',
-                  borderRadius: '4px',
-                  cursor: 'pointer'
-                }}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleCompleteConfirm}
-                style={{
-                  padding: '8px 16px',
-                  backgroundColor: '#2196F3',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '4px',
-                  cursor: 'pointer'
-                }}
-              >
-                Yes, mark as completed
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
+    </Layout>
   );
 };
 

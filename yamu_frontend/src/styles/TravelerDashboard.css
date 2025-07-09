@@ -1130,3 +1130,116 @@
   .leaflet-popup-content-wrapper {
     border-radius: 4px;
   }
+
+ /* Error Modal Styles */
+.error-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+  }
+  
+  .error-modal-content {
+    background-color: white;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 500px;
+    padding: 25px;
+    position: relative;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  }
+  
+  .error-modal-header h2 {
+    color: #e74c3c;
+    margin: 0 0 15px 0;
+    font-size: 1.5rem;
+    text-align: center;
+  }
+  
+  .error-image-preview {
+    width: 100%;
+    max-height: 250px;
+    margin-bottom: 20px;
+    overflow: hidden;
+    border-radius: 8px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: #f5f5f5;
+    border: 1px solid #eee;
+  }
+  
+  .uploaded-image-preview {
+    max-width: 100%;
+    max-height: 250px;
+    object-fit: contain;
+  }
+  
+  .error-message {
+    color: #333;
+    font-size: 1rem;
+    line-height: 1.5;
+    margin-bottom: 15px;
+    text-align: center;
+  }
+  
+  .error-tip {
+    font-weight: 600;
+    color: #333;
+    margin: 15px 0 8px 0;
+  }
+  
+  .error-tips-list {
+    padding-left: 20px;
+    margin: 0 0 20px 0;
+    color: #555;
+  }
+  
+  .error-tips-list li {
+    margin-bottom: 6px;
+  }
+  
+  .error-modal-footer {
+    display: flex;
+    justify-content: center;
+  }
+  
+  .error-modal-ok-button {
+    background-color: #532321;
+    color: white;
+    border: none;
+    padding: 10px 25px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 500;
+    font-size: 1rem;
+    transition: background-color 0.2s;
+  }
+  
+  .error-modal-ok-button:hover {
+    background-color: #3a1817;
+  }
+  
+  .close-modal-button {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: #777;
+    padding: 5px;
+  }
+  
+  .close-modal-button:hover {
+    color: #333;
+  }
+
+  

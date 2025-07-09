@@ -87,9 +87,10 @@ const GuideModal = ({ guide, onClose }) => {
       }
     }
 
-    // Validate dates are not in the past and sequential
+    // Validate dates are not in the past, sequential, and within the current year
     const today = new Date();
     today.setHours(0, 0, 0, 0); // Reset time part for accurate comparison
+    const endOfYear = new Date(today.getFullYear(), 11, 31); // Last day of the current year
 
     for (let i = 0; i < reservationDetails.length; i++) {
       const detail = reservationDetails[i];
@@ -97,6 +98,11 @@ const GuideModal = ({ guide, onClose }) => {
 
       if (selectedDate < today) {
         setError(`Date for Day ${i + 1} cannot be in the past`);
+        return;
+      }
+
+      if (selectedDate > endOfYear) {
+        setError(`Date for Day ${i + 1} must be within the current year`);
         return;
       }
 
@@ -131,8 +137,6 @@ const GuideModal = ({ guide, onClose }) => {
       if (response.status === 200) {
         onClose();
         alert('Reservation request sent successfully!');
-        
-       
       }
     } catch (err) {
       console.error('Reservation failed:', err);
@@ -304,6 +308,7 @@ const GuideModal = ({ guide, onClose }) => {
                     ? new Date().toISOString().split('T')[0] // Today's date for Day 1
                     : reservationDetails[index - 1]?.date // Previous day's date for subsequent days
                 }
+                max={new Date(new Date().getFullYear(), 11, 31).toISOString().split('T')[0]} // Last day of the current year
                 style={{
                   width: '100%',
                   padding: '8px 12px',
@@ -449,7 +454,6 @@ const GuideModal = ({ guide, onClose }) => {
       </div>
     </div>
   );
- 
 
   return (
     <div style={{
