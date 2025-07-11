@@ -19,7 +19,6 @@ export const register = async (userData) => {
 };
 
 export const login = async (credentials) => {
-  console.log("Credentials:", JSON.stringify(credentials));
   const response = await axios.post(`${API_URL}/login`, credentials, {
     withCredentials: true, 
   });
@@ -31,7 +30,7 @@ export const login = async (credentials) => {
 };
 
 export const fetchLoggedInUser = async () => {
-  const response = await apiClient.get(`${API_URL}/current-user`, {
+  const response = await apiClient.get(`${API_URL}/me`, {
     withCredentials: true,
   });
   return response.data;

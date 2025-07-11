@@ -69,8 +69,6 @@
     "@babel/plugin-transform-optional-chaining": "^7.25.9",
     "@babel/plugin-transform-private-methods": "^7.25.9",
     "@babel/plugin-transform-private-property-in-object": "^7.25.9",
-    "@types/react": "^19.1.4",
-    "@types/react-dom": "^19.1.5",
     "@vitejs/plugin-react": "^4.3.4",
     "autoprefixer": "^10.4.21",
     "postcss": "^8.5.3",

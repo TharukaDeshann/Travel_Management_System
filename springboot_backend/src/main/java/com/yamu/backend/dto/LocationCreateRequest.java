@@ -1,26 +1,29 @@
 package com.yamu.backend.dto;
 
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
 
+
+
 @Getter
 @Setter
 public class LocationCreateRequest {
-    @NotNull(message = "Day plan ID is required")
-    private String dayPlanId;
-
-    @NotNull(message = "Name is required")
+    @NotBlank(message = "Location name is required")
     private String name;
-
+    
+    private String address;
+    
     @NotNull(message = "Latitude is required")
     private Double latitude;
-
+    
     @NotNull(message = "Longitude is required")
     private Double longitude;
-
-    private int positionIndex;
+    
+    @NotNull(message = "Position index is required")
+    private Integer positionIndex;
+    
     private String placeId;
-    private String address;
     private String notes;
 }
