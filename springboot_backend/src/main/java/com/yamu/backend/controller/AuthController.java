@@ -173,7 +173,7 @@ public class AuthController {
                     .httpOnly(true)
                     .secure(true) // Set to true in production (requires HTTPS)
                     .path("/")
-                    .maxAge(604800) // 1 minutes for access token
+                    .maxAge(900) // 15 minutes for access token (matches JWT expiration)
                     .sameSite("Strict")
                     .build();
 
@@ -181,7 +181,7 @@ public class AuthController {
                     .httpOnly(true)
                     .secure(true)
                     .path("/")
-                    .maxAge(604800) // 7 days for refresh token
+                    .maxAge(604800) // 7 days for refresh token (matches JWT expiration)
                     .sameSite("Strict")
                     .build();
 
@@ -221,7 +221,7 @@ public class AuthController {
                         .httpOnly(true)
                         .secure(true) // Set to true in production (requires HTTPS)
                         .path("/")
-                        .maxAge(604800) // 1 minutes for access token
+                        .maxAge(900) // 15 minutes for access token (matches JWT expiration)
                         .sameSite("Strict")
                         .build();
 
@@ -250,12 +250,12 @@ public class AuthController {
             tokenBlacklistService.addToBlacklist(refreshToken, refreshTokenExpiry);
         }
 
-        // Claer cookies by setting expiration time to 0
+        // Clear cookies by setting expiration time to 0
         ResponseCookie clearAccessToken = ResponseCookie.from("accessToken", "")
                 .httpOnly(true)
                 .secure(true)
                 .path("/")
-                .maxAge(60000)
+                .maxAge(0)
                 .sameSite("Strict")
                 .build();
 
