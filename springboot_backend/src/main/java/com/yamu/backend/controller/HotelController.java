@@ -3,7 +3,7 @@ package com.yamu.backend.controller;
 import com.yamu.backend.dto.*;
 import com.yamu.backend.model.Hotel;
 import com.yamu.backend.service.HotelService;
-import com.yamu.backend.service.GooglePlacesService;
+import com.yamu.backend.service.OpenStreetMapHotelService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -26,7 +26,7 @@ import java.util.stream.Collectors;
 public class HotelController {
     
     private final HotelService hotelService;
-    private final GooglePlacesService googlePlacesService;
+    private final OpenStreetMapHotelService openStreetMapHotelService;
     
     @PostMapping("/search")
     public ResponseEntity<List<HotelResponseDTO>> searchHotels(
@@ -226,13 +226,13 @@ public class HotelController {
         }
     }
     
-    @GetMapping("/debug/google-places-test")
-    public ResponseEntity<Map<String, Object>> testGooglePlacesAPI(
+    @GetMapping("/debug/osm-hotels-test")
+    public ResponseEntity<Map<String, Object>> testOpenStreetMapAPI(
             @RequestParam Double latitude,
             @RequestParam Double longitude,
             @RequestParam(defaultValue = "2000") Double radius) {
         try {
-            log.info("🧪 TESTING: Google Places API directly");
+            log.info("🧪 TESTING: OpenStreetMap Overpass API directly");
             
             Map<String, Object> testResult = new HashMap<>();
             testResult.put("searchParameters", Map.of(
@@ -241,7 +241,7 @@ public class HotelController {
                 "radius", radius
             ));
             
-            // Create a simple search request to test GooglePlacesService
+            // Create a simple search request to test OpenStreetMapHotelService
             HotelSearchRequestDTO searchRequest = new HotelSearchRequestDTO();
             searchRequest.setStartLatitude(latitude);
             searchRequest.setStartLongitude(longitude);
@@ -251,7 +251,7 @@ public class HotelController {
             searchRequest.setMinRating(1.0); // Very low threshold for testing
             searchRequest.setMaxResults(10);
             
-            List<Hotel> hotels = googlePlacesService.searchHotelsAlongRoute(searchRequest);
+            List<Hotel> hotels = openStreetMapHotelService.searchHotelsAlongRoute(searchRequest);
             
             testResult.put("hotelsFound", hotels.size());
             testResult.put("hotels", hotels.stream().map(hotel -> {

@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("   ")
+@RequestMapping("/api/reviews")
 public class ReviewController {
     private final ReviewService reviewService;
     private final UserRepository userRepository;

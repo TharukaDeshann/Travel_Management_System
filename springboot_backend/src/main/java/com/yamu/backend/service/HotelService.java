@@ -31,7 +31,7 @@ public class HotelService {
     private final HotelBookingRepository hotelBookingRepository;
     private final TravelerRepository travelerRepository;
     private final HotelMockDataService mockDataService;
-    private final GooglePlacesService googlePlacesService;
+    private final OpenStreetMapHotelService openStreetMapHotelService; // Changed from GooglePlacesService
     private final ModelMapper modelMapper;
     
     public List<HotelResponseDTO> searchHotelsAlongRoute(HotelSearchRequestDTO searchRequest) {
@@ -60,20 +60,20 @@ public class HotelService {
         // If not enough hotels in database, fetch additional from Google Places API
         // These will be treated as transient data (not saved to database)
         if (allHotels.size() < maxResults) {
-            log.info("🌐 GOOGLE PLACES: Searching for additional hotels...");
-            List<Hotel> googleHotels = googlePlacesService.searchHotelsAlongRoute(searchRequest);
-            log.info("🌐 GOOGLE PLACES: Found {} hotels", googleHotels.size());
+            log.info("🗺️ OSM: Searching for additional hotels...");
+            List<Hotel> osmHotels = openStreetMapHotelService.searchHotelsAlongRoute(searchRequest);
+            log.info("🗺️ OSM: Found {} hotels", osmHotels.size());
             
-            // Process Google hotels as transient data - assign mock templates without saving
-            for (Hotel googleHotel : googleHotels) {
+            // Process OSM hotels as transient data - assign mock templates without saving
+            for (Hotel osmHotel : osmHotels) {
                 if (allHotels.size() >= maxResults) break;
                 
                 // Assign random mock data template for this session only
-                googleHotel.setMockDataTemplate(mockDataService.getRandomTemplate());
+                osmHotel.setMockDataTemplate(mockDataService.getRandomTemplate());
                 // Set a temporary ID to distinguish from database hotels
-                googleHotel.setId(-Math.abs(googleHotel.getGooglePlaceId().hashCode()) % 100000L);
+                osmHotel.setId(-Math.abs(osmHotel.getGooglePlaceId().hashCode()) % 100000L);
                 
-                allHotels.add(googleHotel);
+                allHotels.add(osmHotel);
             }
         }
         
@@ -326,9 +326,16 @@ public class HotelService {
         // Add mock amenities
         dto.setAmenities(mockDataService.generateMockAmenities(hotel.getMockDataTemplate()));
         
-        // Generate photo URL if photo reference exists
+        // Generate photo URL if photo reference exists - use placeholder for OSM hotels
         if (hotel.getPhotoReference() != null) {
-            dto.setPhotoUrl(googlePlacesService.generatePhotoUrl(hotel.getPhotoReference()));
+            try {
+                dto.setPhotoUrl("https://via.placeholder.com/400x300/0066cc/ffffff?text=" + 
+                              java.net.URLEncoder.encode(hotel.getName(), java.nio.charset.StandardCharsets.UTF_8));
+            } catch (Exception e) {
+                dto.setPhotoUrl("https://via.placeholder.com/400x300/0066cc/ffffff?text=Hotel+Image");
+            }
+        } else {
+            dto.setPhotoUrl("https://via.placeholder.com/400x300/0066cc/ffffff?text=Hotel+Image");
         }
         
         return dto;
