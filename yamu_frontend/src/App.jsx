@@ -50,7 +50,7 @@ const App = () => {
           <Route path="/weather" element={<WeatherPage />} />
           <Route path="/weather-details" element={<Weather />} />
           <Route path="/weather-card" element={<WeatherCard />} />
-
+          <Route path="/finalize-itinerary" element={<FinalizeItinerary />} />
           <Route path="/" element={<Login />} />
           
           {/* Email verification pending */}
@@ -76,7 +76,7 @@ const App = () => {
             <Route path="/itinerary-planner" element={<ItineraryPlanner />} />
 
           
-          <Route path="/finalize-itinerary" element={<FinalizeItinerary />} />
+        
 
             
 

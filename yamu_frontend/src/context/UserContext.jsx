@@ -1,4 +1,3 @@
-// This context will be used to store the user object after login
 import { createContext, useContext, useState } from "react";
 
 const UserContext = createContext();

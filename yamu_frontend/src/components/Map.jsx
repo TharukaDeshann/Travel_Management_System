@@ -6,10 +6,9 @@ import L from "leaflet";
 import "leaflet-routing-machine";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import { searchLocations } from "../services/map/locationService";
-import { fetchRoute, optimizeRoute, nearestNeighborOptimization } from "../services/map/routeService";
-import axios from "axios";
+import { fetchRoute, optimizeRoute } from "../services/map/routeService";
+import { createDayPlan } from "../services/dayPlanService";
 
-// Marker icon configuration
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
@@ -19,24 +18,21 @@ L.Icon.Default.mergeOptions({
 
 const RoutingMachine = ({ locations, travelMode }) => {
   const map = useMap();
-
   useEffect(() => {
-    if (locations.length > 1) {
+    if ((locations || []).length > 1) {
       const drawRoute = async () => {
         try {
           const data = await fetchRoute(locations, travelMode);
           map.eachLayer((layer) => {
             if (layer.options?.className === "route-layer") map.removeLayer(layer);
           });
-
           L.geoJSON(data, {
             color: "#2563eb",
             weight: 5,
             className: "route-layer",
             dashArray: travelMode.includes("foot") ? "5, 10" : null
           }).addTo(map);
-
-          if (locations.length > 0) {
+          if ((locations || []).length > 0) {
             const bounds = L.latLngBounds(locations.map(loc => [loc.lat, loc.lon]));
             map.fitBounds(bounds, { padding: [50, 50] });
           }
@@ -47,31 +43,30 @@ const RoutingMachine = ({ locations, travelMode }) => {
       drawRoute();
     }
   }, [locations, travelMode, map]);
-
   return null;
 };
 
 const FitBoundsControl = ({ locations }) => {
   const map = useMap();
-
   useEffect(() => {
-    if (locations.length > 0) {
+    if ((locations || []).length > 0) {
       const bounds = L.latLngBounds(locations.map(loc => [loc.lat, loc.lon]));
       map.fitBounds(bounds, { padding: [50, 50] });
     }
   }, [locations, map]);
-
   return null;
 };
 
 const Map = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const searchParams = new URLSearchParams(location.search);
-  const dates = JSON.parse(searchParams.get("dates")) || [];
-  const tripTitle = searchParams.get("title") || "";
-  const budget = searchParams.get("budget") || "";
-  const currency = searchParams.get("currency") || "LKR";
+  const state = location.state || {};
+  const dates = state.dates || [];
+  const tripTitle = state.tripTitle || "";
+  const budget = state.budget || "";
+  const currency = state.currency || "LKR";
+  const itineraryId = state.itineraryId;
+  const travelerId = state.travelerId;
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const [locations, setLocations] = useState(Array(dates.length).fill([]));
@@ -82,6 +77,9 @@ const Map = () => {
   const [travelMode, setTravelMode] = useState("driving-car");
   const [showSearchResults, setShowSearchResults] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [guideReservations, setGuideReservations] = useState(Array(dates.length).fill(null));
+  // Add to state
+  const [guideReservationId, setGuideReservationId] = useState(Array(dates.length).fill(null));
 
   useEffect(() => {
     if (dates.length === 0) navigate("/");
@@ -94,7 +92,6 @@ const Map = () => {
         setSearchResults(results);
         setShowSearchResults(true);
       } catch (error) {
-        console.error("Error fetching locations:", error);
         setSearchResults([]);
       }
     } else {
@@ -105,7 +102,7 @@ const Map = () => {
 
   const addLocation = (lat, lon, name) => {
     const updatedLocations = [...locations];
-    updatedLocations[currentIndex] = [...updatedLocations[currentIndex], { lat, lon, name }];
+    updatedLocations[currentIndex] = [...(updatedLocations[currentIndex] || []), { lat, lon, name }];
     setLocations(updatedLocations);
     setSearchTerm("");
     setSearchResults([]);
@@ -114,16 +111,15 @@ const Map = () => {
 
   const removeLocation = (index) => {
     const updatedLocations = [...locations];
-    updatedLocations[currentIndex] = updatedLocations[currentIndex].filter((_, i) => i !== index);
+    updatedLocations[currentIndex] = (updatedLocations[currentIndex] || []).filter((_, i) => i !== index);
     setLocations(updatedLocations);
   };
 
   const onDragEnd = (result) => {
     if (!result.destination) return;
-    const reordered = Array.from(locations[currentIndex]);
+    const reordered = Array.from(locations[currentIndex] || []);
     const [moved] = reordered.splice(result.source.index, 1);
     reordered.splice(result.destination.index, 0, moved);
-
     const updatedLocations = [...locations];
     updatedLocations[currentIndex] = reordered;
     setLocations(updatedLocations);
@@ -151,9 +147,8 @@ const Map = () => {
     }, 500);
   };
 
-  // Optimize route for the current day
   const handleOptimizeRoute = async () => {
-    if (locations[currentIndex].length < 3) {
+    if ((locations[currentIndex] || []).length < 3) {
       alert("Need at least 3 locations to optimize route.");
       return;
     }
@@ -168,51 +163,93 @@ const Map = () => {
     }
   };
 
-  // Save route for the current day
-  const handleSaveRoute = async () => {
+  // Modify handleBookGuide
+  const handleBookGuide = () => {
+    navigate("/guides-page", {
+      state: {
+        fromItinerary: true,
+        itineraryId,
+        dayIndex: currentIndex,
+        date: dates[currentIndex],
+        places: (locations[currentIndex] || []).map(loc => loc.name),
+        travelerId,
+        // Pass current locations
+        locations: locations[currentIndex] || []
+      }
+    });
+  };
+
+  // Update useEffect for reservation result
+  useEffect(() => {
+    if (location.state?.guideReservationResult) {
+      const { dayIndex, reservation } = location.state.guideReservationResult;
+      const updated = [...guideReservations];
+      updated[dayIndex] = reservation;
+      setGuideReservations(updated);
+
+      // Store reservation ID for day plan
+      const reservationIds = [...guideReservationId];
+      reservationIds[dayIndex] = reservation.id;
+      setGuideReservationId(reservationIds);
+
+      navigate(location.pathname, { replace: true, state: { ...location.state, guideReservationResult: undefined } });
+    }
+  }, [location.state]);
+
+  // Update buildDayPlanRequest
+  const buildDayPlanRequest = () => ({
+    date: dates[currentIndex],
+    hotelDetails: "",
+    transportDetails: "",
+    guideDetails: "",
+    locations: (locations[currentIndex] || []).map((loc, idx) => ({
+      name: loc.name,
+      address: "",
+      latitude: parseFloat(loc.lat),
+      longitude: parseFloat(loc.lon),
+      positionIndex: idx,
+      placeId: "",
+      notes: ""
+    })),
+    route: {
+      name: `${tripTitle} - Day ${currentIndex + 1}`,
+      travelMode,
+      totalDistance: null,
+      estimatedTime: null
+    },
+    // Add guide reservation reference
+    guideReservationId: guideReservationId[currentIndex]
+  });
+
+  const saveCurrentDayPlan = async () => {
+    if (!itineraryId) {
+      alert("Itinerary ID missing!");
+      return;
+    }
     if (!locations[currentIndex] || locations[currentIndex].length === 0) {
       alert("Add at least one location before saving.");
       return;
     }
     setSaving(true);
     try {
-      const routeData = {
-        name: `${tripTitle} - Day ${currentIndex + 1}`,
-        travelMode,
-        locations: locations[currentIndex].map((loc, idx) => ({
-          name: loc.name,
-          latitude: parseFloat(loc.lat),
-          longitude: parseFloat(loc.lon),
-          positionIndex: idx,
-        })),
-      };
-      await axios.post("/api/routes", routeData);
-      alert("Route saved successfully!");
+      const dayPlanRequest = buildDayPlanRequest();
+      await createDayPlan(itineraryId, dayPlanRequest);
+      alert("Day plan saved!");
     } catch (error) {
-      console.error("Error saving route:", error);
-      alert("Failed to save route.");
+      alert("Failed to save day plan.");
     }
     setSaving(false);
   };
 
-  
-  // Save route before moving to next day or finalizing
-  const saveCurrentDayRoute = async () => {
-    if (locations[currentIndex] && locations[currentIndex].length > 0) {
-      await handleSaveRoute();
-    }
-  };
-
-  // Modified handleNext to save before navigating
   const handleNext = async () => {
-    await saveCurrentDayRoute();
+    await saveCurrentDayPlan();
     if (currentIndex < dates.length - 1) {
       setCurrentIndex(currentIndex + 1);
     } else {
       navigate("/finalize-itinerary", {
         state: {
           dates,
-          locations: locations.map(day => day.map(loc => loc.name)),
+          locations: locations.map(day => (day || []).map(loc => loc.name)),
           tripTitle,
           budget,
           currency
@@ -271,24 +308,18 @@ const Map = () => {
                 )}
               </div>
 
-              {/* Optimize and Save Route buttons */}
+              {/* Optimize Route button */}
               <div className="flex gap-2 mt-2">
                 <button
                   className="px-4 py-2 bg-yellow-500 text-white rounded hover:bg-yellow-600"
                   onClick={handleOptimizeRoute}
-                  disabled={locations[currentIndex].length < 3}
+                  disabled={(locations[currentIndex] || []).length < 3}
                 >
                   Optimize Route
                 </button>
-                <button
-                  className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-                  onClick={handleSaveRoute}
-                  disabled={saving}
-                >
-                  {saving ? "Saving..." : "Save Route"}
-                </button>
               </div>
 
+              
               <select
                 value={travelMode}
                 onChange={(e) => setTravelMode(e.target.value)}
@@ -299,6 +330,14 @@ const Map = () => {
                 <option value="foot-hiking">🥾 Hiking</option>
                 <option value="foot-walking">🚶 Walking</option>
               </select>
+              {/* Save Button */}
+              <button
+                className="w-full mt-3 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+                onClick={saveCurrentDayPlan}
+                disabled={saving}
+              >
+                {saving ? "Saving..." : "Save Locations & Route"}
+              </button>
             </div>
           </div>
 
@@ -312,11 +351,19 @@ const Map = () => {
               {hotelBooked[currentIndex] ? "Booking Hotel..." : "Book Hotel"}
             </button>
 
+            {/* Update Book Guide button */}
             <button
-              className="w-full px-6 py-3 bg-green-600 text-white rounded hover:bg-green-700"
-              onClick={() => alert("Navigated to Tour Guide Booking Form.")}
+              className={`w-full px-6 py-3 rounded text-white ${
+                guideReservations[currentIndex]
+                  ? 'bg-gray-400 cursor-not-allowed'
+                  : 'bg-green-600 hover:bg-green-700'
+              }`}
+              onClick={guideReservations[currentIndex] ? undefined : handleBookGuide}
+              disabled={!!guideReservations[currentIndex]}
             >
-              Book Tour Guide
+              {guideReservations[currentIndex]
+                ? `✓ Guide Booked`
+                : "Book Tour Guide"}
             </button>
 
             <button
@@ -354,7 +401,7 @@ const Map = () => {
                     attribution="© Google Maps"
                   />
 
-                  {locations[currentIndex].map((loc, index) => (
+                  {(locations[currentIndex] || []).map((loc, index) => (
                     <Marker key={index} position={[loc.lat, loc.lon]}>
                       <Popup>
                         <div className="font-semibold">{loc.name.split(",")[0]}</div>
@@ -363,10 +410,10 @@ const Map = () => {
                     </Marker>
                   ))}
 
-                  {locations[currentIndex].length > 1 && (
-                    <RoutingMachine locations={locations[currentIndex]} travelMode={travelMode} />
+                  {(locations[currentIndex] || []).length > 1 && (
+                    <RoutingMachine locations={locations[currentIndex] || []} travelMode={travelMode} />
                   )}
-                  <FitBoundsControl locations={locations[currentIndex]} />
+                  <FitBoundsControl locations={locations[currentIndex] || []} />
                 </MapContainer>
               </div>
 
@@ -375,7 +422,7 @@ const Map = () => {
                 <div className="flex items-center justify-between mb-2">
                   <h3 className="text-lg font-semibold">Daily Stops</h3>
                   <span className="bg-blue-500 text-white px-2 py-0.5 rounded-full text-sm">
-                    {locations[currentIndex].length} stops
+                    {(locations[currentIndex] || []).length} stops
                   </span>
                 </div>
 
@@ -383,7 +430,7 @@ const Map = () => {
                   <Droppable droppableId="locations">
                     {(provided) => (
                       <div {...provided.droppableProps} ref={provided.innerRef} className="space-y-1">
-                        {locations[currentIndex].map((loc, index) => (
+                        {(locations[currentIndex] || []).map((loc, index) => (
                           <Draggable key={index} draggableId={String(index)} index={index}>
                             {(provided) => (
                               <div
@@ -421,7 +468,7 @@ const Map = () => {
         </div>
       </div>
     </div>
-  );
-};
-
-export default Map;
+    );
+  }
+  
+  export default Map;

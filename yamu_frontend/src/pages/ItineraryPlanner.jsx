@@ -3,15 +3,22 @@ import { useNavigate } from "react-router-dom";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import apiClient from "../services/axiosInstance";
+import { useUser } from "../context/UserContext";
 
 const ItineraryPlanner = () => {
   const navigate = useNavigate();
+  const { user } = useUser();
   const [startDate, setStartDate] = useState(null);
   const [endDate, setEndDate] = useState(null);
   const [budget, setBudget] = useState("");
   const [currency, setCurrency] = useState("LKR");
   const [tripTitle, setTripTitle] = useState("");
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  if (!user) {
+    return <div>Loading user...</div>; // Or navigate to login
+  }
 
   const validateInputs = () => {
     if (!tripTitle) {
@@ -39,34 +46,46 @@ const ItineraryPlanner = () => {
 
   const handleStartPlanning = async () => {
     if (!validateInputs()) return;
-
+    setLoading(true);
     try {
-      const response = await apiClient.post("/api/itineraries", {
+      const initialItineraryData = {
         tripTitle,
         startDate,
         endDate,
-        budget,
+        budget: parseFloat(budget),
         currency,
+        travelerId: user.id,
+        dayPlans: []
+      };
+      const response = await apiClient.post("/api/itineraries", initialItineraryData);
+      // Pass itineraryId to map page
+      navigate(`/map`, {
+        state: {
+          itineraryId: response.data.id,
+          dates: getDateRange(startDate, endDate),
+          tripTitle,
+          budget,
+          currency
+        }
       });
-
-      console.log("Itinerary saved:", response.data);
-
-      // Generate the date range
-      const dateRange = getDateRange(startDate, endDate);
-
-      // Navigate to the map page with the date range as query parameters
-      navigate(`/map?dates=${JSON.stringify(dateRange)}`);
     } catch (error) {
-      console.error("Error saving itinerary:", error);
-      setError("Failed to save itinerary. Please try again.");
+      setError(error.response?.data?.message || "Failed to start itinerary planning. Please try again.");
+      console.error("Error starting itinerary planning:", error);
+    } finally {
+      setLoading(false);
     }
   };
 
+  // Use local time to avoid timezone issues
   const getDateRange = (start, end) => {
     const dates = [];
     let currentDate = new Date(start);
-    while (currentDate <= end) {
-      dates.push(currentDate.toISOString().split("T")[0]); // Format as YYYY-MM-DD
+    const endDateObj = new Date(end);
+    while (currentDate <= endDateObj) {
+      const year = currentDate.getFullYear();
+      const month = String(currentDate.getMonth() + 1).padStart(2, "0");
+      const day = String(currentDate.getDate()).padStart(2, "0");
+      dates.push(`${year}-${month}-${day}`);
       currentDate.setDate(currentDate.getDate() + 1);
     }
     return dates;
@@ -108,6 +127,7 @@ const ItineraryPlanner = () => {
                 minDate={new Date()}
                 placeholderText="Select start date"
                 className="w-full p-3 border rounded-lg"
+                dateFormat="MM/dd/yyyy"
               />
               <DatePicker
                 selected={endDate}
@@ -115,6 +135,7 @@ const ItineraryPlanner = () => {
                 minDate={startDate || new Date()}
                 placeholderText="Select end date"
                 className="w-full p-3 border rounded-lg"
+                dateFormat="MM/dd/yyyy"
               />
             </div>
           </div>
@@ -147,9 +168,12 @@ const ItineraryPlanner = () => {
 
         <button
           onClick={handleStartPlanning}
-          className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium"
+          disabled={loading}
+          className={`w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium ${
+            loading ? 'opacity-50 cursor-not-allowed' : ''
+          }`}
         >
-          Start Planning Your Trip
+          {loading ? 'Starting Planning...' : 'Start Planning Your Trip'}
         </button>
       </div>
     </div>

@@ -1,75 +1,82 @@
 import axios from "axios";
-import { useUser } from "../context/UserContext.jsx"; // Importing useUser from context
+import apiClient from "./axiosInstance";
+
 const API_URL = "http://localhost:8080/api/auth";
-import apiClient from "./axiosInstance"; // Importing axios instance
 
-// Function to expose token expiration to other modules
-export const getTokenExpirationTime = () => {
-  return window.tokenExpirationTime || null;
+// Save token in localStorage
+const saveAccessToken = (token) => {
+  localStorage.setItem("accessToken", token);
 };
 
-export const setTokenExpirationTime = (expiresIn = 60) => {
-  // Set expiration time in browser memory (seconds)
-  window.tokenExpirationTime = Date.now() + (expiresIn * 1000);
+const getAccessToken = () => {
+  return localStorage.getItem("accessToken");
 };
 
+// 1️⃣ Register user
 export const register = async (userData) => {
   const response = await axios.post(`${API_URL}/register`, userData);
-  return response.data;  
+  return response.data;
 };
 
+// 2️⃣ Login user and save token to localStorage
 export const login = async (credentials) => {
   const response = await axios.post(`${API_URL}/login`, credentials, {
-    withCredentials: true, 
-  });
-  
-  // Set token expiration time (60 seconds from now)
-  setTokenExpirationTime(60);
-  
-  return response;
-};
-
-export const fetchLoggedInUser = async () => {
-  const response = await apiClient.get(`${API_URL}/me`, {
     withCredentials: true,
   });
-  return response.data;
 
-};
-
-
-
-
-
-
-export const refreshToken = async () => {
-  try {
-    const response = await axios.post(`${API_URL}/refresh-token`, {}, {
-      withCredentials: true, // Ensures cookies are sent
-    });
-    
-    // Reset expiration timer after successful refresh
-    setTokenExpirationTime(60);
-    
-    return response.data;
-  } catch (error) {
-    console.error("Token refresh failed:", error);
-    throw error; // Rethrow to be handled by the interceptor
+  if (response.data.accessToken) {
+    saveAccessToken(response.data.accessToken);
   }
+
+  return response.data;
 };
 
+// 3️⃣ Fetch logged-in user using token from localStorage
+export const fetchLoggedInUser = async () => {
+  const token = getAccessToken();
+
+  if (!token) throw new Error("No access token found");
+
+  const response = await apiClient.get(`${API_URL}/me`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  return response.data;
+};
+
+// 4️⃣ Refresh token (optional - not used if storing in localStorage)
+export const refreshToken = async () => {
+  const response = await axios.post(`${API_URL}/refresh-token`, {}, {
+    withCredentials: true,
+  });
+
+  if (response.data.accessToken) {
+    saveAccessToken(response.data.accessToken);
+  }
+
+  return response.data;
+};
+
+// 5️⃣ Logout user
 export const logoutUser = async () => {
   try {
-    await axios.post(`${API_URL}/logout`, {}, { withCredentials: true });
-    window.tokenExpirationTime = null;
+    await axios.post(`${API_URL}/logout`, {}, {
+      withCredentials: true,
+    });
+    localStorage.removeItem("accessToken");
   } catch (error) {
     console.error("Logout error:", error);
     throw error;
   }
 };
 
-
-// Add function to check if user is logged in
+// 6️⃣ Check login status
 export const isLoggedIn = () => {
-  return window.tokenExpirationTime && window.tokenExpirationTime > Date.now();
+  const token = getAccessToken();
+  return !!token;
 };
+
+// 7️⃣ Export token for other services like dayPlanService
+export const getStoredToken = getAccessToken;
