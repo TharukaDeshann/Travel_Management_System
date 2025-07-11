@@ -14,7 +14,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -32,7 +35,7 @@ public class HotelService {
     private final ModelMapper modelMapper;
     
     public List<HotelResponseDTO> searchHotelsAlongRoute(HotelSearchRequestDTO searchRequest) {
-        log.info("Searching hotels along route from ({}, {}) to ({}, {})",
+        log.info("🔍 HOTEL SEARCH: Route ({}, {}) → ({}, {})",
                 searchRequest.getStartLatitude(), searchRequest.getStartLongitude(),
                 searchRequest.getEndLatitude(), searchRequest.getEndLongitude());
         
@@ -41,30 +44,43 @@ public class HotelService {
         Double minRating = searchRequest.getMinRating() != null ? searchRequest.getMinRating() : 3.0;
         Integer maxResults = searchRequest.getMaxResults() != null ? searchRequest.getMaxResults() : 10;
         
+        log.info("🔍 SEARCH PARAMS: radius={}km, minRating={}, maxResults={}", radius, minRating, maxResults);
+        
         // Calculate midpoint for search center
         Double centerLat = (searchRequest.getStartLatitude() + searchRequest.getEndLatitude()) / 2;
         Double centerLng = (searchRequest.getStartLongitude() + searchRequest.getEndLongitude()) / 2;
         
-        // First try to get hotels from database
-        List<Hotel> existingHotels = hotelRepository.findHotelsNearRouteWithFiltersJPQL(
+        // First try to get hotels from database (only our seeded/curated hotels)
+        List<Hotel> databaseHotels = hotelRepository.findHotelsNearRouteWithFiltersJPQL(
                 centerLat, centerLng, radius, minRating, PageRequest.of(0, maxResults));
         
-        // If not enough hotels in database, fetch from Google Places API
-        if (existingHotels.size() < maxResults) {
+        List<Hotel> allHotels = new ArrayList<>(databaseHotels);
+        log.info("📊 DATABASE: Found {} hotels", databaseHotels.size());
+        
+        // If not enough hotels in database, fetch additional from Google Places API
+        // These will be treated as transient data (not saved to database)
+        if (allHotels.size() < maxResults) {
+            log.info("🌐 GOOGLE PLACES: Searching for additional hotels...");
             List<Hotel> googleHotels = googlePlacesService.searchHotelsAlongRoute(searchRequest);
+            log.info("🌐 GOOGLE PLACES: Found {} hotels", googleHotels.size());
             
-            // Save new hotels to database with random mock data templates
-            for (Hotel hotel : googleHotels) {
-                if (hotelRepository.findByGooglePlaceId(hotel.getGooglePlaceId()).isEmpty()) {
-                    hotel.setMockDataTemplate(mockDataService.getRandomTemplate());
-                    hotelRepository.save(hotel);
-                    existingHotels.add(hotel);
-                }
+            // Process Google hotels as transient data - assign mock templates without saving
+            for (Hotel googleHotel : googleHotels) {
+                if (allHotels.size() >= maxResults) break;
+                
+                // Assign random mock data template for this session only
+                googleHotel.setMockDataTemplate(mockDataService.getRandomTemplate());
+                // Set a temporary ID to distinguish from database hotels
+                googleHotel.setId(-Math.abs(googleHotel.getGooglePlaceId().hashCode()) % 100000L);
+                
+                allHotels.add(googleHotel);
             }
         }
         
+        log.info("✅ RESULT: Returning {} total hotels", allHotels.size());
+        
         // Convert to DTOs with mock data
-        return existingHotels.stream()
+        return allHotels.stream()
                 .limit(maxResults)
                 .map(this::convertToHotelResponseDTO)
                 .collect(Collectors.toList());
@@ -162,6 +178,95 @@ public class HotelService {
         booking = hotelBookingRepository.save(booking);
         
         return convertToBookingResponseDTO(booking);
+    }
+    
+    public List<HotelResponseDTO> getAllHotels() {
+        List<Hotel> allHotels = hotelRepository.findAll();
+        return allHotels.stream()
+                .map(this::convertToHotelResponseDTO)
+                .collect(Collectors.toList());
+    }
+    
+    // DEBUG METHODS - Remove in production
+    public Map<String, Object> debugDatabaseSearch(Double latitude, Double longitude, Double radiusKm, Double minRating) {
+        Map<String, Object> debugInfo = new HashMap<>();
+        
+        try {
+            // Test the exact same query used in search
+            List<Hotel> hotels = hotelRepository.findHotelsNearRouteWithFiltersJPQL(
+                    latitude, longitude, radiusKm, minRating, PageRequest.of(0, 20));
+            
+            debugInfo.put("searchParameters", Map.of(
+                "latitude", latitude,
+                "longitude", longitude,
+                "radiusKm", radiusKm,
+                "minRating", minRating
+            ));
+            
+            debugInfo.put("hotelsFound", hotels.size());
+            debugInfo.put("hotels", hotels.stream().map(hotel -> {
+                Map<String, Object> hotelInfo = new HashMap<>();
+                hotelInfo.put("id", hotel.getId());
+                hotelInfo.put("name", hotel.getName());
+                hotelInfo.put("latitude", hotel.getLatitude());
+                hotelInfo.put("longitude", hotel.getLongitude());
+                hotelInfo.put("rating", hotel.getRating());
+                hotelInfo.put("distance", calculateDistance(latitude, longitude, hotel.getLatitude(), hotel.getLongitude()));
+                return hotelInfo;
+            }).collect(Collectors.toList()));
+            
+            log.info("🔍 DEBUG DB: Found {} hotels within {}km of ({}, {})", 
+                    hotels.size(), radiusKm, latitude, longitude);
+            
+        } catch (Exception e) {
+            log.error("Error in debug database search: ", e);
+            debugInfo.put("error", e.getMessage());
+        }
+        
+        return debugInfo;
+    }
+    
+    public Map<String, Object> debugAllHotels() {
+        Map<String, Object> debugInfo = new HashMap<>();
+        
+        try {
+            List<Hotel> allHotels = hotelRepository.findAll();
+            
+            debugInfo.put("totalHotels", allHotels.size());
+            debugInfo.put("hotels", allHotels.stream().map(hotel -> {
+                Map<String, Object> hotelInfo = new HashMap<>();
+                hotelInfo.put("id", hotel.getId());
+                hotelInfo.put("name", hotel.getName());
+                hotelInfo.put("latitude", hotel.getLatitude());
+                hotelInfo.put("longitude", hotel.getLongitude());
+                hotelInfo.put("rating", hotel.getRating());
+                hotelInfo.put("address", hotel.getAddress() != null ? hotel.getAddress() : "N/A");
+                return hotelInfo;
+            }).collect(Collectors.toList()));
+            
+            log.info("🔍 DEBUG: Total {} hotels in database", allHotels.size());
+            
+        } catch (Exception e) {
+            log.error("Error getting all hotels: ", e);
+            debugInfo.put("error", e.getMessage());
+        }
+        
+        return debugInfo;
+    }
+    
+    private double calculateDistance(Double lat1, Double lng1, Double lat2, Double lng2) {
+        final int EARTH_RADIUS = 6371; // Earth's radius in kilometers
+        
+        double dLat = Math.toRadians(lat2 - lat1);
+        double dLng = Math.toRadians(lng2 - lng1);
+        
+        double a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                  Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2)) *
+                  Math.sin(dLng / 2) * Math.sin(dLng / 2);
+        
+        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        
+        return EARTH_RADIUS * c; // Distance in kilometers
     }
     
     private void validateBookingRequest(HotelBookingRequestDTO request) {

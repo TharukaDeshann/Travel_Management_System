@@ -1,7 +1,9 @@
 package com.yamu.backend.controller;
 
 import com.yamu.backend.dto.*;
+import com.yamu.backend.model.Hotel;
 import com.yamu.backend.service.HotelService;
+import com.yamu.backend.service.GooglePlacesService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -11,8 +13,10 @@ import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
 import java.time.LocalDate;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/hotels")
@@ -22,6 +26,7 @@ import java.util.Map;
 public class HotelController {
     
     private final HotelService hotelService;
+    private final GooglePlacesService googlePlacesService;
     
     @PostMapping("/search")
     public ResponseEntity<List<HotelResponseDTO>> searchHotels(
@@ -171,6 +176,99 @@ public class HotelController {
             log.error("Error testing Google Places API: ", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("error", "Google Places API test failed: " + e.getMessage()));
+        }
+    }
+    
+    // Debug endpoint to check database hotels
+    @GetMapping("/debug/database-hotels")
+    public ResponseEntity<?> getDatabaseHotels() {
+        try {
+            List<HotelResponseDTO> allHotels = hotelService.getAllHotels();
+            return ResponseEntity.ok(Map.of(
+                "message", "Database hotels retrieved",
+                "totalHotels", allHotels.size(),
+                "hotels", allHotels
+            ));
+        } catch (Exception e) {
+            log.error("Error getting database hotels: ", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Failed to get database hotels: " + e.getMessage()));
+        }
+    }
+    
+    // DEBUG ENDPOINTS - Remove in production
+    @GetMapping("/debug/database-search")
+    public ResponseEntity<Map<String, Object>> debugDatabaseSearch(
+            @RequestParam Double latitude,
+            @RequestParam Double longitude,
+            @RequestParam(defaultValue = "10.0") Double radiusKm,
+            @RequestParam(defaultValue = "3.0") Double minRating) {
+        try {
+            log.info("🔍 DEBUG: Database search for ({}, {}) radius={}km, minRating={}", 
+                    latitude, longitude, radiusKm, minRating);
+            
+            Map<String, Object> debugInfo = hotelService.debugDatabaseSearch(latitude, longitude, radiusKm, minRating);
+            return ResponseEntity.ok(debugInfo);
+        } catch (Exception e) {
+            log.error("Error in debug database search: ", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+    
+    @GetMapping("/debug/all-hotels")
+    public ResponseEntity<Map<String, Object>> debugAllHotels() {
+        try {
+            Map<String, Object> debugInfo = hotelService.debugAllHotels();
+            return ResponseEntity.ok(debugInfo);
+        } catch (Exception e) {
+            log.error("Error getting all hotels debug info: ", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+    
+    @GetMapping("/debug/google-places-test")
+    public ResponseEntity<Map<String, Object>> testGooglePlacesAPI(
+            @RequestParam Double latitude,
+            @RequestParam Double longitude,
+            @RequestParam(defaultValue = "2000") Double radius) {
+        try {
+            log.info("🧪 TESTING: Google Places API directly");
+            
+            Map<String, Object> testResult = new HashMap<>();
+            testResult.put("searchParameters", Map.of(
+                "latitude", latitude,
+                "longitude", longitude,
+                "radius", radius
+            ));
+            
+            // Create a simple search request to test GooglePlacesService
+            HotelSearchRequestDTO searchRequest = new HotelSearchRequestDTO();
+            searchRequest.setStartLatitude(latitude);
+            searchRequest.setStartLongitude(longitude);
+            searchRequest.setEndLatitude(latitude);
+            searchRequest.setEndLongitude(longitude);
+            searchRequest.setRadius(radius);
+            searchRequest.setMinRating(1.0); // Very low threshold for testing
+            searchRequest.setMaxResults(10);
+            
+            List<Hotel> hotels = googlePlacesService.searchHotelsAlongRoute(searchRequest);
+            
+            testResult.put("hotelsFound", hotels.size());
+            testResult.put("hotels", hotels.stream().map(hotel -> {
+                Map<String, Object> hotelInfo = new HashMap<>();
+                hotelInfo.put("name", hotel.getName());
+                hotelInfo.put("rating", hotel.getRating());
+                hotelInfo.put("address", hotel.getAddress());
+                hotelInfo.put("googlePlaceId", hotel.getGooglePlaceId());
+                return hotelInfo;
+            }).collect(Collectors.toList()));
+            
+            return ResponseEntity.ok(testResult);
+            
+        } catch (Exception e) {
+            log.error("Error testing Google Places API: ", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", e.getMessage()));
         }
     }
 }

@@ -14,6 +14,7 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -111,33 +112,108 @@ public class GooglePlacesService {
         List<Hotel> hotels = new ArrayList<>();
         
         try {
+            // Use smaller radius similar to Google Maps JavaScript API - max 5000m for nearby search
+            Double searchRadius = Math.min(radius, 5000.0);
+            
             String url = UriComponentsBuilder.fromUriString(apiUrl + "/nearbysearch/json")
                 .queryParam("location", latitude + "," + longitude)
-                .queryParam("radius", radius)
+                .queryParam("radius", searchRadius.intValue())
                 .queryParam("type", "lodging")
                 .queryParam("key", apiKey)
                 .toUriString();
             
-            log.debug("Calling Google Places API: {}", url.replace(apiKey, "***"));
+            log.info("🌐 API CALL: Google Places for ({}, {}) radius={}m", latitude, longitude, searchRadius.intValue());
+            log.info("🌐 API URL: {}", url.replace(apiKey, "***"));
             
             GooglePlacesResponse response = restTemplate.getForObject(url, GooglePlacesResponse.class);
             
-            if (response != null && response.getResults() != null) {
-                for (GooglePlace place : response.getResults()) {
-                    if (place.getRating() != null && place.getRating() >= minRating) {
-                        Hotel hotel = convertGooglePlaceToHotel(place);
-                        if (hotel != null) {
-                            hotels.add(hotel);
+            if (response != null) {
+                log.info("🌐 API STATUS: {}", response.getStatus());
+                
+                if ("OK".equals(response.getStatus()) && response.getResults() != null) {
+                    log.info("🌐 API RESPONSE: {} raw results", response.getResults().size());
+                    
+                    int validCount = 0;
+                    int filteredCount = 0;
+                    
+                    for (GooglePlace place : response.getResults()) {
+                        // More lenient approach - check rating first, then basic validation
+                        if (place.getRating() != null && place.getRating() >= minRating) {
+                            // Simplified validation - just check if it has basic info and is hotel-like
+                            if (isBasicHotel(place)) {
+                                Hotel hotel = convertGooglePlaceToHotel(place);
+                                if (hotel != null) {
+                                    hotels.add(hotel);
+                                    validCount++;
+                                    log.info("✅ ADDED: {} (Rating: {}, Types: {})", 
+                                            hotel.getName(), hotel.getRating(), place.getTypes());
+                                }
+                            } else {
+                                filteredCount++;
+                                log.debug("❌ FILTERED: {} (Types: {})", place.getName(), place.getTypes());
+                            }
+                        } else {
+                            log.debug("❌ LOW RATING: {} ({})", place.getName(), place.getRating());
                         }
                     }
+                    
+                    log.info("📊 FILTERING RESULTS: {} valid, {} filtered out", validCount, filteredCount);
+                } else if ("ZERO_RESULTS".equals(response.getStatus())) {
+                    log.warn("🌐 API: No hotels found in this area");
+                } else {
+                    log.warn("🌐 API ERROR: Status {} - {}", response.getStatus(), 
+                            getApiErrorMessage(response.getStatus()));
                 }
+            } else {
+                log.warn("🌐 API RESPONSE: Null response from Google Places API");
             }
             
         } catch (Exception e) {
-            log.error("Error calling Google Places API for location {},{}: ", latitude, longitude, e);
+            log.error("🌐 API ERROR: Error calling Google Places API for location {},{}: ", latitude, longitude, e);
         }
         
+        log.info("🏨 LOCATION RESULT: {} hotels near ({}, {})", hotels.size(), latitude, longitude);
         return hotels;
+    }
+    
+    private String getApiErrorMessage(String status) {
+        return switch (status) {
+            case "OVER_QUERY_LIMIT" -> "API quota exceeded";
+            case "REQUEST_DENIED" -> "API key invalid or request denied";
+            case "INVALID_REQUEST" -> "Invalid request parameters";
+            case "ZERO_RESULTS" -> "No results found";
+            default -> "Unknown error: " + status;
+        };
+    }
+    
+    // Simplified hotel validation - more permissive approach
+    private boolean isBasicHotel(GooglePlace place) {
+        // Check basic required fields
+        if (place.getName() == null || place.getName().trim().isEmpty()) {
+            return false;
+        }
+        
+        if (place.getPlaceId() == null || place.getPlaceId().trim().isEmpty()) {
+            return false;
+        }
+        
+        if (place.getGeometry() == null || place.getGeometry().getLocation() == null) {
+            return false;
+        }
+        
+        // Must have lodging type - this is the main filter like the JavaScript code
+        if (place.getTypes() != null && !place.getTypes().contains("lodging")) {
+            return false;
+        }
+        
+        // Simple name exclusions for obvious non-hotels
+        String name = place.getName().toLowerCase();
+        if (name.contains("gas station") || name.contains("hospital") || 
+            name.contains("bank") || name.contains("restaurant")) {
+            return false;
+        }
+        
+        return true;
     }
     
     private Hotel convertGooglePlaceToHotel(GooglePlace place) {
