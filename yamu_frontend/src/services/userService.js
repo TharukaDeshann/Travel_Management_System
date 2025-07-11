@@ -1,6 +1,16 @@
 import apiClient from "./axiosInstance";
 import { fetchLoggedInUser } from "./authService";
 
+// check whether logged user is equals to the userId
+export const isLoggedUser = (userId) => {
+  const loggedUser = fetchLoggedInUser();
+  if(loggedUser) {
+    return loggedUser.id == userId;
+  } else {
+    return false;
+  }
+}
+
 // Update user email
 export const updateEmail = async (data) => {
   const user = await fetchLoggedInUser();
@@ -9,6 +19,7 @@ export const updateEmail = async (data) => {
   return res;
 };
 
+
 // Update user password
 export const updatePassword = async (data) => {
   const user = await fetchLoggedInUser();
@@ -16,6 +27,17 @@ export const updatePassword = async (data) => {
   const res = await apiClient.put(`/api/users/${id}/update-password`, data);
   return res;
 };
+
+// Update user details
+export const UpdateUserDetails = async (userId, data) => {
+  try {
+    const response = await apiClient.put(`api/users/${userId}`, data);
+    return response.data;
+  } catch (error) {
+    console.error("Error updating user details:", error);
+    throw error;
+  }
+}
 
 // Fetch users by role
 export const fetchUsersByRole = async (role) => {
@@ -38,6 +60,19 @@ export const fetchUserById = async (userId) => {
     throw error;
   }
 };
+
+export const fetchTravelersAndGuides = async () => {
+  try {
+    const response = await apiClient.get('/api/users');
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching all users:', error);
+    throw error;
+  }
+};
+
+
+
 
 
 

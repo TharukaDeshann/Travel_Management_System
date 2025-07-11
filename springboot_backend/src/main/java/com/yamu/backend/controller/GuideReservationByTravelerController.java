@@ -32,6 +32,9 @@ public class GuideReservationByTravelerController {
         
         if (reservation.getGuide() != null) {
             dto.setGuideId(reservation.getGuide().getId());
+            // Add guide name and contact
+            dto.setGuideName(reservation.getGuide().getFirstName() + " " + reservation.getGuide().getLastName());
+            dto.setGuideContact(reservation.getGuide().getContactNumber());
         }
         
         dto.setNumberOfDays(reservation.getNumberOfDays());
@@ -121,6 +124,4 @@ public class GuideReservationByTravelerController {
             GuideReservationByTraveler.ReservationStatus.COMPLETED);
         return ResponseEntity.ok(convertToDto(reservation));
     }
-
-   
 }
