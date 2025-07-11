@@ -4,7 +4,6 @@ import com.yamu.backend.dto.UserRegistrationRequest;
 import com.yamu.backend.model.Guide;
 import com.yamu.backend.model.Traveler;
 import com.yamu.backend.model.User;
-import com.yamu.backend.model.Vehicle;
 import com.yamu.backend.repository.UserRepository;
 
 import java.time.LocalDateTime;
@@ -65,20 +64,11 @@ public class AuthService {
 
                 guide.setAbout(request.getAbout());
 
-                for (UserRegistrationRequest.VehicleRequest vehicleRequest : request.getVehicles()) {
-                    Vehicle vehicle = new Vehicle();
-                    vehicle.setModel(vehicleRequest.getModel());
-                    vehicle.setType(vehicleRequest.getType());
-                    vehicle.setCapacity(vehicleRequest.getCapacity());
-                    vehicle.setAirConditioned(vehicleRequest.isAirConditioned());
-                    vehicle.setAvailable(vehicleRequest.isAvailable());
-                    vehicle.setVehicleImageUrl(vehicleRequest.getVehicleImageUrl());
-                    vehicle.setGuide(guide); // Set the guide for the vehicle
-                    guide.getVehicles().add(vehicle);
+                if (request.getVehicleAvailability() != null) {
+                    guide.setVehicleAvailability(request.getVehicleAvailability());
+                } else {
+                    throw new RuntimeException("Vehicle availability is required for guides");
                 }
-                
-                
-                
                 user = guide;
                 break;
 

@@ -4,7 +4,7 @@ import { login, fetchLoggedInUser } from "../services/authService";
 import { useUser } from "../context/UserContext";
 import { useNotification } from "../hooks/useNotification";
 import { AuthLayout } from "../components/AuthLayout";
-import { Button } from "antd";
+
 // Custom styled components instead of Ant Design
 import {
   Form,
@@ -12,6 +12,7 @@ import {
   Label,
   Input,
   PasswordInput,
+  Button,
   ErrorMessage,
   FlexContainer,
   LinkText,
@@ -171,14 +172,12 @@ const Login = () => {
           <LinkText to="/forgot-password">Forgot password?</LinkText>
         </FlexContainer>
 
-        <Button
-          type="primary"
-          htmlType="submit"
-          loading={loading}
-          style={{ width: "100%",marginTop: "16px" }}
-          size="large"
-          >
-          {loading ? "Logging in..." : "Log In"}
+        <Button 
+          type="submit" 
+          disabled={loading}
+          $fullWidth // Using the transient prop syntax
+        >
+          {loading ? "Logging in..." : "Login"}
         </Button>
       </Form>
 

@@ -203,6 +203,7 @@ export const useNotification = () => {
   // Render notifications
   useEffect(() => {
     if (notificationRoot && notifications.length >= 0) {
+      console.log(`Rendering ${notifications.length} notifications`); // Debug log
       
       notificationRoot.render(
         <NotificationContainer>

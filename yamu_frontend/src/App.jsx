@@ -20,18 +20,19 @@ import Map from "./components/Map.jsx";
 import GuidesPage from "./pages/GuidesPage.jsx";         
 import WeatherCard from "./components/WeatherCard.jsx";
 import ItineraryPlanner from "./pages/ItineraryPlanner.jsx";
-
+import ItinerarySelection from "./pages/ItinerarySelection.jsx";
 import FinalizeItinerary from "./pages/FinalizeItinerary.jsx"; 
 import Inbox from "./pages/Inbox.jsx";// Import FinalizeItinerary
-import TravelerUpcomingTrips from "./pages/TravelerUpcomingTrips";
+import TestFacebookEvents from "./pages/TestFacebookEvents.jsx"; // Import Test Facebook Events page
 
 import VerifyEmail from "./pages/VerifyEmail.jsx";
 import VerifyEmailPending from "./pages/VerifyEmailPending.jsx";
 import UserProfile from "./pages/profile/UserProfile.jsx";
-import UpdateUserProfile from "./pages/profile/components/UpdateUserProfile.jsx";
-import ProfileView from "./pages/ProfileView.jsx";
+import UpdateEmail from "./pages/profile/components/UpdateEmail.jsx";
+import UpdatePassword from "./pages/profile/components/UpdatePassword.jsx";
 import AdminDashboard from "./pages/AdminDashboard.jsx";
 import UsersSocialPage from "./pages/UsersSocialPage.jsx";
+
 // import ProfileView from "./pages/ProfileView.jsx";
 
 import EmergencyContacts from "./pages/EmergencyContacts.jsx";
@@ -48,13 +49,18 @@ const App = () => {
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
 
-          
+          <Route path="/map" element={<Map />} />
           <Route path="/weather" element={<WeatherPage />} />
           <Route path="/weather-details" element={<Weather />} />
           <Route path="/weather-card" element={<WeatherCard />} />
+          <Route path="/test-facebook-events" element={<TestFacebookEvents />} />
 
           <Route path="/" element={<Login />} />
-          
+          <Route path="/itinerary-planner" element={<ItineraryPlanner />} />
+          <Route path="/itinerary-selection" element={<ItinerarySelection />} />
+          <Route path="/finalize-itinerary" element={<FinalizeItinerary />} />
+          <Route path="/traveler-dashboard" element={<TravelerDashboard />} />
+
           {/* Email verification pending */}
           <Route
             path="/verify-email-pending"
@@ -67,26 +73,20 @@ const App = () => {
           {/* Protected Routes */}
           <Route element={<ProtectedRoute />}>
             <Route path="/home" element={<Home />} />
-            <Route path="/traveler-dashboard" element={<TravelerDashboard />} />
+            
             <Route path="/guide-dashboard" element={<GuideDashboard />} />
             <Route path="/admin-dashboard" element={<AdminDashboard />} />
-            <Route path="/guide-reviews" element={<GuideReview />} />
+            <Route path="/guide-review" element={<GuideReview />} />
             <Route path="/guide-calendar" element={<GuideCalendar />} />
             <Route path="/visit-plan" element={<VisitPlanPage />} />
             <Route path="/guides-page" element={<GuidesPage />} />
+            <Route path="/inbox" element={<Inbox />} />
             <Route path="/users/users-by-role" element={<UsersSocialPage />} />
-            <Route path="/map" element={<Map />} />
-            <Route path="/itinerary-planner" element={<ItineraryPlanner />} />
-
-          
-          <Route path="/finalize-itinerary" element={<FinalizeItinerary />} />
-
-            
 
             {/* Profile Routes */}
-            {/* <Route path="/users/profile/" */}
             <Route path="/profile" element={<UserProfile />} />
-            <Route path="/profile/update-profile" element={<UpdateUserProfile />} />
+            <Route path="/profile/update-email" element={<UpdateEmail />} />
+            <Route path="/profile/update-password" element={<UpdatePassword />} />
           </Route>
 
           

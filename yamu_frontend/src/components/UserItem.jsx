@@ -55,16 +55,9 @@ const UserItem = ({ user, onViewProfile }) => {
 
   return (
     <div className="user-item">
-      <avatar className="user-avatar">
-        {user.profileImageUrl ? (
-          <img src={user.profileImageUrl} alt={`${user.firstName} ${user.lastName}`} />
-        ) : (
-          <div className="avatar-placeholder">
-            {getInitials()}
-          </div>
-        )}
-      </avatar>
-      
+      <div className="user-avatar">
+        {getInitials()}
+      </div>
       
       <div className="user-info">
         <h3 className="user-name">

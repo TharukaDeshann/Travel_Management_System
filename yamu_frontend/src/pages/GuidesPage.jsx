@@ -1,12 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import GuideModal from '../components/GuideModal';
 import apiClient from '../services/axiosInstance';
-import { fetchUsersByRole } from '../services/userService';
 
-const GuidesPage = () => {
-  const location = useLocation();
-  const currentUser = location.state?.currentUser;
+const GuidesPage = ({ currentUser }) => {
   const [guides, setGuides] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedGuide, setSelectedGuide] = useState(null);
@@ -15,8 +12,8 @@ const GuidesPage = () => {
   useEffect(() => {
     const fetchGuides = async () => {
       try {
-        const response = await fetchUsersByRole('GUIDE');
-        setGuides(response);
+        const response = await apiClient.get("/api/users/role/GUIDE");
+        setGuides(response.data);
       } catch (error) {
         console.error("Error fetching guides:", error);
       }
@@ -28,7 +25,7 @@ const GuidesPage = () => {
   const filteredGuides = guides.filter(guide => {
     const searchLower = searchTerm.toLowerCase();
     return (
-      (guide.firstName + ' ' + guide.lastName).toLowerCase().includes(searchLower) ||
+      `${guide.firstName} ${guide.lastName}`.toLowerCase().includes(searchLower) ||
       guide.expertiseCityRegion.toLowerCase().includes(searchLower) ||
       guide.language.toLowerCase().includes(searchLower)
     );
@@ -75,7 +72,7 @@ const GuidesPage = () => {
             }}
           >
             <img 
-              src={guide.profileImageUrl || 'https://via.placeholder.com/300'}
+              src="/src/images/default-profile.png" 
               alt={guide.name}
               style={{
                 width: '100%',

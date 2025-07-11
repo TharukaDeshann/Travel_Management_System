@@ -10,8 +10,6 @@ public class GuideReservationResponse {
     private Long travelerId;
     private UserDto traveler;
     private Long guideId;
-    private String guideName;  
-    private String guideContact;  
     private Integer numberOfDays;
     private String status;
     private String createdAt;

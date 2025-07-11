@@ -291,16 +291,19 @@ public class AuthController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "User not found"));
         }
 
-        // Return user details (excluding sensitive information)
-        UserResponseDTO userResponseDTO = userService.mapToUserDTO(user);
+        // Return user details (excluding password)
+        Map<String, Object> userInfo = new HashMap<>();
+        userInfo.put("email", user.getEmail());
+        userInfo.put("firstName", user.getFirstName());
+        userInfo.put("lastName", user.getLastName());
+        userInfo.put("role", user.getRole());
 
-
-        return ResponseEntity.ok(userResponseDTO);
+        return ResponseEntity.ok(userInfo);
     }
 
     
 
-    @GetMapping("/me")
+    @GetMapping("/current-user")
     public ResponseEntity<?> getCurrentUser(@CookieValue(value = "accessToken", required = false) String accessToken) {
         if (accessToken == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Access token is missing"));

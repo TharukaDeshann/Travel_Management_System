@@ -1,18 +1,14 @@
+// pages/UsersSocialPage.jsx
 import React, { useState, useCallback, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom'; // Import useNavigate
 import { useUsersByRole } from '../hooks/useUsersByRole';
 import UserSocialList from '../components/UserSocialList';
 import '../styles/UserSocialList.css';
-import BackButton from '../components/BackButton';
 
 const UsersSocialPage = () => {
   // State for filters
   const [activeRole, setActiveRole] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [filteredUsers, setFilteredUsers] = useState([]);
-  
-  // Add useNavigate hook
-  const navigate = useNavigate();
   
   // Fetch users based on selected role
   const { users, loading, error } = useUsersByRole(activeRole);
@@ -50,16 +46,17 @@ const UsersSocialPage = () => {
     setSearchTerm(e.target.value);
   };
 
-  // Fixed handleViewProfile function
+  // Handle view profile action
   const handleViewProfile = useCallback((userId) => {
+    // Implementation for viewing user profile
+    console.log(`View profile for user: ${userId}`);
     // Navigate to user profile page
-    navigate(`/users/profile/${userId}`);
-  }, [navigate]);
+    // history.push(`/users/${userId}`);
+  }, []);
 
   return (
     <div className="user-list-container">
       <h1>Find Users</h1>
-      <BackButton/>
       
       <div className="search-panel">
         <div className="search-row">
@@ -73,7 +70,12 @@ const UsersSocialPage = () => {
         </div>
         
         <div className="role-filter">
-          
+          <button 
+            className={`role-tab ${activeRole === '' ? 'active' : ''}`}
+            onClick={() => handleRoleChange('')}
+          >
+            All Users
+          </button>
           <button 
             className={`role-tab ${activeRole === 'GUIDE' ? 'active' : ''}`}
             onClick={() => handleRoleChange('GUIDE')}

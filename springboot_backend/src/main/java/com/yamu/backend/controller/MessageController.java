@@ -2,13 +2,10 @@ package com.yamu.backend.controller;
 
 import com.yamu.backend.dto.MessageDto;
 import com.yamu.backend.dto.SendMessageDto;
-import com.yamu.backend.model.User;
-import com.yamu.backend.repository.UserRepository;
 import com.yamu.backend.service.MessageService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -18,11 +15,9 @@ import java.util.stream.Collectors;
 @RequestMapping("/api/messages")
 public class MessageController {
     private final MessageService messageService;
-    private final UserRepository userRepository;
 
-    public MessageController(MessageService messageService, UserRepository userRepository) {
+    public MessageController(MessageService messageService) {
         this.messageService = messageService;
-        this.userRepository = userRepository;
     }
 
     @PostMapping
@@ -44,7 +39,7 @@ public class MessageController {
     public ResponseEntity<List<Long>> getChatPartners() {
         Long userId = getCurrentUserId();
         return ResponseEntity.ok(messageService.getChatPartners(userId).stream()
-                .map(User::getId)
+                .map(user -> user.getId())
                 .collect(Collectors.toList()));
     }
 
@@ -54,18 +49,11 @@ public class MessageController {
         return ResponseEntity.ok(messageService.getUnreadMessageCount(userId));
     }
 
-    @PostMapping("/mark-read/{messageId}")
-    public ResponseEntity<Void> markMessageAsRead(@PathVariable Long messageId) {
-        Long userId = getCurrentUserId();
-        messageService.markMessageAsRead(messageId, userId);
-        return ResponseEntity.ok().build();
-    }
-
     private Long getCurrentUserId() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String email = authentication.getName();
-        return userRepository.findByEmail(email)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found"))
-                .getId();
+        // You'll need to implement a method in your UserService to get user ID by email
+        // For now, we'll return a placeholder
+        return 1L; // Replace with actual user ID retrieval
     }
 }

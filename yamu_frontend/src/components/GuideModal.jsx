@@ -3,9 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import apiClient from '../services/axiosInstance';
 import { fetchLoggedInUser } from '../services/authService';
 import { refreshToken } from "../services/authService";
-import ReviewModal from './ReviewModal';
 
-const GuideModal = ({ guide, onClose, currentUser }) => {
+const GuideModal = ({ guide, onClose }) => {
   const [currentStep, setCurrentStep] = useState(1);
   const [numberOfDays, setNumberOfDays] = useState(1);
   const [reservationDetails, setReservationDetails] = useState(
@@ -19,8 +18,25 @@ const GuideModal = ({ guide, onClose, currentUser }) => {
   );
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
-  const [showReviewModal, setShowReviewModal] = useState(false);
+  const [currentUser, setCurrentUser] = useState(null);
+  const [isLoadingUser, setIsLoadingUser] = useState(true);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const loadUser = async () => {
+      try {
+        const user = await fetchLoggedInUser();
+        setCurrentUser(user);
+      } catch (err) {
+        console.error('Failed to fetch user:', err);
+        setCurrentUser(null);
+      } finally {
+        setIsLoadingUser(false);
+      }
+    };
+
+    loadUser();
+  }, []);
 
   const handleDayChange = (e) => {
     const days = parseInt(e.target.value);
@@ -84,6 +100,7 @@ const GuideModal = ({ guide, onClose, currentUser }) => {
           vehicleDetails: detail.vehicleDetails
         }))
       };
+      console.log('Reservation Data:', reservationData);
 
       const response = await apiClient.post('/api/reservations', reservationData);
       
@@ -104,7 +121,7 @@ const GuideModal = ({ guide, onClose, currentUser }) => {
     <div style={{ display: 'flex', gap: '20px' }}>
       <div style={{ flex: 1 }}>
         <img 
-          src={guide.profileImageUrl || '/src/images/default-profile.png'} 
+          src={guide.image || '/src/images/default-profile.png'} 
           alt={guide.name}
           style={{
             width: '100%',
@@ -116,16 +133,14 @@ const GuideModal = ({ guide, onClose, currentUser }) => {
       </div>
       
       <div style={{ flex: 2 }}>
-        <h2 style={{ marginTop: 0 }}>{guide.firstName} {guide.lastName}</h2>
+        <h2 style={{ marginTop: 0 }}>{guide.name}</h2>
         <p><strong>Contact:</strong> {guide.contactNumber}</p>
-        <p><strong>Email:</strong> {guide.email}</p>
         <p><strong>Address:</strong> {guide.address}</p>
         <p><strong>Expertise:</strong> {guide.expertiseCityRegion}</p>
         <p><strong>Language:</strong> {guide.language}</p>
         <p><strong>Vehicle:</strong> {guide.vehicleAvailability ? 'Available' : 'Not Available'}</p>
         <p><strong>About:</strong> {guide.about}</p>
-        <p><strong>Verified:</strong> {guide.verified ? "Yes" : "No"}</p>
-
+        
         <div style={{
           display: 'flex',
           justifyContent: 'flex-end',
@@ -143,19 +158,6 @@ const GuideModal = ({ guide, onClose, currentUser }) => {
             }}
           >
             Close
-          </button>
-          <button
-            onClick={() => setShowReviewModal(true)}
-            style={{
-              padding: '10px 20px',
-              backgroundColor: '#4CAF50',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: 'pointer'
-            }}
-          >
-            Reviews
           </button>
           <button
             onClick={() => setCurrentStep(2)}
@@ -425,20 +427,19 @@ const GuideModal = ({ guide, onClose, currentUser }) => {
           ❌
         </button>
 
-        {currentStep === 1 ? renderGuideDetails() : renderReservationForm()}
+        {isLoadingUser ? (
+          <div style={{ 
+            display: 'flex', 
+            justifyContent: 'center', 
+            alignItems: 'center', 
+            height: '200px'
+          }}>
+            <p>Loading user information...</p>
+          </div>
+        ) : (
+          currentStep === 1 ? renderGuideDetails() : renderReservationForm()
+        )}
       </div>
-
-      {showReviewModal && (
-        <ReviewModal
-          guide={guide}
-          currentUser={currentUser}
-          onClose={() => setShowReviewModal(false)}
-          onReviewSubmitted={() => {
-            setShowReviewModal(false);
-            alert('Review submitted successfully!');
-          }}
-        />
-      )}
     </div>
   );
 };

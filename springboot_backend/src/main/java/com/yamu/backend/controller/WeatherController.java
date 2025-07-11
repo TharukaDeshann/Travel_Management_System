@@ -8,15 +8,15 @@ import java.util.HashMap;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/weather")
-@CrossOrigin(origins = "http://localhost:5173")
+@RequestMapping("/api/weather")//used to map requests to the weather controller
+@CrossOrigin(origins = "http://localhost:5173")//needed for frontend-backend communication
 public class WeatherController {
     // Cache to store weather data for location+date combinations
     private final Map<String, Map<String, Object>> weatherCache = new HashMap<>();
 
     @GetMapping
     public ResponseEntity<Map<String, Object>> getWeatherForecast(
-            @RequestParam String location,
+            @RequestParam String location,//Spring to extract query parameters location and date from the URL
             @RequestParam String date
     ) {
         // Create a unique key for this location and date
@@ -27,6 +27,7 @@ public class WeatherController {
             return ResponseEntity.ok(weatherCache.get(cacheKey));
         }
 
+        // Create a new map to store weather data
         Map<String, Object> weatherData = new HashMap<>();
         LocalDate forecastDate = LocalDate.parse(date);
         LocalDate today = LocalDate.now();
@@ -36,6 +37,7 @@ public class WeatherController {
         // Make sure hash is positive
         hash = Math.abs(hash);
         
+        // Check if the forecast date is within the next 6 days
         if (forecastDate.isBefore(today.plusDays(6)) && !forecastDate.isBefore(today)) {
             // More moderate range for near dates
             weatherData.put("temperature", 25 + (hash % 10)); // Temperature between 25-35°C

@@ -18,7 +18,7 @@ target/
 *.iws
 *.iml
 *.ipr
-echo ".env" >> .gitignore
+.env
 
 ### NetBeans ###
 /nbproject/private/

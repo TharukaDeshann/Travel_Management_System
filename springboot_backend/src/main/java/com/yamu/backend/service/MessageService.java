@@ -63,6 +63,7 @@ public class MessageService {
         List<User> senders = messageRepository.findSendersForReceiver(user);
         List<User> receivers = messageRepository.findReceiversForSender(user);
 
+        // Combine and deduplicate
         senders.addAll(receivers);
         return senders.stream()
                 .distinct()
@@ -79,27 +80,10 @@ public class MessageService {
         messageRepository.markMessagesAsRead(user, otherUser);
     }
 
-    @Transactional
-    public void markMessageAsRead(Long messageId, Long userId) {
-        Message message = messageRepository.findById(messageId)
-                .orElseThrow(() -> new ResourceNotFoundException("Message not found"));
-        
-        if (message.getReceiver().getId().equals(userId)) {
-            message.setIsRead(true);
-            messageRepository.save(message);
-        }
-    }
-
     public long getUnreadMessageCount(Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
         return messageRepository.countByReceiverAndIsReadFalse(user);
-    }
-
-    public Long getUserIdByEmail(String email) {
-        return userRepository.findByEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found"))
-                .getId();
     }
 
     private MessageDto convertToDto(Message message) {

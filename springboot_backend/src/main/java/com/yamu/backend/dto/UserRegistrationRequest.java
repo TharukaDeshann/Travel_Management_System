@@ -1,15 +1,10 @@
 package com.yamu.backend.dto;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
 
 import com.yamu.backend.enums.UserRole;
-import com.yamu.backend.model.Vehicle;
 import com.yamu.backend.validation.GuideRegistration;
 import com.yamu.backend.validation.TravelerRegistration;
-
-import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -21,56 +16,83 @@ public class UserRegistrationRequest {
     @NotBlank(message = "Name is required")
     @Size(min = 3, max = 50, message = "Name must be between 3 and 50 characters")
     private String firstName;
+
     private String lastName;
+
     @NotBlank(message = "Email is required")
     @Email(message = "Invalid email format")
     private String email;
+
     @NotBlank(message = "Password is required")
     @Size(min = 8, message = "Password must be at least 8 characters long")
     @Pattern(regexp = "^(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$", 
-    message = "Password must contain at least one uppercase letter, one number, and one special character")
+         message = "Password must contain at least one uppercase letter, one number, and one special character")
     private String password;
+
     @NotBlank(message = "Contact number is required")
     @Pattern(regexp = "^[0-9]{10,15}$", message = "Contact number must be 10 to 15 digits")
     private String contactNumber;
+
     @NotBlank(message = "Address is required")
     private String address;
+
     private boolean isVerified = false;
     private String verificationToken;
     private LocalDateTime tokenExpiry;
+
     @NotNull(message = "Role is required")
     private UserRole role;
+
     // Specialized fields for Traveler - only validated for TRAVELER role
     @NotNull(groups = TravelerRegistration.class, message = "Nationality is required for travelers")
     private String nationality;
+
     // Specialized fields for Guide - only validated for GUIDE role
     @NotNull(groups = GuideRegistration.class, message = "Expertise city/region is required for guides")
     private String expertiseCityRegion;
+    
     @NotNull(groups = GuideRegistration.class, message = "Language is required for guides")
     private String language;
+    
     private String about;
+    
+    @NotNull(groups = GuideRegistration.class, message = "Vehicle availability is required for guides")
+    private Boolean vehicleAvailability;
 
-    
-    private List<VehicleRequest> vehicles;
+    // Getters and Setters (unchanged)
+    public String getFirstName() { return firstName; }
+    public void setFirstName(String firstName) { this.firstName = firstName; }
 
-    @Getter
-    @Setter
-    public static class VehicleRequest {
-        
-        @NotBlank(message = "Model is required")
-        private String model;
-        @NotBlank(message = "Type is required")
-        private String type;
-        @NotNull(message = "Capacity is required")
-        private int capacity;
-        @NotNull(message = "Air conditioning status is required")
-        private boolean airConditioned;
-        @NotNull(message = "Availability status is required")
-        private boolean available;
-        private String vehicleImageUrl;
-    }
-    
+    public String getLastName() { return lastName; }
+    public void setLastName(String lastName) { this.lastName = lastName; }
 
-    
-    
+    public String getEmail() { return email; }
+    public void setEmail(String email) { this.email = email; }
+
+    public String getPassword() { return password; }
+    public void setPassword(String password) { this.password = password; }
+
+    public String getContactNumber() { return contactNumber; }
+    public void setContactNumber(String contactNumber) { this.contactNumber = contactNumber; }
+
+    public String getAddress() { return address; }
+    public void setAddress(String address) { this.address = address; }
+
+    public UserRole getRole() { return role; }
+    public void setRole(UserRole role) { this.role = role; }
+
+    public String getNationality() { return nationality; }
+    public void setNationality(String nationality) { this.nationality = nationality; }
+
+    public String getExpertiseCityRegion() { return expertiseCityRegion; }
+    public void setExpertiseCityRegion(String expertiseCityRegion) { this.expertiseCityRegion = expertiseCityRegion; }
+
+    public String getLanguage() { return language; }
+    public void setLanguage(String language) { this.language = language; }
+
+    public String getAbout() { return about; }
+    public void setAbout(String about) { this.about = about; }
+
+    public Boolean getVehicleAvailability() { return vehicleAvailability; }
+    public void setVehicleAvailability(Boolean vehicleAvailability) { this.vehicleAvailability = vehicleAvailability; }
 }
