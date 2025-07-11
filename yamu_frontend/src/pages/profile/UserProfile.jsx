@@ -1,3 +1,4 @@
+// pages/UserProfile.jsx (Updated)
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useUser } from "../../context/UserContext";
@@ -20,8 +21,10 @@ import {
 
 // Import image uploader component
 import ProfileImageUploader from "../../components/ProfileImageUploader";
+// Import vehicle management component
+import VehicleManagement from "../../components/VehicleManagement";
 
-// Styled components
+// Styled components (keeping existing ones)
 const DetailLabel = styled(Text)`
   font-size: 14px;
   font-weight: 500;
@@ -142,7 +145,7 @@ const UserProfile = () => {
         <Grid columns={2}>
           <div>
             <Avatar size="120px" src={user.profileImageUrl} alt="Profile Image">
-              
+              {getUserInitials()}
             </Avatar>
             <Title size="20px">{`${user.firstName} ${user.lastName}`}</Title>
             <Badge variant={user.verified ? "success" : "warning"}>
@@ -194,7 +197,7 @@ const UserProfile = () => {
 
         <Separator />
 
-        <FlexContainer  justifyContent="space-between">
+        <FlexContainer justifyContent="space-between">
           <Button onClick={handleUpdateProfile}>Update Profile</Button>
           <Button
             onClick={handleLogout}
@@ -211,6 +214,11 @@ const UserProfile = () => {
           </Button>
         </FlexContainer>
       </Card>
+
+      {/* Vehicle Management Section for Guides */}
+      {user.role === "GUIDE" && (
+        <VehicleManagement guideId={user.id} isOwner={true} />
+      )}
     </Container>
   );
 };

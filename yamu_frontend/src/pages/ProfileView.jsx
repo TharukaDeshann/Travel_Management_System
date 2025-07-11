@@ -1,8 +1,10 @@
+// pages/ProfileView.jsx (Updated)
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { fetchUserById } from '../services/userService';
-import '../styles/ProfileView.css';
 import { fetchLoggedInUser } from '../services/authService';
+import VehicleManagement from '../components/VehicleManagement';
+import '../styles/ProfileView.css';
 
 const ProfileView = () => {
   const { userId } = useParams();
@@ -23,8 +25,8 @@ const ProfileView = () => {
       }
     };
         
-      fetchLoggedInUserData();
-    }, [navigate]);
+    fetchLoggedInUserData();
+  }, [navigate]);
 
   useEffect(() => {
     const loadUserProfile = async () => {
@@ -44,7 +46,7 @@ const ProfileView = () => {
   }, [userId]);
 
   const handleChat = () => {
-    location.href = `/inbox`;
+    window.location.href = '/inbox';
   }
 
   const handleGoBack = () => {
@@ -81,8 +83,6 @@ const ProfileView = () => {
     );
   }
 
-  
-
   const isGuide = user.role === 'GUIDE';
   const isTraveler = user.role === 'TRAVELER';
   const isAdmin = user.role === 'ADMIN';
@@ -91,16 +91,12 @@ const ProfileView = () => {
   const isTravelerViewingGuide = loggedInUser?.role === 'TRAVELER' && isGuide;
   const isGuideViewingTraveler = loggedInUser?.role === 'GUIDE' && isTraveler;
 
-
-
   // Check if the logged-in user is the same as the viewed user
   const isSameUser = loggedInUser && loggedInUser.id === user.id;
 
   if(isSameUser) {
-    navigate(`/profile`);
+    navigate('/profile');
   }
-
- 
 
   return (
     <div className="profile-container">
@@ -129,14 +125,9 @@ const ProfileView = () => {
       </div>
 
       <div className="profile-content">
-        
-
-        
-        
-          <div className="profile-section">
-          {isTraveler &&(<h2>Traveler Information</h2> || <h2>Guide Information</h2>)}
-            
-            
+        <div className="profile-section">
+          {isTraveler && (<h2>Traveler Information</h2>) || <h2>Guide Information</h2>}
+          
           <div className="profile-details">
             <div className="detail-item">
               <span className="detail-label">Full Name:</span>
@@ -163,34 +154,34 @@ const ProfileView = () => {
                 </span>
               </div>
             )}
-          </div>
-           {/* Traveler-specific Section */}
-            {isTraveler && (<div className="detail-item">
+
+            {/* Traveler-specific Section */}
+            {isTraveler && (
+              <div className="detail-item">
                 <span className="detail-label">Nationality:</span>
                 <span className="detail-value">{user.nationality}</span>
-              </div>)}
-              
-              {user.preferredDestinations && (
-                <div className="detail-item">
-                  <span className="detail-label">Preferred Destinations:</span>
-                  <span className="detail-value">{user.preferredDestinations}</span>
-                </div>
-              )}
-              
-              {user.travelInterests && (
-                <div className="detail-item">
-                  <span className="detail-label">Travel Interests:</span>
-                  <span className="detail-value">{user.travelInterests}</span>
-                </div>
-              )}
-            </div>
-          
-        
+              </div>
+            )}
+            
+            {user.preferredDestinations && (
+              <div className="detail-item">
+                <span className="detail-label">Preferred Destinations:</span>
+                <span className="detail-value">{user.preferredDestinations}</span>
+              </div>
+            )}
+            
+            {user.travelInterests && (
+              <div className="detail-item">
+                <span className="detail-label">Travel Interests:</span>
+                <span className="detail-value">{user.travelInterests}</span>
+              </div>
+            )}
+          </div>
+        </div>
 
         {/* Guide-specific Section */}
         {isGuide && (
           <div className="profile-section">
-            
             <div className="profile-details">
               {user.expertiseCityRegion && (
                 <div className="detail-item">
@@ -242,9 +233,14 @@ const ProfileView = () => {
           </div>
         )}
 
-        
+        {/* Vehicle Section for Guides */}
+        {isGuide && (
+          <div className="profile-section">
+            <VehicleManagement guideId={user.id} isOwner={false} />
+          </div>
+        )}
 
-        {/*Guide Reviews Section */}
+        {/* Guide Reviews Section */}
         {isGuide && user.reviews && user.reviews.length > 0 && (
           <div className="profile-section">
             <h2>Reviews ({user.reviews.length})</h2>
@@ -275,13 +271,11 @@ const ProfileView = () => {
               <button className="primary-button" onClick={handleChat}>
                 Chat
               </button>
-              
             </>
           )}
           {isTravelerViewingGuide && (
             <button className="primary-button" onClick={handleChat}>Chat</button>
           )}
-          
         </div>
       </div>
     </div>
