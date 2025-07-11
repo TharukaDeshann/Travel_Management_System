@@ -1,6 +1,5 @@
 package com.yamu.backend.dto;
 
-import com.yamu.backend.model.HotelBooking;
 import com.yamu.backend.model.PaymentInfo;
 import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
@@ -27,7 +26,8 @@ public class HotelBookingRequestDTO {
     private LocalDate checkOutDate;
     
     @NotNull(message = "Room type is required")
-    private HotelBooking.RoomType roomType;
+    @NotBlank(message = "Room type cannot be blank")
+    private String roomType;
     
     @NotNull(message = "Number of rooms is required")
     @Min(value = 1, message = "At least 1 room must be booked")
@@ -41,6 +41,28 @@ public class HotelBookingRequestDTO {
     
     @Size(max = 500, message = "Special requests cannot exceed 500 characters")
     private String specialRequests;
+    
+    // Guest information
+    @NotBlank(message = "Guest name is required")
+    @Size(max = 100, message = "Guest name cannot exceed 100 characters")
+    private String guestName;
+    
+    @NotBlank(message = "Guest email is required")
+    @Email(message = "Invalid email format")
+    private String guestEmail;
+    
+    @NotBlank(message = "Guest phone is required")
+    @Size(max = 20, message = "Guest phone cannot exceed 20 characters")
+    private String guestPhone;
+    
+    // Pricing information
+    @NotNull(message = "Price per night is required")
+    @DecimalMin(value = "0.01", message = "Price per night must be greater than 0")
+    private BigDecimal pricePerNight;
+    
+    @NotNull(message = "Total price is required")
+    @DecimalMin(value = "0.01", message = "Total price must be greater than 0")
+    private BigDecimal totalPrice;
     
     // Payment information
     @NotNull(message = "Payment method is required")

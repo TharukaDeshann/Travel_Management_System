@@ -94,8 +94,18 @@ public class HotelService {
     public RoomAvailabilityDTO getHotelRoomAvailability(Long hotelId, 
                                                        LocalDate checkIn, 
                                                        LocalDate checkOut) {
+        
+        // Check if this is an OpenStreetMap hotel (negative ID)
+        if (hotelId < 0) {
+            log.info("🗺️ OSM Hotel availability request for ID: {}", hotelId);
+            // For OSM hotels, generate mock data using a random template
+            Hotel.MockDataTemplate template = mockDataService.getRandomTemplate();
+            return mockDataService.generateMockRoomData(template, checkIn, checkOut);
+        }
+        
+        // For database hotels, fetch from repository
         Hotel hotel = hotelRepository.findById(hotelId)
-                .orElseThrow(() -> new RuntimeException("Hotel not found"));
+                .orElseThrow(() -> new RuntimeException("Hotel not found with ID: " + hotelId));
         
         return mockDataService.generateMockRoomData(hotel.getMockDataTemplate(), checkIn, checkOut);
     }
@@ -107,9 +117,8 @@ public class HotelService {
         // Validate inputs
         validateBookingRequest(bookingRequest);
         
-        // Get hotel and traveler
-        Hotel hotel = hotelRepository.findById(bookingRequest.getHotelId())
-                .orElseThrow(() -> new RuntimeException("Hotel not found"));
+        // Get or create hotel (handle OSM hotels)
+        Hotel hotel = getOrCreateHotel(bookingRequest.getHotelId());
         
         Traveler traveler = travelerRepository.findById(travelerId)
                 .orElseThrow(() -> new RuntimeException("Traveler not found"));
@@ -123,7 +132,7 @@ public class HotelService {
         booking.setTraveler(traveler);
         booking.setCheckInDate(bookingRequest.getCheckInDate());
         booking.setCheckOutDate(bookingRequest.getCheckOutDate());
-        booking.setRoomType(bookingRequest.getRoomType());
+        booking.setRoomType(convertRoomType(bookingRequest.getRoomType()));
         booking.setNumberOfRooms(bookingRequest.getNumberOfRooms());
         booking.setNumberOfGuests(bookingRequest.getNumberOfGuests());
         booking.setTotalPrice(bookingRequest.getPaymentAmount());
@@ -140,6 +149,37 @@ public class HotelService {
         log.info("Hotel booking created successfully with reference: {}", booking.getBookingReference());
         
         return convertToBookingResponseDTO(booking);
+    }
+    
+    private Hotel getOrCreateHotel(Long hotelId) {
+        // For database hotels (positive IDs)
+        if (hotelId > 0) {
+            return hotelRepository.findById(hotelId)
+                    .orElseThrow(() -> new RuntimeException("Hotel not found"));
+        }
+        
+        // For OpenStreetMap hotels (negative IDs), check if already exists or create temporary record
+        Optional<Hotel> existingHotel = hotelRepository.findById(hotelId);
+        if (existingHotel.isPresent()) {
+            return existingHotel.get();
+        }
+        
+        // Create a temporary hotel record for OSM hotel
+        log.info("🗺️ Creating temporary hotel record for OSM hotel ID: {}", hotelId);
+        Hotel osmHotel = new Hotel();
+        osmHotel.setId(hotelId);
+        osmHotel.setName("OpenStreetMap Hotel #" + Math.abs(hotelId));
+        osmHotel.setAddress("Location from OpenStreetMap");
+        osmHotel.setLatitude(0.0); // These will be overridden by frontend data
+        osmHotel.setLongitude(0.0);
+        osmHotel.setRating(4.0);
+        osmHotel.setTotalRatings(100);
+        osmHotel.setPriceLevel(3);
+        osmHotel.setGooglePlaceId("osm_" + Math.abs(hotelId));
+        osmHotel.setMockDataTemplate(mockDataService.getRandomTemplate());
+        
+        // Save temporary hotel record
+        return hotelRepository.save(osmHotel);
     }
     
     public List<HotelBookingResponseDTO> getTravelerBookings(Long travelerId) {
@@ -291,13 +331,24 @@ public class HotelService {
                 request.getCheckOutDate()
         );
         
+        // Convert the requested room type string to enum for comparison
+        HotelBooking.RoomType requestedRoomType = convertRoomType(request.getRoomType());
+        
         // Find the requested room type in availability
         Optional<RoomAvailabilityDTO.RoomTypeInfo> requestedRoom = availability.getAvailableRooms()
                 .stream()
-                .filter(room -> room.getRoomType() == request.getRoomType())
+                .filter(room -> room.getRoomType() == requestedRoomType)
                 .findFirst();
         
         if (requestedRoom.isEmpty()) {
+            // Log available room types for debugging
+            log.warn("Requested room type '{}' (mapped to {}) not found. Available types: {}", 
+                    request.getRoomType(),
+                    requestedRoomType,
+                    availability.getAvailableRooms().stream()
+                            .map(room -> room.getRoomType())
+                            .collect(Collectors.toList())
+            );
             throw new RuntimeException("Requested room type is not available");
         }
         
@@ -357,5 +408,43 @@ public class HotelService {
         }
         
         return dto;
+    }
+    
+    private HotelBooking.RoomType convertRoomType(String roomTypeString) {
+        if (roomTypeString == null) {
+            return HotelBooking.RoomType.DOUBLE; // Default
+        }
+        
+        // Normalize the string and try to match
+        String normalized = roomTypeString.toUpperCase().replace(" ", "_");
+        
+        // Map common room types
+        switch (normalized) {
+            case "DELUXE_SUITE":
+            case "DELUXE":
+                return HotelBooking.RoomType.DELUXE;
+            case "PRESIDENTIAL_SUITE":
+            case "PRESIDENTIAL":
+                return HotelBooking.RoomType.PRESIDENTIAL_SUITE;
+            case "EXECUTIVE_SUITE":
+            case "JUNIOR_SUITE":
+            case "SUITE":
+                return HotelBooking.RoomType.SUITE;
+            case "FAMILY_ROOM":
+            case "FAMILY":
+                return HotelBooking.RoomType.FAMILY_ROOM;
+            case "SINGLE":
+            case "SINGLE_ROOM":
+                return HotelBooking.RoomType.SINGLE;
+            case "TWIN":
+            case "TWIN_ROOM":
+                return HotelBooking.RoomType.TWIN;
+            case "DOUBLE":
+            case "DOUBLE_ROOM":
+            case "STANDARD":
+            case "STANDARD_ROOM":
+            default:
+                return HotelBooking.RoomType.DOUBLE;
+        }
     }
 }

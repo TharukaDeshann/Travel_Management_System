@@ -57,10 +57,14 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/weather/**").permitAll()
+                        .requestMatchers("/api/hotels/**").permitAll()
                         .requestMatchers("/h2-console/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/reviews/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/hotels/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/reviews/**").authenticated()
+                        .requestMatchers(HttpMethod.POST, "/api/hotels/**").permitAll()
                         .requestMatchers(HttpMethod.DELETE, "/api/reviews/**").authenticated()
+                        .requestMatchers(HttpMethod.DELETE, "/api/hotels/**").permitAll()
                         .requestMatchers("/ws/**", "/app/**", "/topic/**", "/queue/**", "/user/**").permitAll()
                         .requestMatchers("/api/auth/login", "/api/auth/register",
                                 "/api/auth/refresh-token", "/api/auth/user", "api/auth/me", 

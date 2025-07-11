@@ -9,6 +9,11 @@ import { searchLocations } from "../services/map/locationService";
 import { fetchRoute, optimizeRoute, nearestNeighborOptimization } from "../services/map/routeService";
 import axios from "axios";
 
+// Hotel booking components
+import HotelSearchPopup from "./HotelSearchPopup";
+import RoomAvailabilityModal from "./RoomAvailabilityModal";
+import HotelBookingModal from "./HotelBookingModal";
+
 // Marker icon configuration
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
@@ -83,6 +88,15 @@ const Map = () => {
   const [showSearchResults, setShowSearchResults] = useState(false);
   const [saving, setSaving] = useState(false);
 
+  // Hotel booking states
+  const [showHotelSearch, setShowHotelSearch] = useState(false);
+  const [showRoomAvailability, setShowRoomAvailability] = useState(false);
+  const [showHotelBooking, setShowHotelBooking] = useState(false);
+  const [selectedHotel, setSelectedHotel] = useState(null);
+  const [selectedRoom, setSelectedRoom] = useState(null);
+  const [roomAvailability, setRoomAvailability] = useState(null);
+  const [bookedHotels, setBookedHotels] = useState(Array(dates.length).fill(null));
+
   useEffect(() => {
     if (dates.length === 0) navigate("/");
   }, [dates, navigate]);
@@ -130,14 +144,61 @@ const Map = () => {
   };
 
   const handleBookHotel = () => {
+    if (locations[currentIndex].length === 0) {
+      alert('Please add at least one location to your route before booking a hotel.');
+      return;
+    }
+    
+    setShowHotelSearch(true);
+  };
+
+  const handleHotelSelect = (hotel) => {
+    console.log('🏨 Hotel selected:', hotel);
+    setSelectedHotel(hotel);
+    setShowHotelSearch(false);
+    setShowRoomAvailability(true);
+  };
+
+  const handleRoomSelect = (room, availability) => {
+    console.log('🛏️ Room selected:', room);
+    setSelectedRoom(room);
+    setRoomAvailability(availability);
+    setShowRoomAvailability(false);
+    setShowHotelBooking(true);
+  };
+
+  const handleBookingComplete = (booking) => {
+    console.log('✅ Booking completed:', booking);
+    
+    // Update booked hotels state
+    const updatedBookedHotels = [...bookedHotels];
+    updatedBookedHotels[currentIndex] = {
+      hotel: selectedHotel,
+      room: selectedRoom,
+      booking: booking
+    };
+    setBookedHotels(updatedBookedHotels);
+    
+    // Update hotel booked status
     const updated = [...hotelBooked];
     updated[currentIndex] = true;
     setHotelBooked(updated);
-    setTimeout(() => {
-      alert(`Hotel booked for ${dates[currentIndex]}`);
-      updated[currentIndex] = false;
-      setHotelBooked([...updated]);
-    }, 500);
+    
+    // Reset selection states
+    setSelectedHotel(null);
+    setSelectedRoom(null);
+    setRoomAvailability(null);
+    
+    alert(`✅ Hotel booking confirmed!\nBooking ID: ${booking.id}\nHotel: ${selectedHotel.name}`);
+  };
+
+  const handleCloseModals = () => {
+    setShowHotelSearch(false);
+    setShowRoomAvailability(false);
+    setShowHotelBooking(false);
+    setSelectedHotel(null);
+    setSelectedRoom(null);
+    setRoomAvailability(null);
   };
 
   const handleBookTransport = () => {
@@ -305,12 +366,47 @@ const Map = () => {
           {/* Booking Buttons */}
           <div className="bg-white rounded-lg shadow-xl p-6 space-y-4">
             <button
-              className={`w-full px-6 py-3 rounded text-white ${hotelBooked[currentIndex] ? 'bg-blue-400' : 'bg-blue-600 hover:bg-blue-700'}`}
+              className={`w-full px-6 py-3 rounded text-white transition-colors ${
+                hotelBooked[currentIndex] 
+                  ? 'bg-green-500 cursor-default' 
+                  : 'bg-blue-600 hover:bg-blue-700'
+              }`}
               onClick={handleBookHotel}
               disabled={hotelBooked[currentIndex]}
             >
-              {hotelBooked[currentIndex] ? "Booking Hotel..." : "Book Hotel"}
+              {hotelBooked[currentIndex] 
+                ? `✅ Hotel Booked${bookedHotels[currentIndex] ? ` - ${bookedHotels[currentIndex].hotel.name}` : ''}` 
+                : "🏨 Book Hotel"
+              }
             </button>
+
+            {/* Show hotel details if booked */}
+            {hotelBooked[currentIndex] && bookedHotels[currentIndex] && (
+              <div className="bg-green-50 border border-green-200 rounded p-3 text-sm">
+                <div className="font-semibold text-green-800">
+                  {bookedHotels[currentIndex].hotel.name}
+                </div>
+                <div className="text-green-700">
+                  Room: {bookedHotels[currentIndex].room.roomType}
+                </div>
+                <div className="text-green-600">
+                  Booking ID: {bookedHotels[currentIndex].booking.id}
+                </div>
+                <button 
+                  onClick={() => {
+                    const updated = [...hotelBooked];
+                    updated[currentIndex] = false;
+                    setHotelBooked(updated);
+                    const updatedBookedHotels = [...bookedHotels];
+                    updatedBookedHotels[currentIndex] = null;
+                    setBookedHotels(updatedBookedHotels);
+                  }}
+                  className="text-xs text-red-600 hover:text-red-800 mt-1"
+                >
+                  Cancel Booking
+                </button>
+              </div>
+            )}
 
             <button
               className="w-full px-6 py-3 bg-green-600 text-white rounded hover:bg-green-700"
@@ -420,6 +516,35 @@ const Map = () => {
           </div>
         </div>
       </div>
+
+      {/* Hotel Booking Modals */}
+      <HotelSearchPopup
+        isOpen={showHotelSearch}
+        onClose={handleCloseModals}
+        locations={locations[currentIndex]}
+        selectedDate={dates[currentIndex]}
+        onHotelSelect={handleHotelSelect}
+      />
+
+      <RoomAvailabilityModal
+        isOpen={showRoomAvailability}
+        onClose={handleCloseModals}
+        hotel={selectedHotel}
+        checkInDate={dates[currentIndex]}
+        checkOutDate={currentIndex + 1 < dates.length ? dates[currentIndex + 1] : dates[currentIndex]}
+        onRoomSelect={handleRoomSelect}
+      />
+
+      <HotelBookingModal
+        isOpen={showHotelBooking}
+        onClose={handleCloseModals}
+        hotel={selectedHotel}
+        selectedRoom={selectedRoom}
+        availability={roomAvailability}
+        checkInDate={dates[currentIndex]}
+        checkOutDate={currentIndex + 1 < dates.length ? dates[currentIndex + 1] : dates[currentIndex]}
+        onBookingComplete={handleBookingComplete}
+      />
     </div>
   );
 };
