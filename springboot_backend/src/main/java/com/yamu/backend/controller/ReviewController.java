@@ -85,9 +85,12 @@ public class ReviewController {
         if (authentication == null || !authentication.isAuthenticated()) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Authentication required");
         }
-        
+
         try {
-            Long userId = ((User) authentication.getPrincipal()).getId();
+            String email = authentication.getName();
+            User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+            Long userId = user.getId();
             reviewService.deleteReview(reviewId, userId);
             return ResponseEntity.noContent().build();
         } catch (Exception e) {
