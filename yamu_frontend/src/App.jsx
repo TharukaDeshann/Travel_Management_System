@@ -35,7 +35,7 @@ import UsersSocialPage from "./pages/UsersSocialPage.jsx";
 // import ProfileView from "./pages/ProfileView.jsx";
 
 import EmergencyContacts from "./pages/EmergencyContacts.jsx";
-
+import UserSearch from "./components/UserSearch.jsx";
 
 
 const App = () => {
@@ -48,7 +48,8 @@ const App = () => {
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
 
-          
+          {/* ai search */}
+          <Route path="/user-search" element={<UserSearch />} />
           <Route path="/weather" element={<WeatherPage />} />
           <Route path="/weather-details" element={<Weather />} />
           <Route path="/weather-card" element={<WeatherCard />} />

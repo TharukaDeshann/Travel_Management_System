@@ -74,7 +74,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .requestMatchers("/api/guide/**").hasAnyRole("GUIDE", "ADMIN")
                         .requestMatchers("/api/traveler/**").hasRole("TRAVELER")
-                        .requestMatchers("/api/users/**").hasAnyRole("ADMIN", "GUIDE", "TRAVELER")
+                        .requestMatchers("/api/users/**", "/api/search/**").hasAnyRole("ADMIN", "GUIDE", "TRAVELER")
                         .requestMatchers("/api/itineraries/**").hasRole("TRAVELER") // Restrict itineraries to TRAVELER
                         .anyRequest().authenticated())
                 .exceptionHandling(ex -> ex

@@ -1,8 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import GuideModal from '../components/GuideModal';
-import apiClient from '../services/axiosInstance';
-import { fetchUsersByRole } from '../services/userService';
+import { searchUsers } from '../services/searchService';
 
 const GuidesPage = () => {
   const location = useLocation();
@@ -10,40 +9,97 @@ const GuidesPage = () => {
   const [guides, setGuides] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedGuide, setSelectedGuide] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const fetchGuides = async () => {
-      try {
-        const response = await fetchUsersByRole('GUIDE');
-        setGuides(response);
-      } catch (error) {
-        console.error("Error fetching guides:", error);
-      }
+  // Debounced search function
+  const debounce = (func, delay) => {
+    let timeoutId;
+    return (...args) => {
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(() => func(...args), delay);
     };
+  };
 
-    fetchGuides();
+  const fetchGuides = useCallback(async (queryText = '*') => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      console.log('Searching with query:', queryText);
+      
+      const response = await searchUsers({
+        query: queryText,
+        // Try different parameter formats - adjust based on your backend
+        role: 'GUIDE', // Try singular instead of array
+        // OR try: roles: ['GUIDE']
+        // OR try: filter: { role: 'GUIDE' }
+        page: 0,
+        size: 20
+      });
+      
+      console.log('Search response:', response);
+      
+      // Filter guides on frontend as backup
+      const allUsers = response.results || [];
+      const guidesOnly = allUsers.filter(user => 
+        user.role === 'GUIDE' || user.role === 'guide'
+      );
+      
+      setGuides(guidesOnly);
+      
+      if (guidesOnly.length === 0 && allUsers.length > 0) {
+        console.warn('No guides found in results. All users:', allUsers);
+      }
+      
+    } catch (error) {
+      console.error("AI Search error:", error);
+      setError('Failed to search guides. Please try again.');
+      setGuides([]);
+    }
+    
+    setLoading(false);
   }, []);
 
-  const filteredGuides = guides.filter(guide => {
-    const searchLower = searchTerm.toLowerCase();
-    return (
-      (guide.firstName + ' ' + guide.lastName).toLowerCase().includes(searchLower) ||
-      guide.expertiseCityRegion.toLowerCase().includes(searchLower) ||
-      guide.language.toLowerCase().includes(searchLower)
-    );
-  });
+  // Debounced search for real-time typing
+  const debouncedSearch = useCallback(
+    debounce((query) => {
+      fetchGuides(query.trim() || '*');
+    }, 300),
+    [fetchGuides]
+  );
+
+  // Initial load
+  useEffect(() => {
+    fetchGuides();
+  }, [fetchGuides]);
+
+  // Real-time search when user types
+  useEffect(() => {
+    debouncedSearch(searchTerm);
+  }, [searchTerm, debouncedSearch]);
+
+  const handleSearch = async (e) => {
+    e.preventDefault();
+    fetchGuides(searchTerm.trim() || '*');
+  };
+
+  const handleInputChange = (e) => {
+    setSearchTerm(e.target.value);
+  };
 
   return (
     <div style={{ padding: '20px' }}>
       <h1 style={{ fontSize: '24px', marginBottom: '20px' }}>Discover Tour Guides</h1>
-      
-      <div style={{ marginBottom: '20px' }}>
+
+      <form onSubmit={handleSearch} style={{ marginBottom: '20px' }}>
         <input
           type="text"
           placeholder="Search guides by name, region, or language..."
           value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
+          onChange={handleInputChange}
           style={{
             width: '100%',
             padding: '10px',
@@ -52,15 +108,25 @@ const GuidesPage = () => {
             maxWidth: '500px'
           }}
         />
-      </div>
-      
-      <div style={{ 
-        display: 'grid', 
+        <button type="submit" style={{ marginLeft: '10px', padding: '10px 20px' }}>
+          Search
+        </button>
+      </form>
+
+      {loading && <p>Loading guides...</p>}
+      {error && <p style={{ color: 'red' }}>{error}</p>}
+
+      {!loading && guides.length === 0 && (
+        <p>No guides found. Try adjusting your search terms.</p>
+      )}
+
+      <div style={{
+        display: 'grid',
         gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
         gap: '20px'
       }}>
-        {filteredGuides.map(guide => (
-          <div 
+        {guides.map(guide => (
+          <div
             key={guide.id}
             onClick={() => setSelectedGuide(guide)}
             style={{
@@ -69,14 +135,14 @@ const GuidesPage = () => {
               overflow: 'hidden',
               cursor: 'pointer',
               transition: 'transform 0.2s',
-              ':hover': {
-                transform: 'scale(1.02)'
-              }
+              background: '#fff'
             }}
+            onMouseEnter={(e) => e.target.style.transform = 'scale(1.02)'}
+            onMouseLeave={(e) => e.target.style.transform = 'scale(1)'}
           >
-            <img 
-              src={guide.profileImageUrl || 'https://via.placeholder.com/300'}
-              alt={guide.name}
+            <img
+              src={guide.profile_image_url || 'https://via.placeholder.com/300'}
+              alt={`${guide.first_name}`}
               style={{
                 width: '100%',
                 height: '200px',
@@ -84,18 +150,21 @@ const GuidesPage = () => {
               }}
             />
             <div style={{ padding: '15px' }}>
-              <h3 style={{ marginTop: 0 }}>{guide.firstName} {guide.lastName}</h3>
-              <p><strong>Expertise:</strong> {guide.expertiseCityRegion}</p>
-              <p><strong>Language:</strong> {guide.language}</p>
-              <p><strong>Vehicle:</strong> {guide.vehicleAvailability ? 'Available' : 'Not Available'}</p>
+              <h3 style={{ marginTop: 0 }}>
+                {guide.first_name} {guide.last_name}
+              </h3>
+              <p><strong>Expertise:</strong> {guide.expertise_city_region || 'N/A'}</p>
+              <p><strong>Language:</strong> {guide.guide_language || 'N/A'}</p>
+              <p><strong>Contact:</strong> {guide.contact_number || 'N/A'}</p>
+              <p><strong>Verified:</strong> {(guide.is_verified || guide.verified) ? '✅ Yes' : '❌ No'}</p>
             </div>
           </div>
         ))}
       </div>
-      
+
       {selectedGuide && (
-        <GuideModal 
-          guide={selectedGuide} 
+        <GuideModal
+          guide={selectedGuide}
           onClose={() => setSelectedGuide(null)}
           currentUser={currentUser}
         />
