@@ -255,7 +255,7 @@ public class AuthController {
                 .httpOnly(true)
                 .secure(true)
                 .path("/")
-                .maxAge(0)
+                .maxAge(60000)
                 .sameSite("Strict")
                 .build();
 

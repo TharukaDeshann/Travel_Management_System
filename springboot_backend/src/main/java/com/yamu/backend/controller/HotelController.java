@@ -142,4 +142,35 @@ public class HotelController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
+
+    // Endpoint for testing Google Places API integration
+    @GetMapping("/test-google-places")
+    public ResponseEntity<?> testGooglePlacesAPI(
+            @RequestParam Double startLat,
+            @RequestParam Double startLng,
+            @RequestParam Double endLat,
+            @RequestParam Double endLng) {
+        try {
+            HotelSearchRequestDTO testRequest = new HotelSearchRequestDTO();
+            testRequest.setStartLatitude(startLat);
+            testRequest.setStartLongitude(startLng);
+            testRequest.setEndLatitude(endLat);
+            testRequest.setEndLongitude(endLng);
+            testRequest.setRadius(5000.0);
+            testRequest.setMinRating(3.0);
+            testRequest.setMaxResults(5);
+            
+            List<HotelResponseDTO> hotels = hotelService.searchHotelsAlongRoute(testRequest);
+            
+            return ResponseEntity.ok(Map.of(
+                "message", "Google Places API test completed",
+                "hotelsFound", hotels.size(),
+                "hotels", hotels
+            ));
+        } catch (Exception e) {
+            log.error("Error testing Google Places API: ", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Google Places API test failed: " + e.getMessage()));
+        }
+    }
 }
