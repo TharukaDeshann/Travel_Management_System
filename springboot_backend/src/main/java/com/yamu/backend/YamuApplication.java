@@ -5,6 +5,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.context.ApplicationContext;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
+import org.springframework.scheduling.annotation.EnableScheduling;
 // Import the required packages
 
 import com.cloudinary.*;
@@ -16,6 +17,7 @@ import java.util.Map;
 @SpringBootApplication
 @EnableJpaRepositories("com.yamu.backend.repository")
 @EntityScan("com.yamu.backend.model") // Replace with your entity package
+@EnableScheduling
 public class YamuApplication {
 
 	public static void main(String[] args) {

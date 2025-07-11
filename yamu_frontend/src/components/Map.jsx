@@ -521,7 +521,6 @@ const Map = () => {
                 marginLeft: "auto", 
                 backgroundColor: "#3b82f6", 
                 color: "white", 
-                borderRadius: "full",
                 fontSize: "14px",
                 padding: "2px 8px",
                 borderRadius: "12px"
