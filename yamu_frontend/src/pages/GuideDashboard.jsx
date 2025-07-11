@@ -1,19 +1,30 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+
+import { useNavigate, useLocation } from "react-router-dom";
+import { Mail } from "lucide-react";
+
 import yamuLogo from '../images/yamu-logo.png';
-import profileIcon from '../images/profile.png';
 import apiClient from "../services/axiosInstance";
+
+import { useUser } from "../context/UserContext";
+import { Layout } from "../components/Layout";
 
 const RESERVATIONS_STORAGE_KEY = 'guideReservations';
 
 const GuideDashboard = ({ currentUser }) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [activeTab, setActiveTab] = useState('upcoming');
   const [reservations, setReservations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [unreadCount, setUnreadCount] = useState(0);
-  
+
+  const [selectedCurrency, setSelectedCurrency] = useState('LKR');
+
+  const loggedUser = useUser().user;
+
+
   useEffect(() => {
     currentUser = JSON.parse(localStorage.getItem("user"));
     const loadReservations = async () => {
@@ -88,11 +99,9 @@ const GuideDashboard = ({ currentUser }) => {
       }
 
       const response = await apiClient.put(`/api/reservations/${reservationId}/${endpoint}`);
-      
-      const updatedReservations = reservations.map(res => 
+      const updatedReservations = reservations.map(res =>
         res.id === reservationId ? response.data : res
       );
-      
       setReservations(updatedReservations);
       localStorage.setItem(RESERVATIONS_STORAGE_KEY, JSON.stringify(updatedReservations));
     } catch (err) {
@@ -109,114 +118,207 @@ const GuideDashboard = ({ currentUser }) => {
     .filter(res => res.status === 'COMPLETED')
     .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
-  return (
 
-    <div style={{
-      minHeight: "100vh",
-      backgroundColor: "#f5f5f5",
-      fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif"
-    }}>
-      <nav style={{
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "center",
-        padding: "20px 40px",
-        backgroundColor: "white",
-        boxShadow: "0 2px 10px rgba(0,0,0,0.1)",
-        position: "sticky",
-        top: 0,
-        zIndex: 100
-      }}>
-        <div style={{
+  const ReservationCard = ({ reservation, onStatusChange, isPast = false }) => {
+    const statusColors = {
+      'PENDING': '#FFA500',
+      'CONFIRMED': '#4CAF50',
+      'DECLINED': '#F44336',
+      'COMPLETED': '#2196F3'
+    };
+
+    const handleMessageClick = () => {
+      navigate(`/inbox?select=${reservation.traveler?.id}`);
+    };
+
+    const MessageButton = () => (
+      <button
+        onClick={handleMessageClick}
+        style={{
+          padding: "8px 16px",
+          backgroundColor: "#f0f0f0",
+          border: "none",
+          borderRadius: "4px",
+          cursor: "pointer",
           display: "flex",
           alignItems: "center",
-          gap: "10px",
-          cursor: "pointer"
-        }} onClick={() => navigate('/')}>
-          <img src={yamuLogo} alt="Yamu Logo" style={{ height: "40px" }} />
-          <span style={{
-            fontSize: "24px",
-            fontWeight: "bold",
-            color: "#532321"
-          }}>YAMU</span>
+          justifyContent: "center",
+          gap: "6px",
+          transition: "all 0.2s ease"
+        }}
+      >
+        <Mail size={16} />
+        Message
+      </button>
+    );
 
-
+    return (
+      <div style={{
+        backgroundColor: "white",
+        borderRadius: "8px",
+        boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+        padding: "20px",
+        position: "relative"
+      }}>
+        <div style={{
+          position: "absolute",
+          top: "20px",
+          right: "20px",
+          padding: "4px 8px",
+          borderRadius: "4px",
+          color: "white",
+          fontSize: "12px",
+          fontWeight: "600",
+          backgroundColor: statusColors[reservation.status] || '#9E9E9E'
+        }}>
+          {reservation.status}
         </div>
-        
-        <div style={{ display: "flex", gap: "30px" }}>
-          {['Dashboard', 'Calendar', 'Reviews', 'Emergency Contacts'].map((item) => (
-            <button
-              key={item}
-              style={{
-                background: "none",
-                border: "none",
-                color: "#333",
-                fontSize: "16px",
-                cursor: "pointer",
-                padding: "5px 10px",
-                ':hover': {
-                  color: "#532321"
-                }
-              }}
-              onClick={() => navigate(`/guide-${item.toLowerCase().replace(' ', '-')}`)}
-            >
-              {item}
-            </button>
-          ))}
-          <div style={{ position: 'relative' }}>
-            <button
-              style={{
-                background: "none",
-                border: "none",
-                color: "#333",
-                fontSize: "16px",
-                cursor: "pointer",
-                padding: "5px 10px",
-                ':hover': {
-                  color: "#532321"
-                }
-              }}
-              onClick={() => navigate('/inbox')}
-            >
-              Inbox
-            </button>
-            {unreadCount > 0 && (
-              <span style={{
-                position: 'absolute',
-                top: '-5px',
-                right: '-5px',
-                backgroundColor: '#532321',
-                color: 'white',
-                borderRadius: '50%',
-                width: '18px',
-                height: '18px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '10px'
-              }}>
-                {unreadCount}
-              </span>
-            )}
+
+        <div style={{ marginBottom: "15px" }}>
+          <h4 style={{
+            margin: "0 0 5px 0",
+            fontSize: "18px",
+            fontWeight: "600",
+            color: "#532321"
+          }}>Reservation #{reservation.id}</h4>
+          <p style={{
+            margin: 0,
+            color: "#666",
+            fontSize: "14px"
+          }}>
+            Created: {new Date(reservation.createdAt).toLocaleString()}
+          </p>
+        </div>
+
+        <div style={{
+          display: "flex",
+          gap: "20px",
+          marginBottom: "15px"
+        }}>
+          <div>
+            <h5 style={{
+              margin: "0 0 8px 0",
+              fontSize: "14px",
+              color: "#532321",
+              fontWeight: "500"
+            }}>Traveler Details</h5>
+            <p style={{ margin: "4px 0", fontSize: "14px" }}>
+              <strong>Name:</strong> {reservation.traveler?.firstName} {reservation.traveler?.lastName}
+            </p>
+            <p style={{ margin: "4px 0", fontSize: "14px" }}>
+              <strong>Contact:</strong> {reservation.traveler?.contactNumber}
+            </p>
+          </div>
+
+          <div>
+            <h5 style={{
+              margin: "0 0 8px 0",
+              fontSize: "14px",
+              color: "#532321",
+              fontWeight: "500"
+            }}>Tour Details</h5>
+            <p style={{ margin: "4px 0", fontSize: "14px" }}>
+              <strong>Days:</strong> {reservation.numberOfDays}
+            </p>
+            <p style={{ margin: "4px 0", fontSize: "14px" }}>
+              <strong>Travelers:</strong> {reservation.dayDetails?.[0]?.numberOfTravelers || 'N/A'}
+            </p>
           </div>
         </div>
 
-        
-        <div style={{ display: "flex", alignItems: "center", gap: "20px" }}>
-          <img 
-            src={profileIcon} 
-            alt="Profile" 
-            style={{
-              width: "40px",
-              height: "40px",
-              borderRadius: "50%",
-              objectFit: "cover",
-              cursor: "pointer"
-            }}
-            onClick={() => navigate('/profile')}
-          />
+        <div style={{ marginBottom: "20px" }}>
+          <h5 style={{
+            margin: "0 0 8px 0",
+            fontSize: "14px",
+            color: "#532321",
+            fontWeight: "500"
+          }}>Itinerary</h5>
+          <div style={{ display: "grid", gap: "10px" }}>
+            {reservation.dayDetails?.map((day, index) => (
+              <div key={index} style={{
+                padding: "10px",
+                backgroundColor: "#f9f9f9",
+                borderRadius: "4px"
+              }}>
+                <p style={{ margin: "4px 0", fontWeight: "500" }}>
+                  Day {day.dayNumber}: {day.places}
+                </p>
+                <p style={{ margin: "4px 0", fontSize: "13px" }}>
+                  <strong>Date:</strong> {new Date(day.date).toLocaleDateString()}
+                </p>
+                {day.vehicleRequested && (
+                  <p style={{ margin: "4px 0", fontSize: "13px" }}>
+                    <strong>Vehicle:</strong> {day.vehicleDetails || 'No details'}
+                  </p>
+                )}
+              </div>
+            ))}
+          </div>
         </div>
-      </nav>
+
+        {!isPast && (
+          <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px", alignItems: "center" }}>
+            {reservation.status !== 'DECLINED' && <MessageButton />}
+
+            {reservation.status === 'PENDING' && (
+              <>
+                <button
+                  onClick={() => onStatusChange(reservation.id, 'DECLINED')}
+                  style={{
+                    padding: "8px 16px",
+                    backgroundColor: "#F44336",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "4px",
+                    cursor: "pointer"
+                  }}
+                >
+                  Decline
+                </button>
+                <button
+                  onClick={() => onStatusChange(reservation.id, 'CONFIRMED')}
+                  style={{
+                    padding: "8px 16px",
+                    backgroundColor: "#4CAF50",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "4px",
+                    cursor: "pointer"
+                  }}
+                >
+                  Confirm
+                </button>
+              </>
+            )}
+
+            {reservation.status === 'CONFIRMED' && (
+              <button
+                onClick={() => onStatusChange(reservation.id, 'COMPLETED')}
+                style={{
+                  padding: "8px 16px",
+                  backgroundColor: "#2196F3",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "4px",
+                  cursor: "pointer"
+                }}
+              >
+                Mark as Completed
+              </button>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  return (
+    <Layout
+      user={loggedUser}
+      unreadCount={unreadCount}
+      onCurrencyChange={setSelectedCurrency}
+      selectedCurrency={selectedCurrency}
+    >
 
       <div style={{
         padding: "40px",
@@ -235,7 +337,7 @@ const GuideDashboard = ({ currentUser }) => {
             fontWeight: "600",
             margin: 0
           }}>My Tours</h3>
-          
+
           <div style={{ display: "flex", gap: "10px" }}>
             <button onClick={refreshData} style={{
               padding: "8px 16px",
@@ -245,14 +347,11 @@ const GuideDashboard = ({ currentUser }) => {
               cursor: "pointer",
               display: "flex",
               alignItems: "center",
-              gap: "5px",
-              ':hover': {
-                backgroundColor: "#e0e0e0"
-              }
+              gap: "5px"
             }}>
               <span>↻</span> Refresh
             </button>
-            
+
             <div style={{
               display: "flex",
               gap: "10px",
@@ -319,7 +418,7 @@ const GuideDashboard = ({ currentUser }) => {
           <div style={{ display: "grid", gap: "20px" }}>
             {upcomingReservations.length > 0 ? (
               upcomingReservations.map(reservation => (
-                <ReservationCard 
+                <ReservationCard
                   key={reservation.id}
                   reservation={reservation}
                   onStatusChange={handleStatusChange}
@@ -341,7 +440,7 @@ const GuideDashboard = ({ currentUser }) => {
           <div style={{ display: "grid", gap: "20px" }}>
             {pastReservations.length > 0 ? (
               pastReservations.map(reservation => (
-                <ReservationCard 
+                <ReservationCard
                   key={reservation.id}
                   reservation={reservation}
                   isPast={true}
@@ -361,7 +460,7 @@ const GuideDashboard = ({ currentUser }) => {
           </div>
         )}
       </div>
-    </div>
+    </Layout>
   );
 };
 

@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+
+import { useNavigate, useLocation } from "react-router-dom";
+import { ChevronRight, Mail } from "lucide-react";
+
 import '../styles/TravelerDashboard.css';
 import WeatherCard from "../components/WeatherCard";
 import yamuLogo from '../images/yamu-logo.png';
@@ -8,8 +11,13 @@ import profileIcon from '../images/profile.png';
 import botImage from '../images/bot-image.png';
 import apiClient from "../services/axiosInstance";
 import GuideModal from "../components/GuideModal";
+
 import EventModal from "../components/EventModal";
 import eventService from "../services/eventService";
+
+import { useUser } from "../context/UserContext";
+import { Layout } from "../components/Layout";
+
 
 const currencies = [
   { code: 'USD', symbol: '$' },
@@ -20,16 +28,23 @@ const currencies = [
 
 export default function TravelerDashboard({ currentUser }) {
   const navigate = useNavigate();
+  const location = useLocation();
   const [selectedCurrency, setSelectedCurrency] = useState('LKR');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [exchangeRates, setExchangeRates] = useState({});
   const [guides, setGuides] = useState([]);
   const [showLeftButton, setShowLeftButton] = useState({});
   const [selectedGuide, setSelectedGuide] = useState(null);
+
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [facebookEvents, setFacebookEvents] = useState([]);
   const [isLoadingEvents, setIsLoadingEvents] = useState(true);
   const [sections, setSections] = useState([]);
+
+  
+  const loggedUser = useUser().user;
+  const unreadCount = 0;
+
 
   useEffect(() => {
     const fetchGuides = async () => {
@@ -230,84 +245,15 @@ export default function TravelerDashboard({ currentUser }) {
     navigate('/guides-page', { state: { currentUser } });
   };
 
-  const CurrencyDropdown = () => (
-    <div className="currency-dropdown">
-      <button
-        type="button"
-        className="currency-button"
-        onClick={(e) => {
-          e.stopPropagation();//prevent the click event from bubbling up
-          setIsDropdownOpen(!isDropdownOpen);//toggle the dropdown
-        }}
-      >
-        <span>{currencies.find(c => c.code === selectedCurrency)?.symbol}</span>
-        <span>{selectedCurrency}</span>
-        <span className={`dropdown-arrow ${isDropdownOpen ? 'open' : ''}`}>▼</span>
-      </button>
-
-      {isDropdownOpen && (
-        <div className="dropdown-menu">
-          {currencies.map((currency) => (
-            <button
-              key={currency.code}
-              type="button"
-              className="currency-option"
-              onClick={() => {
-                setSelectedCurrency(currency.code);
-                setIsDropdownOpen(false);
-              }}
-            >
-              <span>{currency.symbol}</span> <span>{currency.code}</span>
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-
   return (
-    <div>
-      <nav className="nav-container">
-        <div className="logo-container">
-          <img src={yamuLogo} alt="YAMU Logo" className="nav-logo-image" />
-          <h1 className="nav-logo">YAMU</h1>
-        </div>
-        <ul className="nav-links">
-          {['Dashboard', 'Hotels', 'Guides', 'Places', 'Emergency Contacts'].map((item) => (
-            <li
-              key={item}
-              className="nav-link"
-              onClick={() => {
-                if (item === 'Guides') {
-                  handleNavigateToGuides();
-                } else if (item === 'Dashboard') {
-                  navigate('/traveler-dashboard');
-                }
-              }}
-            >
-              {item}
-            </li>
-          ))}
-          <li
-            key="Inbox"
-            className="nav-link"
-            onClick={() => navigate('/inbox')}
-          >
-            Inbox
-          </li>
-        </ul>
-        <div className="flex items-center space-x-4">
-          <CurrencyDropdown />
-          <WeatherCard />
-          <div className="icon-container">
-            <img src={notificationIcon} alt="Notifications" className="w-6 h-6" />
-            <span className="notification-badge">3</span>
-          </div>
-          <div className="icon-container">
-            <img src={profileIcon} alt="Profile" className="profile-image" onClick={() => navigate('/profile')} />
-          </div>
-        </div>
-      </nav>
+    <Layout 
+      user={loggedUser}
+      unreadCount={unreadCount}
+      onCurrencyChange={setSelectedCurrency}
+      selectedCurrency={selectedCurrency}
+      navigate={navigate}
+      location={location}
+    >
 
       <div className="main-content">
         <div className="search-container">
@@ -319,7 +265,12 @@ export default function TravelerDashboard({ currentUser }) {
             />
           </div>
           <div className="buttons-container">
-            <button className="action-button upcoming-trips-button">
+
+            <button 
+              className="action-button upcoming-trips-button"
+              onClick={() => navigate('/traveler-upcoming-trips')}
+            >
+
               Upcoming Trips
             </button>
             <button 
@@ -440,6 +391,7 @@ export default function TravelerDashboard({ currentUser }) {
           currentUser={currentUser}
         />
       )}
+
       
       {selectedEvent && (
         <EventModal 
@@ -448,5 +400,8 @@ export default function TravelerDashboard({ currentUser }) {
         />
       )}
     </div>
+
+    </Layout>
+
   );
 }
