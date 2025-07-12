@@ -81,6 +81,7 @@ const VehicleManagement = ({ guideId, isOwner = false }) => {
       setLoading(true);
       const vehicleData = await vehicleService.getVehiclesByGuideId(guideId);
       setVehicles(vehicleData);
+      console.log("Loaded vehicles:", vehicleData);
     } catch (error) {
       showError('Failed to load vehicles');
       console.error('Error loading vehicles:', error);
