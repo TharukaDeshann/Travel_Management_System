@@ -199,7 +199,10 @@ public class OpenStreetMapHotelService {
             
             Hotel hotel = new Hotel();
             
-            // Generate a unique ID based on OSM ID
+            // Set the actual OSM ID as the hotel ID
+            hotel.setId(element.getId());
+            
+            // Generate a unique identifier based on OSM ID
             hotel.setGooglePlaceId("osm_" + element.getId());
             hotel.setName(element.getTags().get("name"));
             

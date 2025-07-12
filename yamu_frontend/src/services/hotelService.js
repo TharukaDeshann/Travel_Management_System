@@ -106,7 +106,7 @@ const formatRoomTypeName = (roomTypeEnum) => {
 export const createHotelBooking = async (bookingData) => {
   try {
     console.log('📝 Creating booking:', bookingData);
-    const response = await apiClient.post('/api/hotels/bookings', bookingData);
+    const response = await apiClient.post('/api/hotels/bookings?travelerId=57', bookingData);
     console.log('✅ Booking created:', response.data);
     return response.data;
   } catch (error) {

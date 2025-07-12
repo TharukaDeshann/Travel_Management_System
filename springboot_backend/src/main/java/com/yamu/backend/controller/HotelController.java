@@ -73,7 +73,7 @@ public class HotelController {
     @PostMapping("/bookings")
     public ResponseEntity<?> createBooking(
             @Valid @RequestBody HotelBookingRequestDTO bookingRequest,
-            @RequestParam(required = false) Long travelerId) {
+            @RequestParam(required = true) Long travelerId) {
         try {
             // Use default traveler ID if not provided (for testing purposes)
             Long actualTravelerId = travelerId != null ? travelerId : 1L;

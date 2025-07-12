@@ -14,8 +14,7 @@ import java.util.List;
 public class Hotel {
     
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private Long id; // Remove auto-generation to allow manual setting of OSM IDs
     
     @Column(nullable = false)
     private String name;

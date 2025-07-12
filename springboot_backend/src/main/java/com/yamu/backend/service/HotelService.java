@@ -34,6 +34,7 @@ public class HotelService {
     private final OpenStreetMapHotelService openStreetMapHotelService; // Changed from GooglePlacesService
     private final ModelMapper modelMapper;
     
+    @Transactional
     public List<HotelResponseDTO> searchHotelsAlongRoute(HotelSearchRequestDTO searchRequest) {
         log.info("🔍 HOTEL SEARCH: Route ({}, {}) → ({}, {})",
                 searchRequest.getStartLatitude(), searchRequest.getStartLongitude(),
@@ -57,23 +58,41 @@ public class HotelService {
         List<Hotel> allHotels = new ArrayList<>(databaseHotels);
         log.info("📊 DATABASE: Found {} hotels", databaseHotels.size());
         
-        // If not enough hotels in database, fetch additional from Google Places API
-        // These will be treated as transient data (not saved to database)
+        // If not enough hotels in database, fetch additional from OpenStreetMap API
+        // Save these to database for future bookings and consistency
         if (allHotels.size() < maxResults) {
             log.info("🗺️ OSM: Searching for additional hotels...");
             List<Hotel> osmHotels = openStreetMapHotelService.searchHotelsAlongRoute(searchRequest);
             log.info("🗺️ OSM: Found {} hotels", osmHotels.size());
             
-            // Process OSM hotels as transient data - assign mock templates without saving
+            // Process and save OSM hotels to database
             for (Hotel osmHotel : osmHotels) {
                 if (allHotels.size() >= maxResults) break;
                 
-                // Assign random mock data template for this session only
-                osmHotel.setMockDataTemplate(mockDataService.getRandomTemplate());
-                // Set a temporary ID to distinguish from database hotels
-                osmHotel.setId(-Math.abs(osmHotel.getGooglePlaceId().hashCode()) % 100000L);
-                
-                allHotels.add(osmHotel);
+                try {
+                    // Check if hotel already exists by ID or googlePlaceId
+                    Optional<Hotel> existingHotel = hotelRepository.findById(osmHotel.getId());
+                    if (existingHotel.isEmpty()) {
+                        existingHotel = hotelRepository.findByGooglePlaceId(osmHotel.getGooglePlaceId());
+                    }
+                    
+                    if (existingHotel.isPresent()) {
+                        log.debug("🗺️ OSM hotel already exists in database: {} (ID: {})", 
+                                existingHotel.get().getName(), existingHotel.get().getId());
+                        allHotels.add(existingHotel.get());
+                    } else {
+                        // Assign random mock data template and save to database with OSM ID
+                        osmHotel.setMockDataTemplate(mockDataService.getRandomTemplate());
+                        // Use the OSM ID directly (keep the negative ID from OSM)
+                        
+                        Hotel savedHotel = hotelRepository.save(osmHotel);
+                        log.info("🗺️ OSM: Saved new hotel to database: {} (OSM ID: {})", savedHotel.getName(), savedHotel.getId());
+                        allHotels.add(savedHotel);
+                    }
+                } catch (Exception e) {
+                    log.error("🗺️ OSM: Failed to save hotel: {} - Error: {}", osmHotel.getName(), e.getMessage());
+                    // Continue with other hotels even if one fails
+                }
             }
         }
         
@@ -95,19 +114,21 @@ public class HotelService {
                                                        LocalDate checkIn, 
                                                        LocalDate checkOut) {
         
-        // Check if this is an OpenStreetMap hotel (negative ID)
-        if (hotelId < 0) {
-            log.info("🗺️ OSM Hotel availability request for ID: {}", hotelId);
-            // For OSM hotels, generate mock data using a random template
+        // Try to fetch hotel from database first (works for both seeded and OSM hotels)
+        Optional<Hotel> hotelOpt = hotelRepository.findById(hotelId);
+        
+        if (hotelOpt.isPresent()) {
+            Hotel hotel = hotelOpt.get();
+            log.info("🏨 Generating room availability for hotel: {} (Template: {})", 
+                    hotel.getName(), hotel.getMockDataTemplate());
+            return mockDataService.generateMockRoomData(hotel.getMockDataTemplate(), checkIn, checkOut);
+        } else {
+            // If not found in database, this is likely an OSM hotel that hasn't been saved yet
+            // Generate mock data using a random template
+            log.info("🗺️ OSM Hotel availability request for ID: {} (not in database, using random template)", hotelId);
             Hotel.MockDataTemplate template = mockDataService.getRandomTemplate();
             return mockDataService.generateMockRoomData(template, checkIn, checkOut);
         }
-        
-        // For database hotels, fetch from repository
-        Hotel hotel = hotelRepository.findById(hotelId)
-                .orElseThrow(() -> new RuntimeException("Hotel not found with ID: " + hotelId));
-        
-        return mockDataService.generateMockRoomData(hotel.getMockDataTemplate(), checkIn, checkOut);
     }
     
     @Transactional
@@ -152,34 +173,30 @@ public class HotelService {
     }
     
     private Hotel getOrCreateHotel(Long hotelId) {
-        // For database hotels (positive IDs)
-        if (hotelId > 0) {
-            return hotelRepository.findById(hotelId)
-                    .orElseThrow(() -> new RuntimeException("Hotel not found"));
+        // Try to find hotel in database first
+        Optional<Hotel> hotelOpt = hotelRepository.findById(hotelId);
+        
+        if (hotelOpt.isPresent()) {
+            return hotelOpt.get();
+        } else {
+            // If hotel not found in database, create a temporary one for booking
+            // This handles cases where user books before searching again
+            log.info("🗺️ Creating temporary hotel record for OSM ID: {}", hotelId);
+            Hotel tempHotel = new Hotel();
+            tempHotel.setId(hotelId);
+            tempHotel.setName("OpenStreetMap Hotel #" + Math.abs(hotelId));
+            tempHotel.setAddress("Location from OpenStreetMap");
+            tempHotel.setLatitude(0.0);
+            tempHotel.setLongitude(0.0);
+            tempHotel.setRating(4.0);
+            tempHotel.setTotalRatings(100);
+            tempHotel.setPriceLevel(3);
+            tempHotel.setGooglePlaceId("osm_" + Math.abs(hotelId));
+            tempHotel.setMockDataTemplate(mockDataService.getRandomTemplate());
+            
+            // Save the temporary hotel to database
+            return hotelRepository.save(tempHotel);
         }
-        
-        // For OpenStreetMap hotels (negative IDs), check if already exists or create temporary record
-        Optional<Hotel> existingHotel = hotelRepository.findById(hotelId);
-        if (existingHotel.isPresent()) {
-            return existingHotel.get();
-        }
-        
-        // Create a temporary hotel record for OSM hotel
-        log.info("🗺️ Creating temporary hotel record for OSM hotel ID: {}", hotelId);
-        Hotel osmHotel = new Hotel();
-        osmHotel.setId(hotelId);
-        osmHotel.setName("OpenStreetMap Hotel #" + Math.abs(hotelId));
-        osmHotel.setAddress("Location from OpenStreetMap");
-        osmHotel.setLatitude(0.0); // These will be overridden by frontend data
-        osmHotel.setLongitude(0.0);
-        osmHotel.setRating(4.0);
-        osmHotel.setTotalRatings(100);
-        osmHotel.setPriceLevel(3);
-        osmHotel.setGooglePlaceId("osm_" + Math.abs(hotelId));
-        osmHotel.setMockDataTemplate(mockDataService.getRandomTemplate());
-        
-        // Save temporary hotel record
-        return hotelRepository.save(osmHotel);
     }
     
     public List<HotelBookingResponseDTO> getTravelerBookings(Long travelerId) {
