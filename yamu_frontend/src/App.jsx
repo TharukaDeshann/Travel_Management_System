@@ -32,7 +32,7 @@ import UpdateUserProfile from "./pages/profile/components/UpdateUserProfile.jsx"
 import ProfileView from "./pages/ProfileView.jsx";
 import AdminDashboard from "./pages/AdminDashboard.jsx";
 import UsersSocialPage from "./pages/UsersSocialPage.jsx";
-// import ProfileView from "./pages/ProfileView.jsx";
+
 
 import EmergencyContacts from "./pages/EmergencyContacts.jsx";
 import UserSearch from "./components/UserSearch.jsx";
@@ -67,6 +67,7 @@ const App = () => {
 
           {/* Protected Routes */}
           <Route element={<ProtectedRoute />}>
+            <Route path="/inbox" element={<Inbox />} />
             <Route path="/home" element={<Home />} />
             <Route path="/traveler-dashboard" element={<TravelerDashboard />} />
             <Route path="/guide-dashboard" element={<GuideDashboard />} />
@@ -88,6 +89,7 @@ const App = () => {
             {/* <Route path="/users/profile/" */}
             <Route path="/profile" element={<UserProfile />} />
             <Route path="/profile/update-profile" element={<UpdateUserProfile />} />
+            <Route path="/users/profile/:userId" element={<ProfileView />} />
           </Route>
 
           

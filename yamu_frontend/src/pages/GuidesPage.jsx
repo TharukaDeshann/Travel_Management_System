@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import GuideModal from '../components/GuideModal';
 import apiClient from '../services/axiosInstance';
 import { fetchUsersByRole } from '../services/userService';
-
+import VehicleManagement from '../components/VehicleManagement';
 import { useUser } from '../context/UserContext';
 import { Star } from 'lucide-react';
 
@@ -107,7 +107,7 @@ const GuidesPage = () => {
               <h3 style={{ marginTop: 0 }}>{guide.firstName} {guide.lastName}</h3>
               <p><strong>Expertise:</strong> {guide.expertiseCityRegion}</p>
               <p><strong>Language:</strong> {guide.language}</p>
-              <p><strong>Vehicle:</strong> {guide.vehicleAvailability ? 'Available' : 'Not Available'}</p>
+              
               {guide.averageRating > 0 && (
                 <div style={{ display: 'flex', alignItems: 'center', marginTop: '10px', fontSize: '14px', color: '#666' }}>
                   <Star size={16} fill="#FFD700" color="#FFD700" />
@@ -115,7 +115,12 @@ const GuidesPage = () => {
                     {guide.averageRating.toFixed(1)} ({guide.reviewCount} reviews)
                   </span>
                 </div>
+               
+         
               )}
+               <div className="profile-section">
+                  <VehicleManagement guideId={guide.id} isOwner={false} />
+                </div>
             </div>
           </div>
         ))}
