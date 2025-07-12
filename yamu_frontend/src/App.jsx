@@ -22,7 +22,7 @@ import WeatherCard from "./components/WeatherCard.jsx";
 import ItineraryPlanner from "./pages/ItineraryPlanner.jsx";
 
 import FinalizeItinerary from "./pages/FinalizeItinerary.jsx"; 
-import Inbox from "./pages/Inbox.jsx";
+import Inbox from "./pages/Inbox.jsx";// Import FinalizeItinerary
 import TravelerUpcomingTrips from "./pages/TravelerUpcomingTrips";
 
 import VerifyEmail from "./pages/VerifyEmail.jsx";
@@ -77,9 +77,9 @@ const App = () => {
             <Route path="/users/users-by-role" element={<UsersSocialPage />} />
             <Route path="/map" element={<Map />} />
             <Route path="/itinerary-planner" element={<ItineraryPlanner />} />
-            <Route path="/finalize-itinerary" element={<FinalizeItinerary />} />
-            <Route path="/inbox" element={<Inbox />} />
-            <Route path="/traveler-upcoming-trips" element={<TravelerUpcomingTrips />} />
+
+          
+          <Route path="/finalize-itinerary" element={<FinalizeItinerary />} />
 
             
 
