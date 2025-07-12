@@ -40,8 +40,8 @@ const HotelCard = ({ hotel, onSelect }) => {
         {/* Hotel Image */}
         <div className="w-32 h-32 flex-shrink-0">
           <img 
-            src={hotel.photoUrl || 'https://via.placeholder.com/400x300/0066cc/ffffff?text=Hotel+Image'}
-            alt={hotel.name}
+            src={hotel?.photoUrl }
+            alt={hotel?.name}
             className="w-full h-full object-cover rounded-l-lg"
             onError={(e) => {
               e.target.src = 'https://via.placeholder.com/400x300/0066cc/ffffff?text=Hotel+Image';
