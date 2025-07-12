@@ -8,13 +8,15 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
+
 @Entity
 @Table(name = "itinerary")
 @Getter
 @Setter
 public class Itinerary {
+
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.IDENTITY) 
     private Long id;
 
     @Column(nullable = false)
@@ -24,21 +26,20 @@ public class Itinerary {
     private String currency;
 
     @Temporal(TemporalType.DATE)
-    @Column(nullable = false, name = "start_date")
+    @Column(nullable = false)
     private Date startDate;
 
     @Temporal(TemporalType.DATE)
-    @Column(nullable = false, name = "end_date")
+    @Column(nullable = false)
     private Date endDate;
 
-    @Column(nullable = false, name = "trip_title")
+    @Column(nullable = false)
     private String tripTitle;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "traveler_id", nullable = false)
     private Traveler traveler;
 
-    // Relationship with DayPlan
-    @OneToMany(mappedBy = "itinerary", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "itinerary", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<DayPlan> dayPlans = new ArrayList<>();
 }
