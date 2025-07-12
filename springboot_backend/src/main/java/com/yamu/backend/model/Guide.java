@@ -25,7 +25,6 @@ public class Guide extends User {
 
     @Column(columnDefinition = "TEXT")
     private String about;
-
     @Column(nullable = false)
     private boolean vehicleAvailability;
 

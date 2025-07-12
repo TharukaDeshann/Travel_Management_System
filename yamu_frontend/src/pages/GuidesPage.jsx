@@ -4,7 +4,14 @@ import { Search, MapPin, Languages, Car, Star, Users, Shield } from 'lucide-reac
 import GuideModal from '../components/GuideModal';
 import apiClient from '../services/axiosInstance';
 import { fetchUsersByRole } from '../services/userService';
+
+import VehicleManagement from '../components/VehicleManagement';
+import { useUser } from '../context/UserContext';
+import { Star } from 'lucide-react';
+
+
 import { Layout } from '../components/Layout'; // Added import
+
 
 const GuidesPage = () => {
   const location = useLocation();
@@ -28,6 +35,7 @@ const GuidesPage = () => {
       try {
         setLoading(true);
         const response = await fetchUsersByRole('GUIDE');
+
         setGuides(response);
 
         // Fetch ratings for all guides
@@ -43,6 +51,7 @@ const GuidesPage = () => {
           })
         );
         setGuideRatings(ratings);
+
       } catch (error) {
         console.error("Error fetching guides:", error);
       } finally {
@@ -106,6 +115,7 @@ const GuidesPage = () => {
           <p className="text-lg text-gray-600">Loading Guides...</p>
         </div>
       </div>
+
     );
   }
 
@@ -192,6 +202,7 @@ const GuidesPage = () => {
               <p className="text-gray-600">
                 {filteredAndSortedGuides.length} guides found
               </p>
+
             </div>
           </div>
         </div>
