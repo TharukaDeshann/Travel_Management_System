@@ -434,15 +434,15 @@ const Map = () => {
         </div>
 
         {/* Right Column - Map and Itinerary */}
-        <div className="flex-1">
-          <div className="bg-white rounded-lg shadow-xl p-6">
+        <div className="flex-1 relative z-10">
+          <div className="bg-white rounded-lg shadow-xl p-6 relative z-10">
             <div className="flex flex-col lg:flex-row gap-6">
               {/* Map Section */}
-              <div className="flex-1 h-96">
+              <div className="flex-1 h-96 relative z-0">
                 <MapContainer
                   center={[6.9271, 79.8612]}
                   zoom={13}
-                  className="h-full w-full rounded-lg"
+                  className="h-full w-full rounded-lg relative z-0"
                 >
                   <TileLayer
                     url="https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}"
