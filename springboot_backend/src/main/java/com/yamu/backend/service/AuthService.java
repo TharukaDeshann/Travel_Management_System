@@ -65,18 +65,6 @@ public class AuthService {
 
                 guide.setAbout(request.getAbout());
 
-                for (UserRegistrationRequest.VehicleRequest vehicleRequest : request.getVehicles()) {
-                    Vehicle vehicle = new Vehicle();
-                    vehicle.setModel(vehicleRequest.getModel());
-                    vehicle.setType(vehicleRequest.getType());
-                    vehicle.setCapacity(vehicleRequest.getCapacity());
-                    vehicle.setAirConditioned(vehicleRequest.isAirConditioned());
-                    vehicle.setAvailable(vehicleRequest.isAvailable());
-                    vehicle.setVehicleImageUrl(vehicleRequest.getVehicleImageUrl());
-                    vehicle.setGuide(guide); // Set the guide for the vehicle
-                    guide.getVehicles().add(vehicle);
-                }
-                
                 
                 
                 user = guide;
