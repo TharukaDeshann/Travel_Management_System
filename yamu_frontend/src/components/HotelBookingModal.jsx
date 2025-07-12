@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { createHotelBooking } from '../services/hotelService';
 
 const HotelBookingModal = ({ 
@@ -24,13 +24,25 @@ const HotelBookingModal = ({
     cvv: '',
     cardHolderName: ''
   });
+  const [dateData, setDateData] = useState({
+    checkInDate: checkInDate,
+    checkOutDate: checkOutDate
+  });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [currentStep, setCurrentStep] = useState(1); // 1: Guest Details, 2: Payment, 3: Confirmation
 
+  // Update dates when props change
+  useEffect(() => {
+    setDateData({
+      checkInDate: checkInDate,
+      checkOutDate: checkOutDate
+    });
+  }, [checkInDate, checkOutDate]);
+
   const calculateNights = () => {
-    const checkIn = new Date(checkInDate);
-    const checkOut = new Date(checkOutDate);
+    const checkIn = new Date(dateData.checkInDate);
+    const checkOut = new Date(dateData.checkOutDate);
     return Math.ceil((checkOut - checkIn) / (1000 * 60 * 60 * 24));
   };
 
@@ -50,8 +62,10 @@ const HotelBookingModal = ({
   const handleInputChange = (field, value, section = 'booking') => {
     if (section === 'booking') {
       setBookingData(prev => ({ ...prev, [field]: value }));
-    } else {
+    } else if (section === 'payment') {
       setPaymentData(prev => ({ ...prev, [field]: value }));
+    } else if (section === 'dates') {
+      setDateData(prev => ({ ...prev, [field]: value }));
     }
   };
 
@@ -63,6 +77,15 @@ const HotelBookingModal = ({
            bookingData.numberOfGuests <= selectedRoom.capacity;
   };
 
+  const validateDates = () => {
+    const checkIn = new Date(dateData.checkInDate);
+    const checkOut = new Date(dateData.checkOutDate);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    return checkIn >= today && checkOut > checkIn;
+  };
+
   const validatePaymentDetails = () => {
     return paymentData.cardNumber.length === 16 && 
            paymentData.expiryDate && 
@@ -71,15 +94,17 @@ const HotelBookingModal = ({
   };
 
   const handleNextStep = () => {
-    if (currentStep === 1 && validateGuestDetails()) {
+    if (currentStep === 1 && validateGuestDetails() && validateDates()) {
       setCurrentStep(2);
     } else if (currentStep === 2 && validatePaymentDetails()) {
       setCurrentStep(3);
+    } else {
+      setError('Please fill in all required fields correctly.');
     }
   };
 
   const handleBooking = async () => {
-    if (!validateGuestDetails() || !validatePaymentDetails()) {
+    if (!validateGuestDetails() || !validatePaymentDetails() || !validateDates()) {
       setError('Please fill in all required fields correctly.');
       return;
     }
@@ -92,8 +117,8 @@ const HotelBookingModal = ({
       
       const bookingRequest = {
         hotelId: hotel.id,
-        checkInDate: checkInDate,
-        checkOutDate: checkOutDate,
+        checkInDate: dateData.checkInDate,
+        checkOutDate: dateData.checkOutDate,
         roomType: selectedRoom.roomType,
         numberOfRooms: 1, // Default to 1 room
         numberOfGuests: bookingData.numberOfGuests,
@@ -187,6 +212,48 @@ const HotelBookingModal = ({
           {currentStep === 1 && (
             <div className="space-y-4">
               <h3 className="text-lg font-semibold mb-4">Guest Information</h3>
+              
+              {/* Date Selection Section */}
+              <div className="bg-blue-50 p-4 rounded-lg mb-6">
+                <h4 className="text-md font-semibold mb-3 text-blue-800">Check-in & Check-out Dates</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Check-in Date *
+                    </label>
+                    <input
+                      type="date"
+                      value={dateData.checkInDate}
+                      onChange={(e) => handleInputChange('checkInDate', e.target.value, 'dates')}
+                      min={new Date().toISOString().split('T')[0]}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Check-out Date *
+                    </label>
+                    <input
+                      type="date"
+                      value={dateData.checkOutDate}
+                      onChange={(e) => handleInputChange('checkOutDate', e.target.value, 'dates')}
+                      min={dateData.checkInDate}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                </div>
+                
+                {!validateDates() && (dateData.checkInDate || dateData.checkOutDate) && (
+                  <div className="mt-2 text-sm text-red-600">
+                    Please ensure check-in date is today or later, and check-out date is after check-in date.
+                  </div>
+                )}
+                
+                <div className="mt-3 text-sm text-gray-600">
+                  Duration: {calculateNights()} night{calculateNights() !== 1 ? 's' : ''}
+                </div>
+              </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
@@ -355,10 +422,10 @@ const HotelBookingModal = ({
                     <strong>Room:</strong> {selectedRoom.roomType}
                   </div>
                   <div>
-                    <strong>Check-in:</strong> {checkInDate}
+                    <strong>Check-in:</strong> {dateData.checkInDate}
                   </div>
                   <div>
-                    <strong>Check-out:</strong> {checkOutDate}
+                    <strong>Check-out:</strong> {dateData.checkOutDate}
                   </div>
                   <div>
                     <strong>Guests:</strong> {bookingData.numberOfGuests}
@@ -406,7 +473,7 @@ const HotelBookingModal = ({
             {currentStep < 3 ? (
               <button
                 onClick={handleNextStep}
-                disabled={currentStep === 1 ? !validateGuestDetails() : !validatePaymentDetails()}
+                disabled={currentStep === 1 ? (!validateGuestDetails() || !validateDates()) : !validatePaymentDetails()}
                 className="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
               >
                 Next Step
