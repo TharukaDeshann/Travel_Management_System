@@ -15,8 +15,6 @@ public class ItineraryDetailResponse {
     private Date startDate;
     private Date endDate;
     private String tripTitle;
-    private List<DayPlanDetailResponse> dayPlans;
+    private Long travelerId;
+    private List<DayPlanDetailResponse> dayPlans; // Added DayPlan list
 }
-
-
-

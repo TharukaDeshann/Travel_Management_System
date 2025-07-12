@@ -1,6 +1,5 @@
 package com.yamu.backend.dto;
 
-
 import lombok.Getter;
 import lombok.Setter;
 
@@ -17,4 +16,8 @@ public class DayPlanDetailResponse {
     private String guideDetails;
     private List<LocationDetailResponse> locations;
     private RouteDetailResponse route;
+    public void setGuideReservationId(Long guideReservationId) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'setGuideReservationId'");
+    }
 }

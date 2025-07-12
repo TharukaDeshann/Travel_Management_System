@@ -7,7 +7,6 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
-
 import org.springframework.lang.NonNull;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -38,18 +37,18 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     @Override
     protected void doFilterInternal(@NonNull HttpServletRequest request, 
-                                    @NonNull HttpServletResponse response, 
-                                    @NonNull FilterChain chain)
+                                  @NonNull HttpServletResponse response, 
+                                  @NonNull FilterChain chain)
             throws ServletException, IOException {
 
-        String token = extractToken(request); // Extract from Header or Cookies
+        String token = extractToken(request);
 
         if (token == null) {
             chain.doFilter(request, response);
             return;
         }
 
-        if (tokenBlacklistService.isBlacklisted(token)) { // Check if token is blacklisted
+        if (tokenBlacklistService.isBlacklisted(token)) {
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             response.getWriter().write("Token is invalid.");
             return;
@@ -85,18 +84,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         chain.doFilter(request, response);
     }
 
-    /**
-     * Exclude certain endpoints from filtering (such as /login and /refresh-token)
-     */
     @Override
     protected boolean shouldNotFilter(@NonNull HttpServletRequest request) {
         String path = request.getServletPath();
-        return path.equals("/api/auth/login") || path.equals("/api/auth/refresh-token");
+        return path.equals("/api/auth/login") 
+            || path.equals("/api/auth/refresh-token");
+        // Removed day-plans from exclusion list
     }
 
-    /**
-     * Extracts JWT from Authorization Header or Cookies
-     */
     private String extractToken(HttpServletRequest request) {
         String authHeader = request.getHeader("Authorization");
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
