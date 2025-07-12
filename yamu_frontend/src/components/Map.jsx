@@ -7,6 +7,7 @@ import "leaflet-routing-machine";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import { searchLocations } from "../services/map/locationService";
 import { fetchRoute, optimizeRoute, nearestNeighborOptimization } from "../services/map/routeService";
+import { useNotification } from "../hooks/useNotification";
 import axios from "axios";
 
 // Hotel booking components
@@ -72,6 +73,7 @@ const FitBoundsControl = ({ locations }) => {
 const Map = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { showSuccess, showError, showWarning } = useNotification();
   const searchParams = new URLSearchParams(location.search);
   const dates = JSON.parse(searchParams.get("dates")) || [];
   const tripTitle = searchParams.get("title") || "";
@@ -145,7 +147,7 @@ const Map = () => {
 
   const handleBookHotel = () => {
     if (locations[currentIndex].length === 0) {
-      alert('Please add at least one location to your route before booking a hotel.');
+      showWarning('Please add at least one location to your route before booking a hotel.');
       return;
     }
     
@@ -168,7 +170,7 @@ const Map = () => {
   };
 
   const handleBookingComplete = (booking) => {
-    console.log('✅ Booking completed:', booking);
+    console.log('Booking completed:', booking);
     
     // Update booked hotels state
     const updatedBookedHotels = [...bookedHotels];
@@ -189,7 +191,7 @@ const Map = () => {
     setSelectedRoom(null);
     setRoomAvailability(null);
     
-    alert(`✅ Hotel booking confirmed!\nBooking ID: ${booking.id}\nHotel: ${selectedHotel.name}`);
+    showSuccess(`Hotel booking confirmed! Booking ID: ${booking.id} at ${selectedHotel.name}`, 'Booking Confirmed');
   };
 
   const handleCloseModals = () => {
@@ -206,7 +208,7 @@ const Map = () => {
     updated[currentIndex] = true;
     setTransportBooked(updated);
     setTimeout(() => {
-      alert(`Transport booked for ${dates[currentIndex]}`);
+      showSuccess(`Transport booked for ${dates[currentIndex]}`, 'Transport Booking');
       updated[currentIndex] = false;
       setTransportBooked([...updated]);
     }, 500);
@@ -215,7 +217,7 @@ const Map = () => {
   // Optimize route for the current day
   const handleOptimizeRoute = async () => {
     if (locations[currentIndex].length < 3) {
-      alert("Need at least 3 locations to optimize route.");
+      showWarning("Need at least 3 locations to optimize route.");
       return;
     }
     try {
@@ -223,16 +225,16 @@ const Map = () => {
       const updatedLocations = [...locations];
       updatedLocations[currentIndex] = optimized;
       setLocations(updatedLocations);
-      alert("Route optimized!");
+      showSuccess("Route optimized successfully!", "Route Optimization");
     } catch (error) {
-      alert("Failed to optimize route.");
+      showError("Failed to optimize route. Please try again.", "Optimization Failed");
     }
   };
 
   // Save route for the current day
   const handleSaveRoute = async () => {
     if (!locations[currentIndex] || locations[currentIndex].length === 0) {
-      alert("Add at least one location before saving.");
+      showWarning("Add at least one location before saving.");
       return;
     }
     setSaving(true);
@@ -248,10 +250,10 @@ const Map = () => {
         })),
       };
       await axios.post("/api/routes", routeData);
-      alert("Route saved successfully!");
+      showSuccess("Route saved successfully!", "Route Saved");
     } catch (error) {
       console.error("Error saving route:", error);
-      alert("Failed to save route.");
+      showError("Failed to save route. Please try again.", "Save Failed");
     }
     setSaving(false);
   };
@@ -375,8 +377,8 @@ const Map = () => {
               disabled={hotelBooked[currentIndex]}
             >
               {hotelBooked[currentIndex] 
-                ? `✅ Hotel Booked${bookedHotels[currentIndex] ? ` - ${bookedHotels[currentIndex].hotel.name}` : ''}` 
-                : "🏨 Book Hotel"
+                ? ` Hotel Booked${bookedHotels[currentIndex] ? ` - ${bookedHotels[currentIndex].hotel.name}` : ''}` 
+                : "Book Hotel"
               }
             </button>
 
@@ -392,25 +394,13 @@ const Map = () => {
                 <div className="text-green-600">
                   Booking ID: {bookedHotels[currentIndex].booking.id}
                 </div>
-                <button 
-                  onClick={() => {
-                    const updated = [...hotelBooked];
-                    updated[currentIndex] = false;
-                    setHotelBooked(updated);
-                    const updatedBookedHotels = [...bookedHotels];
-                    updatedBookedHotels[currentIndex] = null;
-                    setBookedHotels(updatedBookedHotels);
-                  }}
-                  className="text-xs text-red-600 hover:text-red-800 mt-1"
-                >
-                  Cancel Booking
-                </button>
+                
               </div>
             )}
 
             <button
               className="w-full px-6 py-3 bg-green-600 text-white rounded hover:bg-green-700"
-              onClick={() => alert("Navigated to Tour Guide Booking Form.")}
+              onClick={() => showSuccess("Navigated to Tour Guide Booking Form.", "Tour Guide Booking")}
             >
               Book Tour Guide
             </button>
