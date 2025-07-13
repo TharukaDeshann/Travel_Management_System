@@ -47,6 +47,7 @@ public class DriverController {
     }
 
     // Book a driver for a date
+// Book a driver for a date
     @PostMapping("/book")
     public String bookDriver(@RequestBody BookDriverRequest req) {
         LocalDate bookingDate = LocalDate.parse(req.date());
@@ -58,6 +59,19 @@ public class DriverController {
         booking.setBookingDate(bookingDate);
         booking.setTravelerId(req.travelerId());
         booking.setStatus("BOOKED");
+
+        // Set start and end location details
+        if (req.startLocation() != null) {
+            booking.setStartLocationName(req.startLocation().name());
+            booking.setStartLocationLat(req.startLocation().latitude());
+            booking.setStartLocationLon(req.startLocation().longitude());
+        }
+        if (req.endLocation() != null) {
+            booking.setEndLocationName(req.endLocation().name());
+            booking.setEndLocationLat(req.endLocation().latitude());
+            booking.setEndLocationLon(req.endLocation().longitude());
+        }
+
         bookingRepository.save(booking);
         return "BOOKED";
     }
