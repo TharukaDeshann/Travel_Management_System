@@ -6,20 +6,31 @@ import L from "leaflet";
 import "leaflet-routing-machine";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import { searchLocations } from "../services/map/locationService";
-import { fetchRoute, optimizeRoute, nearestNeighborOptimization } from "../services/map/routeService";
+import {
+  fetchRoute,
+  optimizeRoute,
+  nearestNeighborOptimization,
+} from "../services/map/routeService";
 import axios from "axios";
 
 // Hotel booking components
 import HotelSearchPopup from "./HotelSearchPopup";
 import RoomAvailabilityModal from "./RoomAvailabilityModal";
 import HotelBookingModal from "./HotelBookingModal";
+import BookTransportButton from "./BookTransportButton";
+import AvailableDriversPopup from "./AvailableDriversPopup";
+import ConfirmDriverSelection from "./ConfirmDriverSelection";
+import apiClient from "../services/axiosInstance";
 
 // Marker icon configuration
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
-  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
-  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
-  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+  iconRetinaUrl:
+    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png",
+  iconUrl:
+    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png",
+  shadowUrl:
+    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
 });
 
 const RoutingMachine = ({ locations, travelMode }) => {
@@ -31,18 +42,21 @@ const RoutingMachine = ({ locations, travelMode }) => {
         try {
           const data = await fetchRoute(locations, travelMode);
           map.eachLayer((layer) => {
-            if (layer.options?.className === "route-layer") map.removeLayer(layer);
+            if (layer.options?.className === "route-layer")
+              map.removeLayer(layer);
           });
 
           L.geoJSON(data, {
             color: "#2563eb",
             weight: 5,
             className: "route-layer",
-            dashArray: travelMode.includes("foot") ? "5, 10" : null
+            dashArray: travelMode.includes("foot") ? "5, 10" : null,
           }).addTo(map);
 
           if (locations.length > 0) {
-            const bounds = L.latLngBounds(locations.map(loc => [loc.lat, loc.lon]));
+            const bounds = L.latLngBounds(
+              locations.map((loc) => [loc.lat, loc.lon])
+            );
             map.fitBounds(bounds, { padding: [50, 50] });
           }
         } catch (error) {
@@ -61,7 +75,7 @@ const FitBoundsControl = ({ locations }) => {
 
   useEffect(() => {
     if (locations.length > 0) {
-      const bounds = L.latLngBounds(locations.map(loc => [loc.lat, loc.lon]));
+      const bounds = L.latLngBounds(locations.map((loc) => [loc.lat, loc.lon]));
       map.fitBounds(bounds, { padding: [50, 50] });
     }
   }, [locations, map]);
@@ -80,8 +94,12 @@ const Map = () => {
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const [locations, setLocations] = useState(Array(dates.length).fill([]));
-  const [hotelBooked, setHotelBooked] = useState(Array(dates.length).fill(false));
-  const [transportBooked, setTransportBooked] = useState(Array(dates.length).fill(false));
+  const [hotelBooked, setHotelBooked] = useState(
+    Array(dates.length).fill(false)
+  );
+  const [transportBooked, setTransportBooked] = useState(
+    Array(dates.length).fill(false)
+  );
   const [searchTerm, setSearchTerm] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const [travelMode, setTravelMode] = useState("driving-car");
@@ -95,7 +113,15 @@ const Map = () => {
   const [selectedHotel, setSelectedHotel] = useState(null);
   const [selectedRoom, setSelectedRoom] = useState(null);
   const [roomAvailability, setRoomAvailability] = useState(null);
-  const [bookedHotels, setBookedHotels] = useState(Array(dates.length).fill(null));
+  const [bookedHotels, setBookedHotels] = useState(
+    Array(dates.length).fill(null)
+  );
+
+  // Driver booking states
+  const [showDriversPopup, setShowDriversPopup] = useState(false);
+  const [selectedDriverId, setSelectedDriverId] = useState(null);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [selectedDriverSummary, setSelectedDriverSummary] = useState(null); // For passing to confirmation
 
   useEffect(() => {
     if (dates.length === 0) navigate("/");
@@ -119,7 +145,10 @@ const Map = () => {
 
   const addLocation = (lat, lon, name) => {
     const updatedLocations = [...locations];
-    updatedLocations[currentIndex] = [...updatedLocations[currentIndex], { lat, lon, name }];
+    updatedLocations[currentIndex] = [
+      ...updatedLocations[currentIndex],
+      { lat, lon, name },
+    ];
     setLocations(updatedLocations);
     setSearchTerm("");
     setSearchResults([]);
@@ -128,7 +157,9 @@ const Map = () => {
 
   const removeLocation = (index) => {
     const updatedLocations = [...locations];
-    updatedLocations[currentIndex] = updatedLocations[currentIndex].filter((_, i) => i !== index);
+    updatedLocations[currentIndex] = updatedLocations[currentIndex].filter(
+      (_, i) => i !== index
+    );
     setLocations(updatedLocations);
   };
 
@@ -145,22 +176,24 @@ const Map = () => {
 
   const handleBookHotel = () => {
     if (locations[currentIndex].length === 0) {
-      alert('Please add at least one location to your route before booking a hotel.');
+      alert(
+        "Please add at least one location to your route before booking a hotel."
+      );
       return;
     }
-    
+
     setShowHotelSearch(true);
   };
 
   const handleHotelSelect = (hotel) => {
-    console.log('🏨 Hotel selected:', hotel);
+    console.log("🏨 Hotel selected:", hotel);
     setSelectedHotel(hotel);
     setShowHotelSearch(false);
     setShowRoomAvailability(true);
   };
 
   const handleRoomSelect = (room, availability) => {
-    console.log('🛏️ Room selected:', room);
+    console.log("🛏️ Room selected:", room);
     setSelectedRoom(room);
     setRoomAvailability(availability);
     setShowRoomAvailability(false);
@@ -168,28 +201,30 @@ const Map = () => {
   };
 
   const handleBookingComplete = (booking) => {
-    console.log('✅ Booking completed:', booking);
-    
+    console.log("✅ Booking completed:", booking);
+
     // Update booked hotels state
     const updatedBookedHotels = [...bookedHotels];
     updatedBookedHotels[currentIndex] = {
       hotel: selectedHotel,
       room: selectedRoom,
-      booking: booking
+      booking: booking,
     };
     setBookedHotels(updatedBookedHotels);
-    
+
     // Update hotel booked status
     const updated = [...hotelBooked];
     updated[currentIndex] = true;
     setHotelBooked(updated);
-    
+
     // Reset selection states
     setSelectedHotel(null);
     setSelectedRoom(null);
     setRoomAvailability(null);
-    
-    alert(`✅ Hotel booking confirmed!\nBooking ID: ${booking.id}\nHotel: ${selectedHotel.name}`);
+
+    alert(
+      `✅ Hotel booking confirmed!\nBooking ID: ${booking.id}\nHotel: ${selectedHotel.name}`
+    );
   };
 
   const handleCloseModals = () => {
@@ -219,7 +254,10 @@ const Map = () => {
       return;
     }
     try {
-      const optimized = await optimizeRoute(locations[currentIndex], travelMode);
+      const optimized = await optimizeRoute(
+        locations[currentIndex],
+        travelMode
+      );
       const updatedLocations = [...locations];
       updatedLocations[currentIndex] = optimized;
       setLocations(updatedLocations);
@@ -256,7 +294,6 @@ const Map = () => {
     setSaving(false);
   };
 
-  
   // Save route before moving to next day or finalizing
   const saveCurrentDayRoute = async () => {
     if (locations[currentIndex] && locations[currentIndex].length > 0) {
@@ -273,11 +310,11 @@ const Map = () => {
       navigate("/finalize-itinerary", {
         state: {
           dates,
-          locations: locations.map(day => day.map(loc => loc.name)),
+          locations: locations.map((day) => day.map((loc) => loc.name)),
           tripTitle,
           budget,
-          currency
-        }
+          currency,
+        },
       });
     }
   };
@@ -319,10 +356,14 @@ const Map = () => {
                     {searchResults.map((place) => (
                       <div
                         key={place.place_id}
-                        onClick={() => addLocation(place.lat, place.lon, place.display_name)}
+                        onClick={() =>
+                          addLocation(place.lat, place.lon, place.display_name)
+                        }
                         className="p-3 hover:bg-gray-100 cursor-pointer"
                       >
-                        <div className="font-medium">{place.display_name.split(",")[0]}</div>
+                        <div className="font-medium">
+                          {place.display_name.split(",")[0]}
+                        </div>
                         <div className="text-sm text-gray-500">
                           {place.display_name.split(",").slice(1, 3).join(",")}
                         </div>
@@ -367,17 +408,20 @@ const Map = () => {
           <div className="bg-white rounded-lg shadow-xl p-6 space-y-4">
             <button
               className={`w-full px-6 py-3 rounded text-white transition-colors ${
-                hotelBooked[currentIndex] 
-                  ? 'bg-green-500 cursor-default' 
-                  : 'bg-blue-600 hover:bg-blue-700'
+                hotelBooked[currentIndex]
+                  ? "bg-green-500 cursor-default"
+                  : "bg-blue-600 hover:bg-blue-700"
               }`}
               onClick={handleBookHotel}
               disabled={hotelBooked[currentIndex]}
             >
-              {hotelBooked[currentIndex] 
-                ? `✅ Hotel Booked${bookedHotels[currentIndex] ? ` - ${bookedHotels[currentIndex].hotel.name}` : ''}` 
-                : "🏨 Book Hotel"
-              }
+              {hotelBooked[currentIndex]
+                ? `✅ Hotel Booked${
+                    bookedHotels[currentIndex]
+                      ? ` - ${bookedHotels[currentIndex].hotel.name}`
+                      : ""
+                  }`
+                : "🏨 Book Hotel"}
             </button>
 
             {/* Show hotel details if booked */}
@@ -392,7 +436,7 @@ const Map = () => {
                 <div className="text-green-600">
                   Booking ID: {bookedHotels[currentIndex].booking.id}
                 </div>
-                <button 
+                <button
                   onClick={() => {
                     const updated = [...hotelBooked];
                     updated[currentIndex] = false;
@@ -415,13 +459,75 @@ const Map = () => {
               Book Tour Guide
             </button>
 
-            <button
+            {/* <button
               className={`w-full px-6 py-3 rounded text-white ${transportBooked[currentIndex] ? 'bg-purple-400' : 'bg-purple-600 hover:bg-purple-700'}`}
               onClick={handleBookTransport}
               disabled={transportBooked[currentIndex]}
             >
               {transportBooked[currentIndex] ? "Booking Transport..." : "Book Transport"}
-            </button>
+            </button> */}
+            <BookTransportButton
+              onClick={() => setShowDriversPopup(true)}
+              disabled={
+                transportBooked[currentIndex] ||
+                locations[currentIndex].length < 2
+              }
+            />
+            <AvailableDriversPopup
+              isOpen={showDriversPopup}
+              onClose={() => setShowDriversPopup(false)}
+              date={dates[currentIndex]}
+              onSelectDriver={(driverId, summary) => {
+                setSelectedDriverId(driverId);
+                setSelectedDriverSummary(summary); // You may want to update AvailableDriversPopup to pass summary
+                setShowDriversPopup(false);
+                setShowConfirm(true);
+              }}
+            />
+
+            {showConfirm && selectedDriverId && (
+              <ConfirmDriverSelection
+                driver={selectedDriverSummary}
+                onConfirm={async () => {
+                  const dayLocations = locations[currentIndex];
+                  const startLocation = dayLocations[0];
+                  const endLocation = dayLocations[dayLocations.length - 1];
+                  const userStr = localStorage.getItem("user");
+                  const user = userStr ? JSON.parse(userStr) : null;
+                  const userId = user ? user.id : null;
+
+                  try {
+                    await apiClient.post("/api/drivers/book", {
+                      driverId: selectedDriverId,
+                      date: dates[currentIndex],
+                      travelerId: userId, // You'll need to get the logged-in user's id
+                      startLocation: {
+                        name: startLocation.name,
+                        latitude: startLocation.lat,
+                        longitude: startLocation.lon,
+                      },
+                      endLocation: {
+                        name: endLocation.name,
+                        latitude: endLocation.lat,
+                        longitude: endLocation.lon,
+                      },
+                    });
+                    alert("Driver booked successfully!");
+                    setTransportBooked((prev) => {
+                      const updated = [...prev];
+                      updated[currentIndex] = true;
+                      return updated;
+                    });
+                    setShowConfirm(false); // <<== Only close on success!
+                  } catch (err) {
+                    alert("Failed to book driver.");
+                    console.error("Error booking driver:", err);
+                    // Optionally leave modal open, or handle error state here
+                  }
+                }}
+                onCancel={() => setShowConfirm(false)}
+              />
+            )}
           </div>
 
           {/* Next Button */}
@@ -429,7 +535,9 @@ const Map = () => {
             onClick={handleNext}
             className="w-full px-6 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600"
           >
-            {currentIndex < dates.length - 1 ? "Next Day →" : "Finalize Itinerary"}
+            {currentIndex < dates.length - 1
+              ? "Next Day →"
+              : "Finalize Itinerary"}
           </button>
         </div>
 
@@ -453,14 +561,21 @@ const Map = () => {
                   {locations[currentIndex].map((loc, index) => (
                     <Marker key={index} position={[loc.lat, loc.lon]}>
                       <Popup>
-                        <div className="font-semibold">{loc.name.split(",")[0]}</div>
-                        <div className="text-sm">{loc.name.split(",").slice(1, 3).join(",")}</div>
+                        <div className="font-semibold">
+                          {loc.name.split(",")[0]}
+                        </div>
+                        <div className="text-sm">
+                          {loc.name.split(",").slice(1, 3).join(",")}
+                        </div>
                       </Popup>
                     </Marker>
                   ))}
 
                   {locations[currentIndex].length > 1 && (
-                    <RoutingMachine locations={locations[currentIndex]} travelMode={travelMode} />
+                    <RoutingMachine
+                      locations={locations[currentIndex]}
+                      travelMode={travelMode}
+                    />
                   )}
                   <FitBoundsControl locations={locations[currentIndex]} />
                 </MapContainer>
@@ -478,9 +593,17 @@ const Map = () => {
                 <DragDropContext onDragEnd={onDragEnd}>
                   <Droppable droppableId="locations">
                     {(provided) => (
-                      <div {...provided.droppableProps} ref={provided.innerRef} className="space-y-1">
+                      <div
+                        {...provided.droppableProps}
+                        ref={provided.innerRef}
+                        className="space-y-1"
+                      >
                         {locations[currentIndex].map((loc, index) => (
-                          <Draggable key={index} draggableId={String(index)} index={index}>
+                          <Draggable
+                            key={index}
+                            draggableId={String(index)}
+                            index={index}
+                          >
                             {(provided) => (
                               <div
                                 ref={provided.innerRef}
@@ -490,9 +613,14 @@ const Map = () => {
                               >
                                 <div className="flex justify-between items-center">
                                   <div className="truncate">
-                                    <div className="font-medium truncate">{loc.name.split(",")[0]}</div>
+                                    <div className="font-medium truncate">
+                                      {loc.name.split(",")[0]}
+                                    </div>
                                     <div className="text-xs text-gray-500 truncate">
-                                      {loc.name.split(",").slice(1, 3).join(",")}
+                                      {loc.name
+                                        .split(",")
+                                        .slice(1, 3)
+                                        .join(",")}
                                     </div>
                                   </div>
                                   <button
@@ -531,7 +659,11 @@ const Map = () => {
         onClose={handleCloseModals}
         hotel={selectedHotel}
         checkInDate={dates[currentIndex]}
-        checkOutDate={currentIndex + 1 < dates.length ? dates[currentIndex + 1] : dates[currentIndex]}
+        checkOutDate={
+          currentIndex + 1 < dates.length
+            ? dates[currentIndex + 1]
+            : dates[currentIndex]
+        }
         onRoomSelect={handleRoomSelect}
       />
 
@@ -542,7 +674,11 @@ const Map = () => {
         selectedRoom={selectedRoom}
         availability={roomAvailability}
         checkInDate={dates[currentIndex]}
-        checkOutDate={currentIndex + 1 < dates.length ? dates[currentIndex + 1] : dates[currentIndex]}
+        checkOutDate={
+          currentIndex + 1 < dates.length
+            ? dates[currentIndex + 1]
+            : dates[currentIndex]
+        }
         onBookingComplete={handleBookingComplete}
       />
     </div>
