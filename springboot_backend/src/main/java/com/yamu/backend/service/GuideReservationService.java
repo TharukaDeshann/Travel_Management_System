@@ -11,12 +11,14 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDate;
 import java.util.List;
 
+// Service class for managing guide reservations
 @Service
 public class GuideReservationService {
 
     private final GuideReservationRepository reservationRepository;
     private final UserRepository userRepository;
 
+    // Constructor to inject dependencies
     public GuideReservationService(
             GuideReservationRepository reservationRepository,
             UserRepository userRepository) {
@@ -24,10 +26,12 @@ public class GuideReservationService {
         this.userRepository = userRepository;
     }
 
+    // Retrieve reservations for a specific guide
     public List<GuideReservation> getGuideReservations(Long userId) {
         return reservationRepository.findByUserId(userId);
     }
 
+    // Create a new reservation
     public GuideReservation createReservation(Long userId, GuideReservationRequest request) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
@@ -51,6 +55,7 @@ public class GuideReservationService {
         return reservationRepository.save(reservation);
     }
 
+    // Delete a reservation
     public void deleteReservation(Long reservationId, Long userId) {
         if (!reservationRepository.existsByIdAndUserId(reservationId, userId)) {
             throw new ResourceNotFoundException(

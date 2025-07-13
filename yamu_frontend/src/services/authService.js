@@ -22,10 +22,12 @@ export const login = async (credentials) => {
   const response = await axios.post(`${API_URL}/login`, credentials, {
     withCredentials: true, 
   });
+
   
   // Set token expiration time (60 seconds from now)
   setTokenExpirationTime(60);
-  
+  localStorage.setItem("accessToken", JSON.stringify(response.data.accessToken)); 
+  localStorage.setItem("refreshToken", JSON.stringify(response.data.refreshToken));
   return response;
 };
 

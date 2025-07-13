@@ -7,7 +7,7 @@ export const searchLocations = async (query) => {
   
   try {
     const response = await axios.get(
-      `https://nominatim.openstreetmap.org/search`,
+      'https://nominatim.openstreetmap.org/search',
       {
         params: {
           format: 'json',

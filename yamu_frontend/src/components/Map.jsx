@@ -34,7 +34,7 @@ const RoutingMachine = ({ locations, travelMode }) => {
   const map = useMap();
 
   useEffect(() => {
-    if (locations.length > 1) {
+    if (locations && locations.length > 1) {
       const drawRoute = async () => {
         try {
           const data = await fetchRoute(locations, travelMode);
@@ -87,7 +87,9 @@ const Map = () => {
   const location = useLocation();
   const { showSuccess, showError, showWarning } = useNotification();
   const searchParams = new URLSearchParams(location.search);
-  const dates = JSON.parse(searchParams.get("dates")) || [];
+  
+  // Safely parse dates with fallback to empty array
+  const dates = JSON.parse(searchParams.get("dates") || []);
   const tripTitle = searchParams.get("title") || "";
   const budget = searchParams.get("budget") || "";
   const currency = searchParams.get("currency") || "LKR";
@@ -138,7 +140,9 @@ const Map = () => {
   },[])
 
   useEffect(() => {
-    if (dates.length === 0) navigate("/");
+    if (dates.length === 0) {
+      navigate("/");
+    }
   }, [dates, navigate]);
 
   const handleSearch = async (query) => {
@@ -178,7 +182,8 @@ const Map = () => {
   };
 
   const onDragEnd = (result) => {
-    if (!result.destination) return;
+    if (!result.destination || !locations[currentIndex]) return;
+    
     const reordered = Array.from(locations[currentIndex]);
     const [moved] = reordered.splice(result.source.index, 1);
     reordered.splice(result.destination.index, 0, moved);
@@ -255,7 +260,6 @@ const Map = () => {
     }, 500);
   };
 
-  // Optimize route for the current day
   const handleOptimizeRoute = async () => {
     if (locations[currentIndex].length < 3) {
       showWarning("Need at least 3 locations to optimize route.");
@@ -275,7 +279,6 @@ const Map = () => {
     }
   };
 
-  // Save route for the current day
   const handleSaveRoute = async () => {
     if (!locations[currentIndex] || locations[currentIndex].length === 0) {
       showWarning("Add at least one location before saving.");
@@ -309,7 +312,6 @@ const Map = () => {
     }
   };
 
-  // Modified handleNext to save before navigating
   const handleNext = async () => {
     await saveCurrentDayRoute();
     if (currentIndex < dates.length - 1) {
@@ -326,6 +328,10 @@ const Map = () => {
       });
     }
   };
+
+  if (dates.length === 0) {
+    return <div className="container mx-auto p-6 text-center">Loading trip data...</div>;
+  }
 
   return (
     <div className="container mx-auto p-6 bg-gray-100 min-h-screen">
@@ -386,7 +392,7 @@ const Map = () => {
                 <button
                   className="px-4 py-2 bg-yellow-500 text-white rounded hover:bg-yellow-600"
                   onClick={handleOptimizeRoute}
-                  disabled={locations[currentIndex].length < 3}
+                  disabled={!locations[currentIndex] || locations[currentIndex].length < 3}
                 >
                   Optimize Route
                 </button>
@@ -550,7 +556,7 @@ const Map = () => {
                     attribution="© Google Maps"
                   />
 
-                  {locations[currentIndex].map((loc, index) => (
+                  {locations[currentIndex] && locations[currentIndex].map((loc, index) => (
                     <Marker key={index} position={[loc.lat, loc.lon]}>
                       <Popup>
                         <div className="font-semibold">
@@ -578,7 +584,7 @@ const Map = () => {
                 <div className="flex items-center justify-between mb-2">
                   <h3 className="text-lg font-semibold">Daily Stops</h3>
                   <span className="bg-blue-500 text-white px-2 py-0.5 rounded-full text-sm">
-                    {locations[currentIndex].length} stops
+                    {locations[currentIndex] ? locations[currentIndex].length : 0} stops
                   </span>
                 </div>
 

@@ -3,10 +3,12 @@ package com.yamu.backend.model;
 import jakarta.persistence.*;
 import java.time.LocalDate;
 
+// Entity representing a guide reservation
 @Entity
 @Table(name = "guide_reservations")
 public class GuideReservation {
 
+    // Enum for reservation types
     public enum ReservationType {
         TOUR, PERSONAL
     }
@@ -15,25 +17,32 @@ public class GuideReservation {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    // Many-to-one relationship with the User entity (guide)
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
+    // Date of the reservation
     @Column(nullable = false)
     private LocalDate date;
 
+    // Type of the reservation (e.g., TOUR or PERSONAL)
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private ReservationType type;
 
+    // Name of the traveler
     @Column(name = "traveler_name")
     private String travelerName;
 
+    // Place of the reservation
     private String place;
 
+    // Time period of the reservation
     @Column(name = "time_period")
     private String timePeriod;
 
+    // Getters and Setters
     public Long getId() {
         return id;
     }

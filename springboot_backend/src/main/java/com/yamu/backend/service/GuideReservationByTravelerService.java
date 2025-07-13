@@ -13,12 +13,14 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
+// Service class for managing guide reservations made by travelers
 @Service
 public class GuideReservationByTravelerService {
 
     private final GuideReservationByTravelerRepository reservationRepository;
     private final UserRepository userRepository;
 
+    // Constructor to inject dependencies
     public GuideReservationByTravelerService(
             GuideReservationByTravelerRepository reservationRepository,
             UserRepository userRepository) {
@@ -26,6 +28,7 @@ public class GuideReservationByTravelerService {
         this.userRepository = userRepository;
     }
 
+    // Create a new reservation
     @Transactional
     public GuideReservationByTraveler createReservation(CreateReservationRequest request) {
         User traveler = userRepository.findById(request.getTravelerId())
@@ -37,10 +40,6 @@ public class GuideReservationByTravelerService {
 
         User guide = userRepository.findById(request.getGuideId())
                 .orElseThrow(() -> new RuntimeException("Guide not found"));
-
-        if (!(guide instanceof Guide)) {
-            throw new RuntimeException("Invalid guide user");
-        }
 
         boolean hasVehicleRequest = request.getDayDetails().stream()
                 .anyMatch(CreateReservationRequest.DayDetail::isVehicleRequested);
@@ -73,14 +72,17 @@ public class GuideReservationByTravelerService {
         return reservationRepository.save(reservation);
     }
 
+    // Retrieve reservations for a specific guide
     public List<GuideReservationByTraveler> getReservationsForGuide(Long guideId) {
         return reservationRepository.findByGuideId(guideId);
     }
 
+    // Retrieve reservations for a specific traveler
     public List<GuideReservationByTraveler> getReservationsForTraveler(Long travelerId) {
         return reservationRepository.findByTravelerId(travelerId);
     }
 
+    // Update the status of a reservation
     @Transactional
     public GuideReservationByTraveler updateReservationStatus(Long reservationId, 
             GuideReservationByTraveler.ReservationStatus status) {
@@ -88,6 +90,17 @@ public class GuideReservationByTravelerService {
                 .orElseThrow(() -> new RuntimeException("Reservation not found"));
         
         reservation.setStatus(status);
+        reservation.setUpdatedAt(LocalDateTime.now());
+        return reservationRepository.save(reservation);
+    }
+
+    // Set the estimated price for a reservation
+    @Transactional
+    public GuideReservationByTraveler setReservationPrice(Long reservationId, Double estimatedPrice) {
+        GuideReservationByTraveler reservation = reservationRepository.findById(reservationId)
+                .orElseThrow(() -> new RuntimeException("Reservation not found"));
+        
+        reservation.setEstimatedPrice(estimatedPrice);
         reservation.setUpdatedAt(LocalDateTime.now());
         return reservationRepository.save(reservation);
     }

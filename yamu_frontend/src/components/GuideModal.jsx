@@ -20,6 +20,7 @@ const GuideModal = ({ guide, onClose, currentUser }) => {
   );
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
+  const [isLoadingUser, setIsLoadingUser] = useState(true);
   const [reviews, setReviews] = useState([]);
   const [averageRating, setAverageRating] = useState(null);
   const [isLoadingReviews, setIsLoadingReviews] = useState(true);
@@ -53,12 +54,12 @@ const GuideModal = ({ guide, onClose, currentUser }) => {
   const handleDayChange = (e) => {
     const days = parseInt(e.target.value);
     setNumberOfDays(days);
-    
+
     const newDetails = [];
     for (let i = 0; i < days; i++) {
-      newDetails.push(reservationDetails[i] || { 
-        place: '', 
-        date: '', 
+      newDetails.push(reservationDetails[i] || {
+        place: '',
+        date: '',
         travelers: 1,
         vehicleRequested: false,
         vehicleDetails: ''
@@ -124,11 +125,43 @@ const GuideModal = ({ guide, onClose, currentUser }) => {
       return;
     }
 
+    // Validate all fields are filled
+    // Validate all fields are filled
     for (let i = 0; i < reservationDetails.length; i++) {
       const detail = reservationDetails[i];
       if (!detail.place || !detail.date || !detail.travelers) {
         setError(`Please fill all required fields for Day ${i + 1}`);
         return;
+      }
+    }
+
+    // Validate dates are not in the past, sequential, and within 365 days
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const maxDate = new Date();
+    maxDate.setDate(maxDate.getDate() + 365);
+
+    for (let i = 0; i < reservationDetails.length; i++) {
+      const detail = reservationDetails[i];
+      const selectedDate = new Date(detail.date);
+
+      if (selectedDate < today) {
+        setError(`Date for Day ${i + 1} cannot be in the past`);
+        return;
+      }
+
+      if (selectedDate > maxDate) {
+        setError(`Date for Day ${i + 1} must be within 365 days from today`);
+        return;
+      }
+
+      if (i > 0) {
+        const previousDate = new Date(reservationDetails[i - 1].date);
+        if (selectedDate <= previousDate) {
+          setError(`Date for Day ${i + 1} must be after Day ${i}`);
+          return;
+        }
       }
     }
 
@@ -150,11 +183,10 @@ const GuideModal = ({ guide, onClose, currentUser }) => {
       };
 
       const response = await apiClient.post('/api/reservations', reservationData);
-      
+
       if (response.status === 200) {
         onClose();
         alert('Reservation request sent successfully!');
-        navigate('/traveler-dashboard');
       }
     } catch (err) {
       console.error('Reservation failed:', err);

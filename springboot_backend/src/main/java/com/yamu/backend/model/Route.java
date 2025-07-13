@@ -1,22 +1,23 @@
 package com.yamu.backend.model;
 
 import jakarta.persistence.*;
-import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
 import lombok.Setter;
+
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
 @Entity
 @Table(name = "route")
-@Getter @Setter
+@Getter
+@Setter
 public class Route {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @NotBlank
+    @Column(nullable = false) // Based on your table schema
     private String name;
 
     private String travelMode;
@@ -24,8 +25,8 @@ public class Route {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
-    private Double totalDistance;
-    private Integer estimatedTime;
+    private Double totalDistance; // Based on your table schema
+    private Integer estimatedTime; // Based on your table schema
 
     @PrePersist
     protected void onCreate() {
@@ -39,9 +40,9 @@ public class Route {
     }
 
     @OneToOne
-    @JoinColumn(name = "day_plan_id", nullable = false, unique = true)
+    @JoinColumn(name = "day_plan_id", nullable = false, unique = true) // Based on your table schema
     private DayPlan dayPlan;
 
-    @OneToMany(mappedBy = "route", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "route", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<Location> locations = new ArrayList<>();
 }

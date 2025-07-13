@@ -48,8 +48,9 @@ public class MessageService {
         User otherUser = userRepository.findById(otherUserId)
                 .orElseThrow(() -> new ResourceNotFoundException("Other user not found"));
 
-        List<Message> messages = messageRepository.findBySenderAndReceiverOrReceiverAndSenderOrderByTimestampAsc(
-                user, otherUser, otherUser, user);
+
+        List<Message> messages = messageRepository.findConversation(user, otherUser);
+
 
         return messages.stream()
                 .map(this::convertToDto)
@@ -88,6 +89,9 @@ public class MessageService {
             message.setIsRead(true);
             messageRepository.save(message);
         }
+    }
+    public boolean userExists(Long userId) {
+        return userRepository.existsById(userId);
     }
 
     public long getUnreadMessageCount(Long userId) {

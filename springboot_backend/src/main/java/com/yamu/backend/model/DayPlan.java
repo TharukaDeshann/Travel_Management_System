@@ -3,13 +3,15 @@ package com.yamu.backend.model;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
 @Entity
 @Table(name = "day_plan")
-@Getter @Setter
+@Getter
+@Setter
 public class DayPlan {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -24,18 +26,14 @@ public class DayPlan {
     private Date date;
 
     @Column(columnDefinition = "TEXT")
-    private String hotelDetails; // Temporarily set as string until hotel APIs are implemented
-   
+    private String hotelDetails;
 
     @Column(columnDefinition = "TEXT")
-    private String transportDetails; // Temporarily set as string until transportation APIs are implemented
+    private String transportDetails;
 
-    @Column(columnDefinition = "TEXT")
-    private String guideDetails;
-
-    @OneToMany(mappedBy = "dayPlan", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "dayPlan", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<Location> locations = new ArrayList<>();
 
-    @OneToOne(mappedBy = "dayPlan", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToOne(mappedBy = "dayPlan", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private Route route;
 }

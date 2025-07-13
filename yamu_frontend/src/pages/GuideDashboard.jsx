@@ -8,7 +8,7 @@ import { Layout } from "../components/Layout";
 
 const RESERVATIONS_STORAGE_KEY = 'guideReservations';
 
-const GuideDashboard = ({ currentUser }) => {
+const GuideDashboard = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [activeTab, setActiveTab] = useState('upcoming');
@@ -16,12 +16,24 @@ const GuideDashboard = ({ currentUser }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [unreadCount, setUnreadCount] = useState(0);
-  const [selectedCurrency, setSelectedCurrency] = useState('LKR');
 
-  const loggedUser = useUser().user;
+  const [showPricePrompt, setShowPricePrompt] = useState(false);
+  const [currentReservationId, setCurrentReservationId] = useState(null);
+  const [estimatedPrice, setEstimatedPrice] = useState('');
+  const [priceError, setPriceError] = useState('');
+  const [showCompletionConfirm, setShowCompletionConfirm] = useState(false);
+
+
+  const [showPricePrompt, setShowPricePrompt] = useState(false);
+  const [currentReservationId, setCurrentReservationId] = useState(null);
+  const [estimatedPrice, setEstimatedPrice] = useState('');
+  const [priceError, setPriceError] = useState('');
+  const [showCompletionConfirm, setShowCompletionConfirm] = useState(false);
+
+  const [selectedCurrency, setSelectedCurrency] = useState('LKR');
+  const { user: loggedUser } = useUser();
 
   useEffect(() => {
-    currentUser = JSON.parse(localStorage.getItem("user"));
     const loadReservations = async () => {
       try {
         const savedReservations = localStorage.getItem(RESERVATIONS_STORAGE_KEY);
@@ -32,8 +44,8 @@ const GuideDashboard = ({ currentUser }) => {
           }
         }
 
-        if (currentUser?.id) {
-          const response = await apiClient.get(`/api/reservations/guide/${currentUser.id}`);
+        if (loggedUser?.id) {
+          const response = await apiClient.get(`/api/reservations/guide/${loggedUser.id}`);
           const freshData = response.data;
           setReservations(freshData);
           localStorage.setItem(RESERVATIONS_STORAGE_KEY, JSON.stringify(freshData));
@@ -45,60 +57,114 @@ const GuideDashboard = ({ currentUser }) => {
         }
       } catch (err) {
         console.error("Error loading reservations:", err);
+        setError("Failed to load reservations. Please try again later.");
       } finally {
         setLoading(false);
       }
     };
 
     loadReservations();
-  }, [currentUser]);
+  }, [loggedUser]);
 
   const refreshData = async () => {
     try {
-      currentUser = JSON.parse(localStorage.getItem("user"));
-      if (!currentUser?.id) {
+      if (!loggedUser?.id) {
         setError("User information not available. Cannot refresh.");
         return;
       }
 
       setLoading(true);
-      const response = await apiClient.get(`/api/reservations/guide/${currentUser.id}`);
+      const response = await apiClient.get(`/api/reservations/guide/${loggedUser.id}`);
       const freshData = response.data;
       setReservations(freshData);
       localStorage.setItem(RESERVATIONS_STORAGE_KEY, JSON.stringify(freshData));
       setError(null);
     } catch (err) {
       console.error("Refresh failed:", err);
+      setError("Failed to refresh data. Please try again.");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleStatusChange = async (reservationId, newStatus) => {
+  const handleConfirmClick = (reservationId) => {
+    setCurrentReservationId(reservationId);
+    setShowPricePrompt(true);
+    setEstimatedPrice('');
+    setPriceError('');
+  };
+
+  const handlePriceSubmit = async () => {
+    if (!estimatedPrice) {
+      setPriceError('Price is required');
+      return;
+    }
+    
+    const priceValue = parseFloat(estimatedPrice);
+    if (isNaN(priceValue)) {
+      setPriceError('Please enter a valid number');
+      return;
+    }
+    
+    if (priceValue <= 0) {
+      setPriceError('Price must be positive');
+      return;
+    }
+
     try {
-      currentUser = JSON.parse(localStorage.getItem("user"));
-      if (!currentUser?.id) {
-        setError("User information not available. Cannot update status.");
-        return;
-      }
+      await apiClient.put(`/api/reservations/${currentReservationId}/set-price`, {
+        estimatedPrice: priceValue
+      });
 
-      let endpoint;
-      switch (newStatus) {
-        case 'CONFIRMED': endpoint = 'confirm'; break;
-        case 'DECLINED': endpoint = 'decline'; break;
-        case 'COMPLETED': endpoint = 'complete'; break;
-        default: return;
-      }
-
-      const response = await apiClient.put(`/api/reservations/${reservationId}/${endpoint}`);
-      const updatedReservations = reservations.map(res =>
-        res.id === reservationId ? response.data : res
+      const response = await apiClient.put(`/api/reservations/${currentReservationId}/confirm`);
+      
+      const updatedReservations = reservations.map(res => 
+        res.id === currentReservationId ? response.data : res
+        res.id === currentReservationId ? response.data : res
       );
+      
       setReservations(updatedReservations);
       localStorage.setItem(RESERVATIONS_STORAGE_KEY, JSON.stringify(updatedReservations));
+      setShowPricePrompt(false);
     } catch (err) {
       console.error("Status change failed:", err);
       setError("Failed to update status. Please try again.");
+      setShowPricePrompt(false);
+    }
+  };
+
+  const handleCompleteClick = (reservationId) => {
+    const reservation = reservations.find(r => r.id === reservationId);
+    if (!reservation) return;
+
+    const hasFutureDays = reservation.dayDetails?.some(day => {
+      const dayDate = new Date(day.date);
+      const today = new Date();
+      return dayDate > today;
+    });
+
+    if (hasFutureDays) {
+      setError("Cannot complete reservation with future dates");
+      return;
+    }
+
+    setCurrentReservationId(reservationId);
+    setShowCompletionConfirm(true);
+  };
+
+  const handleCompleteConfirm = async () => {
+    try {
+      const response = await apiClient.put(`/api/reservations/${currentReservationId}/complete`);
+      const updatedReservations = reservations.map(res =>
+        res.id === currentReservationId ? response.data : res
+      );
+      setReservations(updatedReservations);
+      localStorage.setItem(RESERVATIONS_STORAGE_KEY, JSON.stringify(updatedReservations));
+      setShowCompletionConfirm(false);
+    } catch (err) {
+      console.error("Status change failed:", err);
+      setError("Failed to update status. Please try again.");
+      setShowCompletionConfirm(false);
     }
   };
 
@@ -110,7 +176,7 @@ const GuideDashboard = ({ currentUser }) => {
     .filter(res => res.status === 'COMPLETED')
     .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
-  const ReservationCard = ({ reservation, onStatusChange, isPast = false }) => {
+  const ReservationCard = ({ reservation, isPast = false }) => {
     const statusColors = {
       'PENDING': '#FFA500',
       'CONFIRMED': '#4CAF50',
@@ -214,6 +280,26 @@ const GuideDashboard = ({ currentUser }) => {
             <p style={{ margin: "4px 0", fontSize: "14px" }}>
               <strong>Travelers:</strong> {reservation.dayDetails?.[0]?.numberOfTravelers || 'N/A'}
             </p>
+            {reservation.estimatedPrice && (
+              <p style={{ 
+                margin: "4px 0", 
+                fontSize: "14px",
+                color: "#2196F3",
+                fontWeight: "bold"
+              }}>
+                <strong>Estimated Price:</strong> LKR {reservation.estimatedPrice.toLocaleString()}
+              </p>
+            )}
+            {reservation.estimatedPrice && (
+              <p style={{ 
+                margin: "4px 0", 
+                fontSize: "14px",
+                color: "#2196F3",
+                fontWeight: "bold"
+              }}>
+                <strong>Estimated Price:</strong> LKR {reservation.estimatedPrice.toLocaleString()}
+              </p>
+            )}
           </div>
         </div>
 
@@ -254,7 +340,23 @@ const GuideDashboard = ({ currentUser }) => {
             {reservation.status === 'PENDING' && (
               <>
                 <button
-                  onClick={() => onStatusChange(reservation.id, 'DECLINED')}
+                  onClick={() => {
+                    const response = window.confirm("Are you sure you want to decline this reservation?");
+                    if (response) {
+                      apiClient.put(`/api/reservations/${reservation.id}/decline`)
+                        .then(res => {
+                          const updated = reservations.map(r => 
+                            r.id === reservation.id ? res.data : r
+                          );
+                          setReservations(updated);
+                          localStorage.setItem(RESERVATIONS_STORAGE_KEY, JSON.stringify(updated));
+                        })
+                        .catch(err => {
+                          console.error("Failed to decline reservation:", err);
+                          setError("Failed to decline reservation. Please try again.");
+                        });
+                    }
+                  }}
                   style={{
                     padding: "8px 16px",
                     backgroundColor: "#F44336",
@@ -267,7 +369,8 @@ const GuideDashboard = ({ currentUser }) => {
                   Decline
                 </button>
                 <button
-                  onClick={() => onStatusChange(reservation.id, 'CONFIRMED')}
+                  onClick={() => handleConfirmClick(reservation.id)}
+                  onClick={() => handleConfirmClick(reservation.id)}
                   style={{
                     padding: "8px 16px",
                     backgroundColor: "#4CAF50",
@@ -284,7 +387,8 @@ const GuideDashboard = ({ currentUser }) => {
 
             {reservation.status === 'CONFIRMED' && (
               <button
-                onClick={() => onStatusChange(reservation.id, 'COMPLETED')}
+                onClick={() => handleCompleteClick(reservation.id)}
+                onClick={() => handleCompleteClick(reservation.id)}
                 style={{
                   padding: "8px 16px",
                   backgroundColor: "#2196F3",
@@ -304,147 +408,276 @@ const GuideDashboard = ({ currentUser }) => {
   };
 
   return (
-    <Layout
+    <Layout 
       user={loggedUser}
       unreadCount={unreadCount}
       onCurrencyChange={setSelectedCurrency}
       selectedCurrency={selectedCurrency}
+      navigate={navigate}
+      location={location}
     >
       <div style={{
-        padding: "40px",
-        maxWidth: "1200px",
-        margin: "0 auto"
+        minHeight: "100vh",
+        backgroundColor: "#f5f5f5",
+        fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif"
       }}>
         <div style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: "30px"
+          padding: "40px",
+          maxWidth: "1200px",
+          margin: "0 auto"
         }}>
-          <h3 style={{
-            fontSize: "24px",
-            color: "#532321",
-            fontWeight: "600",
-            margin: 0
-          }}>My Tours</h3>
+          <div style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginBottom: "30px"
+          }}>
+            <h3 style={{
+              fontSize: "24px",
+              color: "#532321",
+              fontWeight: "600",
+              margin: 0
+            }}>My Tours</h3>
 
-          <div style={{ display: "flex", gap: "10px" }}>
-            <button onClick={refreshData} style={{
-              padding: "8px 16px",
-              backgroundColor: "#f0f0f0",
-              border: "none",
-              borderRadius: "6px",
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              gap: "5px"
-            }}>
-              <span>↻</span> Refresh
-            </button>
+            <div style={{ display: "flex", gap: "10px" }}>
+              <button onClick={refreshData} style={{
+                padding: "8px 16px",
+                backgroundColor: "#f0f0f0",
+                border: "none",
+                borderRadius: "6px",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                gap: "5px"
+              }}>
+                <span>↻</span> Refresh
+              </button>
 
-            <div style={{
-              display: "flex",
-              gap: "10px",
-              backgroundColor: "#f0f0f0",
-              borderRadius: "8px",
-              padding: "4px"
-            }}>
-              <button
-                onClick={() => setActiveTab('upcoming')}
-                style={{
-                  padding: "8px 16px",
-                  borderRadius: "6px",
-                  border: "none",
-                  background: activeTab === 'upcoming' ? "#532321" : "transparent",
-                  color: activeTab === 'upcoming' ? "white" : "#333",
-                  cursor: "pointer",
-                  fontWeight: "500"
-                }}
-              >
-                Upcoming
-              </button>
-              <button
-                onClick={() => setActiveTab('past')}
-                style={{
-                  padding: "8px 16px",
-                  borderRadius: "6px",
-                  border: "none",
-                  background: activeTab === 'past' ? "#532321" : "transparent",
-                  color: activeTab === 'past' ? "white" : "#333",
-                  cursor: "pointer",
-                  fontWeight: "500"
-                }}
-              >
-                Past
-              </button>
+              <div style={{
+                display: "flex",
+                gap: "10px",
+                backgroundColor: "#f0f0f0",
+                borderRadius: "8px",
+                padding: "4px"
+              }}>
+                <button
+                  onClick={() => setActiveTab('upcoming')}
+                  style={{
+                    padding: "8px 16px",
+                    borderRadius: "6px",
+                    border: "none",
+                    background: activeTab === 'upcoming' ? "#532321" : "transparent",
+                    color: activeTab === 'upcoming' ? "white" : "#333",
+                    cursor: "pointer",
+                    fontWeight: "500"
+                  }}
+                >
+                  Upcoming
+                </button>
+                <button
+                  onClick={() => setActiveTab('past')}
+                  style={{
+                    padding: "8px 16px",
+                    borderRadius: "6px",
+                    border: "none",
+                    background: activeTab === 'past' ? "#532321" : "transparent",
+                    color: activeTab === 'past' ? "white" : "#333",
+                    cursor: "pointer",
+                    fontWeight: "500"
+                  }}
+                >
+                  Past
+                </button>
+              </div>
             </div>
           </div>
+
+          {error && (
+            <div style={{
+              padding: "15px",
+              backgroundColor: "#ffebee",
+              color: "#d32f2f",
+              borderRadius: "4px",
+              marginBottom: "20px"
+            }}>
+              {error}
+            </div>
+          )}
+
+          {loading ? (
+            <div style={{
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              height: "200px"
+            }}>
+              <p>Loading reservations...</p>
+            </div>
+          ) : activeTab === 'upcoming' ? (
+            <div style={{ display: "grid", gap: "20px" }}>
+              {upcomingReservations.length > 0 ? (
+                upcomingReservations.map(reservation => (
+                  <ReservationCard
+                    key={reservation.id}
+                    reservation={reservation}
+                  />
+                ))
+              ) : (
+                <div style={{
+                  padding: "40px",
+                  textAlign: "center",
+                  backgroundColor: "white",
+                  borderRadius: "8px",
+                  boxShadow: "0 2px 8px rgba(0,0,0,0.1)"
+                }}>
+                  <p>No upcoming reservations found</p>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div style={{ display: "grid", gap: "20px" }}>
+              {pastReservations.length > 0 ? (
+                pastReservations.map(reservation => (
+                  <ReservationCard
+                    key={reservation.id}
+                    reservation={reservation}
+                    isPast={true}
+                  />
+                ))
+              ) : (
+                <div style={{
+                  padding: "40px",
+                  textAlign: "center",
+                  backgroundColor: "white",
+                  borderRadius: "8px",
+                  boxShadow: "0 2px 8px rgba(0,0,0,0.1)"
+                }}>
+                  <p>No past reservations found</p>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
-        {error && (
+        {showPricePrompt && (
           <div style={{
-            padding: "15px",
-            backgroundColor: "#ffebee",
-            color: "#d32f2f",
-            borderRadius: "4px",
-            marginBottom: "20px"
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0,0,0,0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000
           }}>
-            {error}
+            <div style={{
+              backgroundColor: 'white',
+              padding: '20px',
+              borderRadius: '8px',
+              width: '400px',
+              maxWidth: '90%'
+            }}>
+              <h3 style={{ marginTop: 0 }}>Enter Estimated Price</h3>
+              <p>Please provide the estimated cost for this reservation (LKR):</p>
+              <input
+                type="number"
+                value={estimatedPrice}
+                onChange={(e) => setEstimatedPrice(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '8px',
+                  margin: '10px 0',
+                  border: `1px solid ${priceError ? '#F44336' : '#ddd'}`,
+                  borderRadius: '4px'
+                }}
+                placeholder="Enter amount in LKR"
+              />
+              {priceError && (
+                <p style={{ color: '#F44336', margin: '5px 0' }}>{priceError}</p>
+              )}
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+                <button
+                  onClick={() => setShowPricePrompt(false)}
+                  style={{
+                    padding: '8px 16px',
+                    backgroundColor: '#f0f0f0',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handlePriceSubmit}
+                  style={{
+                    padding: '8px 16px',
+                    backgroundColor: '#4CAF50',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Submit
+                </button>
+              </div>
+            </div>
           </div>
         )}
 
-        {loading ? (
+        {showCompletionConfirm && (
           <div style={{
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            height: "200px"
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0,0,0,0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000
           }}>
-            <p>Loading reservations...</p>
-          </div>
-        ) : activeTab === 'upcoming' ? (
-          <div style={{ display: "grid", gap: "20px" }}>
-            {upcomingReservations.length > 0 ? (
-              upcomingReservations.map(reservation => (
-                <ReservationCard
-                  key={reservation.id}
-                  reservation={reservation}
-                  onStatusChange={handleStatusChange}
-                />
-              ))
-            ) : (
-              <div style={{
-                padding: "40px",
-                textAlign: "center",
-                backgroundColor: "white",
-                borderRadius: "8px",
-                boxShadow: "0 2px 8px rgba(0,0,0,0.1)"
-              }}>
-                <p>No upcoming reservations found</p>
+            <div style={{
+              backgroundColor: 'white',
+              padding: '20px',
+              borderRadius: '8px',
+              width: '400px',
+              maxWidth: '90%'
+            }}>
+              <h3 style={{ marginTop: 0 }}>Confirm Completion</h3>
+              <p>Are you sure you want to mark this reservation as completed?</p>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+                <button
+                  onClick={() => setShowCompletionConfirm(false)}
+                  style={{
+                    padding: '8px 16px',
+                    backgroundColor: '#f0f0f0',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleCompleteConfirm}
+                  style={{
+                    padding: '8px 16px',
+                    backgroundColor: '#2196F3',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Yes, mark as completed
+                </button>
               </div>
-            )}
-          </div>
-        ) : (
-          <div style={{ display: "grid", gap: "20px" }}>
-            {pastReservations.length > 0 ? (
-              pastReservations.map(reservation => (
-                <ReservationCard
-                  key={reservation.id}
-                  reservation={reservation}
-                  isPast={true}
-                />
-              ))
-            ) : (
-              <div style={{
-                padding: "40px",
-                textAlign: "center",
-                backgroundColor: "white",
-                borderRadius: "8px",
-                boxShadow: "0 2px 8px rgba(0,0,0,0.1)"
-              }}>
-                <p>No past reservations found</p>
-              </div>
-            )}
+            </div>
           </div>
         )}
       </div>
