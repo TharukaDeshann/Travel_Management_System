@@ -394,19 +394,23 @@ public class HotelService {
         // Add mock amenities
         dto.setAmenities(mockDataService.generateMockAmenities(hotel.getMockDataTemplate()));
         
-        // Generate photo URL if photo reference exists - use placeholder for OSM hotels
-        if (hotel.getPhotoReference() != null) {
-            try {
-                dto.setPhotoUrl("https://via.placeholder.com/400x300/0066cc/ffffff?text=" + 
-                              java.net.URLEncoder.encode(hotel.getName(), java.nio.charset.StandardCharsets.UTF_8));
-            } catch (Exception e) {
-                dto.setPhotoUrl("https://via.placeholder.com/400x300/0066cc/ffffff?text=Hotel+Image");
-            }
-        } else {
-            dto.setPhotoUrl("https://via.placeholder.com/400x300/0066cc/ffffff?text=Hotel+Image");
-        }
+        // Generate consistent photo URL based on hotel ID
+        dto.setPhotoUrl(generateHotelImageUrl(hotel.getId()));
         
         return dto;
+    }
+    
+    /**
+     * Generate a consistent hotel image URL based on hotel ID
+     * Maps each hotel to a unique image from 1-20.webp in public/hotels folder
+     * Uses a hash-based approach to ensure better distribution
+     */
+    private String generateHotelImageUrl(Long hotelId) {
+        // Use hash to ensure better distribution across images
+        // This prevents clustering of consecutive hotel IDs to same images
+        int hash = Math.abs(hotelId.hashCode());
+        int imageNumber = (hash % 20) + 1;
+        return String.format("/hotels/%d.webp", imageNumber);
     }
     
     private HotelBookingResponseDTO convertToBookingResponseDTO(HotelBooking booking) {
