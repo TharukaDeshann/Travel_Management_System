@@ -41,7 +41,7 @@ const Header = ({
     } else {
       return [
         { name: 'Dashboard', path: '/traveler-dashboard' },
-        { name: 'Hotels', path: '/hotels' },
+        { name: 'Reservations', path: '/reservations' },
         { name: 'Guides', path: '/guides-page' },
         { name: 'Places', path: '/places' },
         { name: 'Emergency Contacts', path: '/emergency-contacts'}
