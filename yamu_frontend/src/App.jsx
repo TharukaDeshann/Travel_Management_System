@@ -8,7 +8,7 @@ import Register from "./pages/Register.jsx";
 import Home from "./pages/Home.jsx";
 import ProtectedRoute from "./routes/ProtectedRoute.jsx";
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
-
+import Reservations from "./pages/Reservations.jsx";
 import WeatherPage from "./pages/WeatherPage.jsx";
 import Weather from "./components/Weather.jsx";
 import VisitPlanPage from "./pages/VisitPlanPage";
@@ -79,7 +79,7 @@ const App = () => {
             <Route path="/users/users-by-role" element={<UsersSocialPage />} />
             <Route path="/map" element={<Map />} />
             <Route path="/itinerary-planner" element={<ItineraryPlanner />} />
-
+            <Route path="/reservations" element={<Reservations></Reservations>}></Route>
           
           <Route path="/finalize-itinerary" element={<FinalizeItinerary />} />
 

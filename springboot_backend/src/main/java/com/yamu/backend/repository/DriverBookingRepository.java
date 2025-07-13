@@ -10,4 +10,6 @@ import java.util.List;
 public interface DriverBookingRepository extends JpaRepository<DriverBooking, Long> {
     List<DriverBooking> findByBookingDateAndStatus(LocalDate date, String status);
     List<DriverBooking> findByDriverAndBookingDateAndStatus(Driver driver, LocalDate date, String status);
+    List<DriverBooking> findByTravelerId(Long travelerId);
+    List<DriverBooking> findByTravelerIdOrderByBookingDateAsc(Long travelerId);
 }
