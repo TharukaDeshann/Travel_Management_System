@@ -19,6 +19,7 @@ import AvailableDriversPopup from "./AvailableDriversPopup";
 import ConfirmDriverSelection from "./ConfirmDriverSelection";
 import apiClient from "../services/axiosInstance";
 import { fetchLoggedInUser } from "../services/authService";
+
 // Marker icon configuration
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
@@ -44,7 +45,7 @@ const RoutingMachine = ({ locations, travelMode }) => {
           });
 
           L.geoJSON(data, {
-            color: "#2563eb",
+            color: "#4285F4",
             weight: 5,
             className: "route-layer",
             dashArray: travelMode.includes("foot") ? "5, 10" : null,
@@ -79,6 +80,18 @@ const FitBoundsControl = ({ locations }) => {
 
   return null;
 };
+
+const GOOGLE_MAPS_STYLE = "https://{s}.google.com/vt/lyrs=s,h&x={x}&y={y}&z={z}"; // satellite + hybrid labels
+
+const MODERN_BG_GRADIENT =
+  "bg-gradient-to-br from-gray-100 via-white to-blue-100 dark:from-gray-900 dark:to-blue-950";
+
+const VEHICLE_OPTIONS = [
+  { key: "driving-car", icon: "🚗", label: "Car" },
+  { key: "cycling-regular", icon: "🚴", label: "Cycling" },
+  { key: "foot-hiking", icon: "🥾", label: "Hiking" },
+  { key: "foot-walking", icon: "🚶", label: "Walking" },
+];
 
 const Map = () => {
   const [loggedInUser, setLoggedInUser] = useState(null);
@@ -121,7 +134,7 @@ const Map = () => {
   const [showDriversPopup, setShowDriversPopup] = useState(false);
   const [selectedDriverId, setSelectedDriverId] = useState(null);
   const [showConfirm, setShowConfirm] = useState(false);
-  const [selectedDriverSummary, setSelectedDriverSummary] = useState(null); // For passing to confirmation
+  const [selectedDriverSummary, setSelectedDriverSummary] = useState(null);
 
   useEffect(() => {
     const loadUser = async () => {
@@ -132,10 +145,9 @@ const Map = () => {
         console.error("Error fetching logged in user:", error);
         showError("Failed to load user data. Please try again.");
       }
-    }
+    };
     loadUser();
-
-  },[])
+  }, []);
 
   useEffect(() => {
     if (dates.length === 0) navigate("/");
@@ -190,22 +202,21 @@ const Map = () => {
 
   const handleBookHotel = () => {
     if (locations[currentIndex].length === 0) {
-      showWarning('Please add at least one location to your route before booking a hotel.');
+      showWarning(
+        "Please add at least one location to your route before booking a hotel."
+      );
       return;
     }
-
     setShowHotelSearch(true);
   };
 
   const handleHotelSelect = (hotel) => {
-    console.log("🏨 Hotel selected:", hotel);
     setSelectedHotel(hotel);
     setShowHotelSearch(false);
     setShowRoomAvailability(true);
   };
 
   const handleRoomSelect = (room, availability) => {
-    console.log("🛏️ Room selected:", room);
     setSelectedRoom(room);
     setRoomAvailability(availability);
     setShowRoomAvailability(false);
@@ -213,8 +224,6 @@ const Map = () => {
   };
 
   const handleBookingComplete = (booking) => {
-    console.log('Booking completed:', booking);
-    // Update booked hotels state
     const updatedBookedHotels = [...bookedHotels];
     updatedBookedHotels[currentIndex] = {
       hotel: selectedHotel,
@@ -223,16 +232,17 @@ const Map = () => {
     };
     setBookedHotels(updatedBookedHotels);
 
-    // Update hotel booked status
     const updated = [...hotelBooked];
     updated[currentIndex] = true;
     setHotelBooked(updated);
 
-    // Reset selection states
     setSelectedHotel(null);
     setSelectedRoom(null);
     setRoomAvailability(null);
-    showSuccess(`Hotel booking confirmed! Booking ID: ${booking.id} at ${selectedHotel.name}`, 'Booking Confirmed');
+    showSuccess(
+      `Hotel booking confirmed! Booking ID: ${booking.id} at ${selectedHotel.name}`,
+      "Booking Confirmed"
+    );
   };
 
   const handleCloseModals = () => {
@@ -249,13 +259,15 @@ const Map = () => {
     updated[currentIndex] = true;
     setTransportBooked(updated);
     setTimeout(() => {
-      showSuccess(`Transport booked for ${dates[currentIndex]}`, 'Transport Booking');
+      showSuccess(
+        `Transport booked for ${dates[currentIndex]}`,
+        "Transport Booking"
+      );
       updated[currentIndex] = false;
       setTransportBooked([...updated]);
     }, 500);
   };
 
-  // Optimize route for the current day
   const handleOptimizeRoute = async () => {
     if (locations[currentIndex].length < 3) {
       showWarning("Need at least 3 locations to optimize route.");
@@ -275,7 +287,6 @@ const Map = () => {
     }
   };
 
-  // Save route for the current day
   const handleSaveRoute = async () => {
     if (!locations[currentIndex] || locations[currentIndex].length === 0) {
       showWarning("Add at least one location before saving.");
@@ -302,14 +313,12 @@ const Map = () => {
     setSaving(false);
   };
 
-  // Save route before moving to next day or finalizing
   const saveCurrentDayRoute = async () => {
     if (locations[currentIndex] && locations[currentIndex].length > 0) {
       await handleSaveRoute();
     }
   };
 
-  // Modified handleNext to save before navigating
   const handleNext = async () => {
     await saveCurrentDayRoute();
     if (currentIndex < dates.length - 1) {
@@ -328,24 +337,34 @@ const Map = () => {
   };
 
   return (
-    <div className="container mx-auto p-6 bg-gray-100 min-h-screen">
+    <div
+      className="min-h-screen bg-gradient-to-br from-gray-100 via-white to-blue-100 px-0 py-0 flex flex-col items-center justify-start"
+      style={{ fontFamily: "Google Sans, Roboto, Arial, sans-serif" }}
+    >
       {/* Trip Header */}
-      <div className="text-center mb-8">
-        <h1 className="text-3xl font-bold text-blue-600">{tripTitle}</h1>
-        <h2 className="text-xl mt-2">
-          Day {currentIndex + 1} - {dates[currentIndex]}
-        </h2>
-        <p className="mt-2 text-gray-600">
-          Budget: {currency} {budget}
-        </p>
+      <div className="w-full max-w-5xl mx-auto mb-8 pt-8 px-4">
+        <div className="flex flex-col md:flex-row items-center justify-between">
+          <div className="flex-1">
+            <h1 className="text-4xl font-bold text-[#4285F4] tracking-tight drop-shadow-lg">
+              {tripTitle}
+            </h1>
+            <h2 className="text-xl mt-2 text-gray-800 dark:text-gray-200">
+              Day {currentIndex + 1} &mdash; {dates[currentIndex]}
+            </h2>
+            <p className="mt-2 text-gray-500 font-medium">
+              Budget: <span className="font-bold">{currency} {budget}</span>
+            </p>
+          </div>
+        </div>
       </div>
 
-      <div className="flex flex-col lg:flex-row gap-6">
-        {/* Left Column - Controls and Bookings */}
-        <div className="lg:w-96 space-y-6">
-          {/* Search and Transport */}
-          <div className="bg-white rounded-lg shadow-xl p-6">
-            <div className="space-y-4">
+      <div className="flex flex-row gap-8 w-full max-w-7xl mx-auto px-4 pb-12">
+        {/* Left Card: Controls & Bookings */}
+        <div className="w-96 flex flex-col gap-8">
+          {/* Search & Route Controls */}
+          <div className="bg-white rounded-2xl shadow-2xl p-6 border border-gray-100">
+            <div className="space-y-6">
+              {/* Location Search */}
               <div className="relative">
                 <input
                   type="text"
@@ -355,24 +374,28 @@ const Map = () => {
                     setSearchTerm(e.target.value);
                     handleSearch(e.target.value);
                   }}
-                  className="w-full p-3 border rounded-lg pl-10"
+                  className="w-full p-3 border border-gray-200 rounded-xl pl-12 text-gray-800 focus:ring-2 focus:ring-[#4285F4] focus:border-[#4285F4] font-medium shadow-sm transition"
+                  style={{ background: "#F7FBFF" }}
                 />
-                <span className="absolute left-3 top-3 text-gray-500">🔍</span>
-
+                <span className="absolute left-4 top-3 text-gray-400 text-xl">
+                  <svg width={20} height={20} fill="currentColor">
+                    <path d="M8.5 2a6.5 6.5 0 015.28 10.5l4.11 4.12a1 1 0 01-1.42 1.41l-4.12-4.11A6.5 6.5 0 118.5 2zm0 2a4.5 4.5 0 100 9 4.5 4.5 0 000-9z" />
+                  </svg>
+                </span>
                 {showSearchResults && (
-                  <div className="absolute z-10 w-full bg-white border rounded-lg mt-1 max-h-60 overflow-auto">
+                  <div className="absolute z-20 w-full bg-white border-t border-gray-100 rounded-xl mt-1 max-h-60 overflow-auto shadow-lg">
                     {searchResults.map((place) => (
                       <div
                         key={place.place_id}
                         onClick={() =>
                           addLocation(place.lat, place.lon, place.display_name)
                         }
-                        className="p-3 hover:bg-gray-100 cursor-pointer"
+                        className="flex flex-col p-3 hover:bg-[#F2F6FE] cursor-pointer border-b last:border-b-0"
                       >
-                        <div className="font-medium">
+                        <div className="font-medium text-[#4285F4]">
                           {place.display_name.split(",")[0]}
                         </div>
-                        <div className="text-sm text-gray-500">
+                        <div className="text-xs text-gray-500">
                           {place.display_name.split(",").slice(1, 3).join(",")}
                         </div>
                       </div>
@@ -380,18 +403,25 @@ const Map = () => {
                   </div>
                 )}
               </div>
-
-              {/* Optimize and Save Route buttons */}
-              <div className="flex gap-2 mt-2">
+              
+              {/* Route Controls */}
+              <div className="flex gap-3 mt-2">
                 <button
-                  className="px-4 py-2 bg-yellow-500 text-white rounded hover:bg-yellow-600"
+                  className={`flex-1 px-4 py-2 rounded-xl font-semibold bg-[#F4B400] text-white hover:bg-[#F4B400]/90 transition ${
+                    locations[currentIndex].length < 3
+                      ? "opacity-50 cursor-not-allowed"
+                      : ""
+                  }`}
                   onClick={handleOptimizeRoute}
                   disabled={locations[currentIndex].length < 3}
                 >
+                  <span className="mr-1">⚡</span>
                   Optimize Route
                 </button>
                 <button
-                  className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                  className={`flex-1 px-4 py-2 rounded-xl font-semibold bg-[#4285F4] text-white hover:bg-[#4285F4]/90 transition ${
+                    saving ? "opacity-50 cursor-not-allowed" : ""
+                  }`}
                   onClick={handleSaveRoute}
                   disabled={saving}
                 >
@@ -399,70 +429,67 @@ const Map = () => {
                 </button>
               </div>
 
-              <select
-                value={travelMode}
-                onChange={(e) => setTravelMode(e.target.value)}
-                className="w-full p-2 border rounded-lg"
-              >
-                <option value="driving-car">🚗 Car</option>
-                <option value="cycling-regular">🚴 Cycling</option>
-                <option value="foot-hiking">🥾 Hiking</option>
-                <option value="foot-walking">🚶 Walking</option>
-              </select>
+              {/* Vehicle Segmented Control */}
+              <div className="flex gap-2 mt-4">
+                {VEHICLE_OPTIONS.map(opt => (
+                  <button
+                    key={opt.key}
+                    type="button"
+                    className={`flex-1 py-2 rounded-xl font-medium border 
+                      ${travelMode === opt.key 
+                        ? "bg-[#4285F4] text-white border-[#4285F4]" 
+                        : "bg-white hover:bg-blue-50 text-gray-700 border-gray-300"}
+                      transition shadow-sm flex flex-col items-center`}
+                    onClick={() => setTravelMode(opt.key)}
+                  >
+                    <span className="text-2xl">{opt.icon}</span>
+                    <span className="text-xs">{opt.label}</span>
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
 
-          {/* Booking Buttons */}
-          <div className="bg-white rounded-lg shadow-xl p-6 space-y-4">
+          {/* Booking Card */}
+          <div className="bg-white rounded-2xl shadow-2xl p-6 border border-gray-100 space-y-5">
             <button
-              className={`w-full px-6 py-3 rounded text-white transition-colors ${
+              className={`w-full px-6 py-3 rounded-xl font-semibold transition ${
                 hotelBooked[currentIndex]
-                  ? "bg-green-500 cursor-default"
-                  : "bg-blue-600 hover:bg-blue-700"
+                  ? "bg-[#34A853] cursor-default text-white"
+                  : "bg-[#4285F4] hover:bg-[#4285F4]/90 text-white"
               }`}
               onClick={handleBookHotel}
               disabled={hotelBooked[currentIndex]}
             >
-              {hotelBooked[currentIndex] 
-                ? ` Hotel Booked${bookedHotels[currentIndex] ? ` - ${bookedHotels[currentIndex].hotel.name}` : ''}` 
-                : "Book Hotel"
-              }
+              {hotelBooked[currentIndex]
+                ? ` Hotel Booked${bookedHotels[currentIndex] ? ` - ${bookedHotels[currentIndex].hotel.name}` : ""}`
+                : "Book Hotel"}
             </button>
-
-            {/* Show hotel details if booked */}
             {hotelBooked[currentIndex] && bookedHotels[currentIndex] && (
-              <div className="bg-green-50 border border-green-200 rounded p-3 text-sm">
-                <div className="font-semibold text-green-800">
+              <div className="bg-[#E6F4EA] border border-[#34A853]/30 rounded-xl p-3 text-sm">
+                <div className="font-semibold text-[#34A853]">
                   {bookedHotels[currentIndex].hotel.name}
                 </div>
-                <div className="text-green-700">
+                <div className="text-[#34A853]/90">
                   Room: {bookedHotels[currentIndex].room.roomType}
                 </div>
-                <div className="text-green-600">
+                <div className="text-[#34A853]/70">
                   Booking ID: {bookedHotels[currentIndex].booking.id}
                 </div>
               </div>
             )}
-
             <button
-              className="w-full px-6 py-3 bg-green-600 text-white rounded hover:bg-green-700"
-              onClick={() => showSuccess("Navigated to Tour Guide Booking Form.", "Tour Guide Booking")}
+              className="w-full px-6 py-3 bg-[#F4B400] text-white rounded-xl font-semibold hover:bg-[#F4B400]/90 transition"
+              onClick={() =>
+                showSuccess("Navigated to Tour Guide Booking Form.", "Tour Guide Booking")
+              }
             >
               Book Tour Guide
             </button>
-
-            {/* <button
-              className={`w-full px-6 py-3 rounded text-white ${transportBooked[currentIndex] ? 'bg-purple-400' : 'bg-purple-600 hover:bg-purple-700'}`}
-              onClick={handleBookTransport}
-              disabled={transportBooked[currentIndex]}
-            >
-              {transportBooked[currentIndex] ? "Booking Transport..." : "Book Transport"}
-            </button> */}
             <BookTransportButton
               onClick={() => setShowDriversPopup(true)}
               disabled={
-                transportBooked[currentIndex] ||
-                locations[currentIndex].length < 2
+                transportBooked[currentIndex] || locations[currentIndex].length < 2
               }
             />
             <AvailableDriversPopup
@@ -471,12 +498,11 @@ const Map = () => {
               date={dates[currentIndex]}
               onSelectDriver={(driverId, summary) => {
                 setSelectedDriverId(driverId);
-                setSelectedDriverSummary(summary); // You may want to update AvailableDriversPopup to pass summary
+                setSelectedDriverSummary(summary);
                 setShowDriversPopup(false);
                 setShowConfirm(true);
               }}
             />
-
             {showConfirm && selectedDriverId && (
               <ConfirmDriverSelection
                 driver={selectedDriverSummary}
@@ -492,7 +518,7 @@ const Map = () => {
                     await apiClient.post("/api/drivers/book", {
                       driverId: selectedDriverId,
                       date: dates[currentIndex],
-                      travelerId: userId, // You'll need to get the logged-in user's id
+                      travelerId: userId,
                       startLocation: {
                         name: startLocation.name,
                         latitude: startLocation.lat,
@@ -504,139 +530,126 @@ const Map = () => {
                         longitude: endLocation.lon,
                       },
                     });
-                    showSuccess("Driver Booked Successfully")
+                    showSuccess("Driver Booked Successfully");
                     setTransportBooked((prev) => {
                       const updated = [...prev];
                       updated[currentIndex] = true;
                       return updated;
                     });
-                    setShowConfirm(false); // <<== Only close on success!
+                    setShowConfirm(false);
                   } catch (err) {
                     showError("Failed to book driver.");
                     console.error("Error booking driver:", err);
-                    // Optionally leave modal open, or handle error state here
                   }
                 }}
                 onCancel={() => setShowConfirm(false)}
               />
             )}
           </div>
-
-          {/* Next Button */}
           <button
             onClick={handleNext}
-            className="w-full px-6 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600"
+            className="w-full px-6 py-3 bg-[#34A853] text-white rounded-xl font-bold hover:bg-[#34A853]/90 shadow-lg mt-2 transition"
           >
-            {currentIndex < dates.length - 1
-              ? "Next Day →"
-              : "Finalize Itinerary"}
+            {currentIndex < dates.length - 1 ? "Next Day →" : "Finalize Itinerary"}
           </button>
         </div>
 
-        {/* Right Column - Map and Itinerary */}
-        <div className="flex-1 relative z-10">
-          <div className="bg-white rounded-lg shadow-xl p-6 relative z-10">
-            <div className="flex flex-col lg:flex-row gap-6">
-              {/* Map Section */}
-              <div className="flex-1 h-96 relative z-0">
-                <MapContainer
-                  center={[6.9271, 79.8612]}
-                  zoom={13}
-                  className="h-full w-full rounded-lg relative z-0"
-                >
-                  <TileLayer
-                    url="https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}"
-                    subdomains={["mt0", "mt1", "mt2", "mt3"]}
-                    attribution="© Google Maps"
-                  />
-
-                  {locations[currentIndex].map((loc, index) => (
-                    <Marker key={index} position={[loc.lat, loc.lon]}>
-                      <Popup>
-                        <div className="font-semibold">
-                          {loc.name.split(",")[0]}
-                        </div>
-                        <div className="text-sm">
-                          {loc.name.split(",").slice(1, 3).join(",")}
-                        </div>
-                      </Popup>
-                    </Marker>
-                  ))}
-
-                  {locations[currentIndex].length > 1 && (
-                    <RoutingMachine
-                      locations={locations[currentIndex]}
-                      travelMode={travelMode}
-                    />
-                  )}
-                  <FitBoundsControl locations={locations[currentIndex]} />
-                </MapContainer>
+        {/* Right: Map Full Height, Daily Stops floating on z axis OVER map */}
+        <div className="flex-1 relative z-10 flex flex-col items-center">
+          <div className="relative w-full h-[700px]">
+            {/* Map Section */}
+            <MapContainer
+              center={[6.9271, 79.8612]}
+              zoom={13}
+              className="h-full w-full"
+            >
+              <TileLayer
+                url={GOOGLE_MAPS_STYLE}
+                subdomains={["mt0", "mt1", "mt2", "mt3"]}
+                attribution="Map data ©2025 Google"
+              />
+              {locations[currentIndex].map((loc, index) => (
+                <Marker key={index} position={[loc.lat, loc.lon]}>
+                  <Popup>
+                    <div className="font-semibold text-[#4285F4]">
+                      {loc.name.split(",")[0]}
+                    </div>
+                    <div className="text-xs text-gray-500">
+                      {loc.name.split(",").slice(1, 3).join(",")}
+                    </div>
+                  </Popup>
+                </Marker>
+              ))}
+              {locations[currentIndex].length > 1 && (
+                <RoutingMachine
+                  locations={locations[currentIndex]}
+                  travelMode={travelMode}
+                />
+              )}
+              <FitBoundsControl locations={locations[currentIndex]} />
+            </MapContainer>
+            {/* Daily Stops floating card in z axis OVER the map, top center */}
+            <div
+              className="absolute left-1/2 transform -translate-x-1/2 top-4 w-2/3 max-w-2xl bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl border border-gray-200 p-4 z-[999]"
+              style={{ pointerEvents: "auto" }}
+            >
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-xl font-semibold text-[#4285F4]">
+                  Daily Stops
+                </h3>
+                <span className="bg-[#4285F4] text-white px-3 py-1 rounded-full text-sm font-medium">
+                  {locations[currentIndex].length} stops
+                </span>
               </div>
-
-              {/* Compact Itinerary List */}
-              <div className="lg:w-64 bg-white border rounded-lg p-2">
-                <div className="flex items-center justify-between mb-2">
-                  <h3 className="text-lg font-semibold">Daily Stops</h3>
-                  <span className="bg-blue-500 text-white px-2 py-0.5 rounded-full text-sm">
-                    {locations[currentIndex].length} stops
-                  </span>
-                </div>
-
-                <DragDropContext onDragEnd={onDragEnd}>
-                  <Droppable droppableId="locations">
-                    {(provided) => (
-                      <div
-                        {...provided.droppableProps}
-                        ref={provided.innerRef}
-                        className="space-y-1"
-                      >
-                        {locations[currentIndex].map((loc, index) => (
-                          <Draggable
-                            key={index}
-                            draggableId={String(index)}
-                            index={index}
-                          >
-                            {(provided) => (
-                              <div
-                                ref={provided.innerRef}
-                                {...provided.draggableProps}
-                                {...provided.dragHandleProps}
-                                className="bg-gray-50 p-2 rounded shadow-xs text-sm hover:bg-gray-100 transition-colors"
-                              >
-                                <div className="flex justify-between items-center">
-                                  <div className="truncate">
-                                    <div className="font-medium truncate">
-                                      {loc.name.split(",")[0]}
-                                    </div>
-                                    <div className="text-xs text-gray-500 truncate">
-                                      {loc.name
-                                        .split(",")
-                                        .slice(1, 3)
-                                        .join(",")}
-                                    </div>
-                                  </div>
-                                  <button
-                                    onClick={() => removeLocation(index)}
-                                    className="text-red-500 hover:text-red-700 ml-2 text-xs"
-                                  >
-                                    ✕
-                                  </button>
-                                </div>
+              <DragDropContext onDragEnd={onDragEnd}>
+                <Droppable droppableId="locations">
+                  {(provided) => (
+                    <div
+                      {...provided.droppableProps}
+                      ref={provided.innerRef}
+                      className="space-y-2"
+                    >
+                      {locations[currentIndex].map((loc, index) => (
+                        <Draggable
+                          key={index}
+                          draggableId={String(index)}
+                          index={index}
+                        >
+                          {(provided) => (
+                            <div
+                              ref={provided.innerRef}
+                              {...provided.draggableProps}
+                              {...provided.dragHandleProps}
+                              className="bg-[#F7FBFF] p-3 rounded-xl shadow-xs text-sm hover:bg-[#E3F0FE] transition-colors flex justify-between items-center border border-gray-100"
+                            >
+                              <div className="truncate flex flex-col">
+                                <span className="font-medium text-[#4285F4] truncate">
+                                  {loc.name.split(",")[0]}
+                                </span>
+                                <span className="text-xs text-gray-500 truncate">
+                                  {loc.name.split(",").slice(1, 3).join(",")}
+                                </span>
                               </div>
-                            )}
-                          </Draggable>
-                        ))}
-                        {provided.placeholder}
-                      </div>
-                    )}
-                  </Droppable>
-                </DragDropContext>
-              </div>
+                              <button
+                                onClick={() => removeLocation(index)}
+                                className="text-red-500 hover:text-red-700 ml-2 text-xs rounded-full px-2 py-1 transition shadow-sm"
+                                aria-label="Remove stop"
+                              >
+                                ✕
+                              </button>
+                            </div>
+                          )}
+                        </Draggable>
+                      ))}
+                      {provided.placeholder}
+                    </div>
+                  )}
+                </Droppable>
+              </DragDropContext>
             </div>
           </div>
         </div>
       </div>
-
       {/* Hotel Booking Modals */}
       <HotelSearchPopup
         isOpen={showHotelSearch}
@@ -645,7 +658,6 @@ const Map = () => {
         selectedDate={dates[currentIndex]}
         onHotelSelect={handleHotelSelect}
       />
-
       <RoomAvailabilityModal
         isOpen={showRoomAvailability}
         onClose={handleCloseModals}
@@ -658,7 +670,6 @@ const Map = () => {
         }
         onRoomSelect={handleRoomSelect}
       />
-
       <HotelBookingModal
         isOpen={showHotelBooking}
         onClose={handleCloseModals}
