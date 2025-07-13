@@ -41,7 +41,7 @@ const Header = ({
     } else {
       return [
         { name: 'Dashboard', path: '/traveler-dashboard' },
-        { name: 'Hotels', path: '/hotels' },
+        { name: 'Reservations', path: '/reservations' },
         { name: 'Guides', path: '/guides-page' },
         { name: 'Places', path: '/places' },
         { name: 'Emergency Contacts', path: '/emergency-contacts'}
@@ -175,90 +175,102 @@ const Header = ({
     </button>
   );
 
-  const ProfileDropdown = () => (
+const ProfileDropdown = () => (
     <div className="relative">
-      <button
-        onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-        className="flex items-center gap-3 p-2 rounded-xl hover:bg-blue-50 transition-all duration-200 group"
-      >
-        <div className="relative">
-          <img
-            src={user?.profileImageUrl || '/default-profile.png'}
-            alt="Profile"
-            className="w-10 h-10 rounded-full object-cover ring-2 ring-transparent group-hover:ring-blue-200 transition-all duration-200"
-          />
-          <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
-        </div>
-        <div className="hidden sm:block text-left">
-          <p className="font-semibold text-base text-gray-900 truncate max-w-[120px]">
-            {user?.firstName} {user?.lastName}
-          </p>
-          <p className="text-sm text-gray-500">{user?.role === 'GUIDE' ? 'Guide' : 'Traveler'}</p>
-        </div>
-        <ChevronDown className={`w-4 h-4 text-gray-600 transition-transform duration-200 ${isDropdownOpen ? 'rotate-180' : ''}`} />
-      </button>
-
-      {isDropdownOpen && (
-        <div className="absolute right-0 mt-2 w-72 bg-white border border-gray-200 rounded-xl shadow-xl z-50">
-          <div className="px-5 py-4 border-b border-gray-100">
-            <div className="flex items-center gap-3">
-              <img
-                src={user?.profileImageUrl || '/default-profile.png'}
-                alt="Profile"
-                className="w-12 h-12 rounded-full object-cover"
-              />
-              <div>
-                <p className="font-semibold text-lg text-gray-900">
-                  {user?.firstName} {user?.lastName}
-                </p>
-                <p className="text-base text-gray-600">{user?.email}</p>
-                <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold mt-1 ${
-                  user?.role === 'GUIDE' 
-                    ? 'bg-green-100 text-green-800' 
-                    : 'bg-blue-100 text-blue-800'
-                }`}>
-                  {user?.role === 'GUIDE' ? 'Tour Guide' : 'Traveler'}
-                </span>
-              </div>
+        <button
+            onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+            className="flex items-center gap-3 p-2 rounded-xl hover:bg-blue-50 transition-all duration-200 group"
+        >
+            <div className="relative">
+                <img
+                    src={user?.profileImageUrl || '/default-profile.png'}
+                    alt="Profile"
+                    className="w-10 h-10 rounded-full object-cover ring-2 ring-transparent group-hover:ring-blue-200 transition-all duration-200"
+                />
+                <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
             </div>
-          </div>
-          <div className="py-2">
-            <button
-              onClick={() => {
-                navigate('/profile');
-                setIsDropdownOpen(false);
-              }}
-              className="w-full px-5 py-3 text-left text-base text-gray-700 hover:bg-gray-50 flex items-center gap-3 font-medium"
-            >
-              <User className="w-5 h-5" />
-              Profile Settings
-            </button>
-            {/* <button
-              onClick={() => {
-                navigate('/settings');
-                setIsDropdownOpen(false);
-              }}
-              className="w-full px-5 py-3 text-left text-base text-gray-700 hover:bg-gray-50 flex items-center gap-3 font-medium"
-            >
-              <Settings className="w-5 h-5" />
-              Account Settings
-            </button> */}
-            <hr className="my-2 border-gray-100" />
-            <button
-              onClick={() => {
-                localStorage.removeItem('user');
-                navigate('/login');
-                setIsDropdownOpen(false);
-              }}
-              className="w-full px-5 py-3 text-left text-base text-red-600 hover:bg-red-50 flex items-center gap-3 font-medium"
-            >
-              <span>Sign Out</span>
-            </button>
-          </div>
-        </div>
-      )}
+            <div className="hidden sm:block text-left">
+                <p className="font-semibold text-base text-gray-900 truncate max-w-[120px]">
+                    {user?.firstName} {user?.lastName}
+                </p>
+                <p className="text-sm text-gray-500">
+                    {user?.role === 'ADMIN'
+                        ? 'Admin'
+                        : user?.role === 'GUIDE'
+                        ? 'Guide'
+                        : 'Traveler'}
+                </p>
+            </div>
+            <ChevronDown className={`w-4 h-4 text-gray-600 transition-transform duration-200 ${isDropdownOpen ? 'rotate-180' : ''}`} />
+        </button>
+
+        {isDropdownOpen && (
+            <div className="absolute right-0 mt-2 w-72 bg-white border border-gray-200 rounded-xl shadow-xl z-50">
+                <div className="px-5 py-4 border-b border-gray-100">
+                    <div className="flex items-center gap-3">
+                        <img
+                            src={user?.profileImageUrl || '/default-profile.png'}
+                            alt="Profile"
+                            className="w-12 h-12 rounded-full object-cover"
+                        />
+                        <div>
+                            <p className="font-semibold text-lg text-gray-900">
+                                {user?.firstName} {user?.lastName}
+                            </p>
+                            <p className="text-base text-gray-600">{user?.email}</p>
+                            <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold mt-1 ${
+                                user?.role === 'ADMIN'
+                                    ? 'bg-red-100 text-red-800'
+                                    : user?.role === 'GUIDE'
+                                    ? 'bg-green-100 text-green-800'
+                                    : 'bg-blue-100 text-blue-800'
+                            }`}>
+                                {user?.role === 'ADMIN'
+                                    ? 'Admin'
+                                    : user?.role === 'GUIDE'
+                                    ? 'Tour Guide'
+                                    : 'Traveler'}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                <div className="py-2">
+                    <button
+                        onClick={() => {
+                            navigate('/profile');
+                            setIsDropdownOpen(false);
+                        }}
+                        className="w-full px-5 py-3 text-left text-base text-gray-700 hover:bg-gray-50 flex items-center gap-3 font-medium"
+                    >
+                        <User className="w-5 h-5" />
+                        Profile Settings
+                    </button>
+                    {/* <button
+                        onClick={() => {
+                            navigate('/settings');
+                            setIsDropdownOpen(false);
+                        }}
+                        className="w-full px-5 py-3 text-left text-base text-gray-700 hover:bg-gray-50 flex items-center gap-3 font-medium"
+                    >
+                        <Settings className="w-5 h-5" />
+                        Account Settings
+                    </button> */}
+                    <hr className="my-2 border-gray-100" />
+                    <button
+                        onClick={() => {
+                            localStorage.removeItem('user');
+                            navigate('/login');
+                            setIsDropdownOpen(false);
+                        }}
+                        className="w-full px-5 py-3 text-left text-base text-red-600 hover:bg-red-50 flex items-center gap-3 font-medium"
+                    >
+                        <span>Sign Out</span>
+                    </button>
+                </div>
+            </div>
+        )}
     </div>
-  );
+);
 
   return (
     <header className="bg-white shadow-sm sticky top-0 z-40 border-b border-gray-200">

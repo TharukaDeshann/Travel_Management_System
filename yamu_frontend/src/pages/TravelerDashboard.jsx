@@ -377,41 +377,6 @@ export default function TravelerDashboard({ currentUser }) {
     }
   };
 
-  const CurrencyDropdown = () => (
-    <div className="currency-dropdown">
-      <button
-        type="button"
-        className="currency-button"
-        onClick={(e) => {
-          e.stopPropagation();
-          setIsDropdownOpen(!isDropdownOpen);
-        }}
-      >
-        <span>{currencies.find(c => c.code === selectedCurrency)?.symbol}</span>
-        <span>{selectedCurrency}</span>
-        <span className={`dropdown-arrow ${isDropdownOpen ? 'open' : ''}`}>▼</span>
-      </button>
-
-      {isDropdownOpen && (
-        <div className="dropdown-menu">
-          {currencies.map((currency) => (
-            <button
-              key={currency.code}
-              type="button"
-              className="currency-option"
-              onClick={() => {
-                setSelectedCurrency(currency.code);
-                setIsDropdownOpen(false);
-              }}
-            >
-              <span>{currency.symbol}</span> <span>{currency.code}</span>
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-
   return (
     <Layout 
       user={loggedUser}
@@ -422,55 +387,6 @@ export default function TravelerDashboard({ currentUser }) {
       location={location}
     >
       <div className="traveler-dashboard-container">
-        <nav className="nav-container">
-          <div className="logo-container">
-            <img src={yamuLogo} alt="YAMU Logo" className="nav-logo-image" />
-            <h1 className="nav-logo">YAMU</h1>
-          </div>
-          <ul className="nav-links">
-            {['Dashboard', 'Hotels', 'Guides', 'Places', 'Emergency Contacts'].map((item) => (
-              <li
-                key={item}
-                className="nav-link"
-                onClick={() => {
-                  if (item === 'Guides') {
-                    handleNavigateToGuides();
-                  } else if (item === 'Dashboard') {
-                    navigate('/traveler-dashboard');
-                  } else if (item === 'Places') {
-                    navigate('/places');
-                  } else if (item === 'Hotels') {
-                    navigate('/hotels');
-                  } else if (item === 'Emergency Contacts') {
-                    navigate('/emergency-contacts');
-                  }
-                }}
-              >
-                {item}
-              </li>
-            ))}
-            <li
-              key="Inbox"
-              className="nav-link"
-              onClick={() => navigate('/inbox', { state: { currentUser } })}
-              style={{ display: 'flex', alignItems: 'center', padding: '0 12px' }}
-            >
-              <Mail size={20} />
-            </li>
-          </ul>
-          <div className="flex items-center space-x-4">
-            <CurrencyDropdown />
-            <WeatherCard />
-            <div className="icon-container">
-              <img src={notificationIcon} alt="Notifications" className="w-6 h-6" />
-              <span className="notification-badge">3</span>
-            </div>
-            <div className="icon-container">
-              <img src={loggedUser.profileImageUrl || profileIcon} alt="Profile" className="profile-image" onClick={() => navigate('/profile')} />
-            </div>
-          </div>
-        </nav>
-
         <div className="main-content">
           <div className="search-container">
             <div className="search-bar">

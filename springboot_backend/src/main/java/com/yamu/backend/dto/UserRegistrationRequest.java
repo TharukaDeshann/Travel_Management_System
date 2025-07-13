@@ -51,24 +51,8 @@ public class UserRegistrationRequest {
     private String about;
 
     
-    private List<VehicleRequest> vehicles;
 
-    @Getter
-    @Setter
-    public static class VehicleRequest {
-        
-        @NotBlank(message = "Model is required")
-        private String model;
-        @NotBlank(message = "Type is required")
-        private String type;
-        @NotNull(message = "Capacity is required")
-        private int capacity;
-        @NotNull(message = "Air conditioning status is required")
-        private boolean airConditioned;
-        @NotNull(message = "Availability status is required")
-        private boolean available;
-        private String vehicleImageUrl;
-    }
+
     
 
     

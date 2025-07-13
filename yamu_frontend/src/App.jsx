@@ -8,7 +8,7 @@ import Register from "./pages/Register.jsx";
 import Home from "./pages/Home.jsx";
 import ProtectedRoute from "./routes/ProtectedRoute.jsx";
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
-
+import Reservations from "./pages/Reservations.jsx";
 import WeatherPage from "./pages/WeatherPage.jsx";
 import Weather from "./components/Weather.jsx";
 import VisitPlanPage from "./pages/VisitPlanPage";
@@ -38,6 +38,8 @@ import DirectionsPage from "./pages/DirectionsPage.jsx";
 // import ProfileView from "./pages/ProfileView.jsx";
 
 import EmergencyContacts from "./pages/EmergencyContacts.jsx";
+import UserSearch from "./components/UserSearch.jsx";
+
 
 const App = () => {
   return (
@@ -49,7 +51,8 @@ const App = () => {
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
 
-          
+          {/* ai search */}
+          <Route path="/user-search" element={<UserSearch />} />
           <Route path="/weather" element={<WeatherPage />} />
           <Route path="/weather-details" element={<Weather />} />
           <Route path="/weather-card" element={<WeatherCard />} />
@@ -64,6 +67,7 @@ const App = () => {
 
           {/* Protected Routes */}
           <Route element={<ProtectedRoute />}>
+            <Route path="/inbox" element={<Inbox />} />
             <Route path="/home" element={<Home />} />
             <Route path="/traveler-dashboard" element={<TravelerDashboard />} />
             <Route path="/traveler-upcoming-trips" element={<TravelerUpcomingTrips />} />
@@ -78,7 +82,8 @@ const App = () => {
             <Route path="/itinerary-planner" element={<ItineraryPlanner />} />
             <Route path="/inbox" element={<Inbox />} />
             <Route path="/profile-view" element={<ProfileView />} />
-            <Route path="/directions" element={<DirectionsPage />} /> 
+            <Route path="/directions" element={<DirectionsPage />} />             
+            <Route path="/reservations" element={<Reservations></Reservations>}></Route>
           
           <Route path="/finalize-itinerary" element={<FinalizeItinerary />} />
 
@@ -92,6 +97,7 @@ const App = () => {
 
             {/* Cancellation Modal Route */}
             <Route path="/cancellation-modal" element={<CancellationModal isOpen={true} />} />
+            <Route path="/users/profile/:userId" element={<ProfileView />} />
           </Route>
 
           {/* Fallback Route */}
