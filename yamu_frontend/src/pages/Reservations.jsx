@@ -9,6 +9,7 @@ import RoomAvailabilityModal from '../components/RoomAvailabilityModal';
 import HotelBookingModal from '../components/HotelBookingModal';
 import AvailableDriversPopup from '../components/AvailableDriversPopup';
 import ConfirmDriverSelection from '../components/ConfirmDriverSelection';
+import LocationSelector from '../components/LocationSelector';
 import useNotification from '../hooks/useNotification';
 import { fetchLoggedInUser } from '../services/authService';
 const Reservations = () => {
@@ -217,7 +218,7 @@ const Reservations = () => {
   };
 
   const handleBookingComplete = (booking) => {
-    console.log('✅ Hotel booking completed:', booking);
+    console.log(' Hotel booking completed:', booking);
     
     showSuccess(`Hotel booking confirmed! Booking ID: ${booking.id}`, 'Booking Confirmed');
     
@@ -608,7 +609,7 @@ const Reservations = () => {
                         {/* Results Summary */}
                         <div className="mb-4 text-sm text-gray-600">
                           Showing {filteredBookings.length} {bookingFilter} booking{filteredBookings.length !== 1 ? 's' : ''} 
-                          (sorted by check-in date)
+                         
                         </div>
                         
                         <div className="grid gap-6">
@@ -894,7 +895,7 @@ const Reservations = () => {
                         disabled={loadingTransportBookings}
                         className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:bg-gray-400 text-sm"
                       >
-                        {loadingTransportBookings ? '🔄 Refreshing...' : '🔄 Refresh'}
+                        {loadingTransportBookings ? 'Refreshing...' : 'Refresh'}
                       </button>
                     </div>
                   </div>
@@ -1061,37 +1062,22 @@ const Reservations = () => {
                 </div>
 
                 <div className="p-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                    {/* Start Location */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Pick-up Location (Optional)
-                      </label>
-                      <input
-                        type="text"
-                        value={startLocation.name}
-                        onChange={(e) => setStartLocation({...startLocation, name: e.target.value})}
-                        placeholder="Enter pick-up location"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      />
-                    </div>
+                  {/* Location Selector Component */}
+                  <LocationSelector
+                    pickupLocation={startLocation}
+                    dropoffLocation={endLocation}
+                    onLocationChange={(location, locationType) => {
+                      if (locationType === 'pickup') {
+                        setStartLocation(location);
+                      } else if (locationType === 'dropoff') {
+                        setEndLocation(location);
+                      }
+                    }}
+                    title="Select Pick-up and Drop-off Locations"
+                    height="400px"
+                  />
 
-                    {/* End Location */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Drop-off Location (Optional)
-                      </label>
-                      <input
-                        type="text"
-                        value={endLocation.name}
-                        onChange={(e) => setEndLocation({...endLocation, name: e.target.value})}
-                        placeholder="Enter drop-off location"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="text-center">
+                  <div className="text-center mt-6">
                     <button
                       onClick={handleBookTransport}
                       className="bg-purple-600 hover:bg-purple-700 text-white px-8 py-3 rounded-lg font-medium transition-colors"
@@ -1149,7 +1135,7 @@ const Reservations = () => {
 
         {/* Cancel Hotel Booking Confirmation Modal */}
         {showCancelModal && bookingToCancel && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[1040] p-4">
             <div className="bg-white rounded-lg max-w-md w-full p-6">
               <div className="flex items-center mb-4">
                 <div className="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100">
@@ -1204,7 +1190,7 @@ const Reservations = () => {
 
         {/* Cancel Transport Booking Confirmation Modal */}
         {showTransportCancelModal && transportBookingToCancel && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[1040] p-4">
             <div className="bg-white rounded-lg max-w-md w-full p-6">
               <div className="flex items-center mb-4">
                 <div className="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100">

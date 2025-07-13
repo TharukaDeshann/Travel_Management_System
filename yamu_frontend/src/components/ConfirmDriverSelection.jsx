@@ -1,7 +1,7 @@
 import React from "react";
 
 const ConfirmDriverSelection = ({ driver, onConfirm, onCancel }) => (
-  <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+  <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-[1030]">
     <div className="bg-white p-8 rounded-lg shadow-2xl w-full max-w-md">
       <div className="flex flex-col items-center">
         <h2 className="text-xl font-bold mb-3 text-gray-800">
