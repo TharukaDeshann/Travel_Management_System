@@ -488,7 +488,7 @@ const Map = () => {
                         longitude: endLocation.lon,
                       },
                     });
-                    alert("Driver booked successfully!");
+                    showSuccess("Driver Booked Successfully")
                     setTransportBooked((prev) => {
                       const updated = [...prev];
                       updated[currentIndex] = true;
@@ -496,7 +496,7 @@ const Map = () => {
                     });
                     setShowConfirm(false); // <<== Only close on success!
                   } catch (err) {
-                    alert("Failed to book driver.");
+                    showError("Failed to book driver.");
                     console.error("Error booking driver:", err);
                     // Optionally leave modal open, or handle error state here
                   }

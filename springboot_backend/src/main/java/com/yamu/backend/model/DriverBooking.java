@@ -25,5 +25,15 @@ public class DriverBooking {
 
     private String status; // BOOKED, CANCELLED
 
-    // Getters and Setters
+    // Start Location
+    private String startLocationName;
+    private Double startLocationLat;
+    private Double startLocationLon;
+
+    // End Location
+    private String endLocationName;
+    private Double endLocationLat;
+    private Double endLocationLon;
+
+    // Getters and Setters (if not using Lombok)
 }
