@@ -38,7 +38,18 @@ const GuideModal = ({ guide, onClose, currentUser, prefillDate, prefillPlaces })
       }
     };
     loadUser();
-  }, []);
+    
+    // Pre-fill the form with itinerary data
+    if (prefillDate && prefillPlaces && prefillPlaces.length > 0) {
+      const updatedDetails = [...reservationDetails];
+      updatedDetails[0] = {
+        ...updatedDetails[0],
+        place: prefillPlaces.join(", "),
+        date: prefillDate
+      };
+      setReservationDetails(updatedDetails);
+    }
+  }, [prefillDate, prefillPlaces]);
 
   const handleDayChange = (e) => {
     const days = parseInt(e.target.value);

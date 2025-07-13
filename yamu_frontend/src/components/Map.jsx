@@ -8,6 +8,7 @@ import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import { searchLocations } from "../services/map/locationService";
 import { fetchRoute, optimizeRoute } from "../services/map/routeService";
 import { createDayPlan } from "../services/dayPlanService";
+import { linkGuideReservationToDayPlan } from "../services/dayPlanGuideService";
 
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
@@ -165,16 +166,19 @@ const Map = () => {
 
   // Modify handleBookGuide
   const handleBookGuide = () => {
+    // Get the current locations for this day
+    const currentLocations = locations[currentIndex] || [];
+    const locationNames = currentLocations.map(loc => loc.name);
+    
     navigate("/guides-page", {
       state: {
         fromItinerary: true,
         itineraryId,
         dayIndex: currentIndex,
         date: dates[currentIndex],
-        places: (locations[currentIndex] || []).map(loc => loc.name),
+        places: locationNames, // Pass the actual location names
         travelerId,
-        // Pass current locations
-        locations: locations[currentIndex] || []
+        locations: currentLocations
       }
     });
   };
@@ -198,10 +202,9 @@ const Map = () => {
 
   // Update buildDayPlanRequest
   const buildDayPlanRequest = () => ({
-    date: dates[currentIndex],
+    date: new Date(dates[currentIndex]),
     hotelDetails: "",
     transportDetails: "",
-    guideDetails: "",
     locations: (locations[currentIndex] || []).map((loc, idx) => ({
       name: loc.name,
       address: "",
@@ -216,33 +219,57 @@ const Map = () => {
       travelMode,
       totalDistance: null,
       estimatedTime: null
-    },
-    // Add guide reservation reference
-    guideReservationId: guideReservationId[currentIndex]
+    }
   });
 
   const saveCurrentDayPlan = async () => {
     if (!itineraryId) {
       alert("Itinerary ID missing!");
-      return;
+      return null;
     }
     if (!locations[currentIndex] || locations[currentIndex].length === 0) {
       alert("Add at least one location before saving.");
-      return;
+      return null;
     }
     setSaving(true);
     try {
       const dayPlanRequest = buildDayPlanRequest();
-      await createDayPlan(itineraryId, dayPlanRequest);
+      const savedDayPlan = await createDayPlan(itineraryId, dayPlanRequest);
       alert("Day plan saved!");
+      setSaving(false);
+      return savedDayPlan;
     } catch (error) {
       alert("Failed to save day plan.");
+      setSaving(false);
+      return null;
     }
-    setSaving(false);
   };
 
   const handleNext = async () => {
-    await saveCurrentDayPlan();
+    const savedDayPlan = await saveCurrentDayPlan();
+    
+    // If there's a guide reservation for this day, link it to the day plan
+    if (guideReservations[currentIndex] && savedDayPlan) {
+      try {
+        const reservation = guideReservations[currentIndex];
+        // Find the day detail for this specific date
+        const dayDetail = reservation.dayDetails?.find(detail => 
+          detail.date === dates[currentIndex]
+        );
+        
+        if (dayDetail) {
+          await linkGuideReservationToDayPlan(
+            savedDayPlan.id,
+            reservation.id,
+            dayDetail.id
+          );
+          console.log("Guide reservation linked to day plan");
+        }
+      } catch (error) {
+        console.error("Failed to link guide reservation:", error);
+      }
+    }
+    
     if (currentIndex < dates.length - 1) {
       setCurrentIndex(currentIndex + 1);
     } else {

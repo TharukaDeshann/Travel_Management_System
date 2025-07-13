@@ -31,26 +31,9 @@ public class DayPlan {
     @Column(columnDefinition = "TEXT")
     private String transportDetails;
 
-    @Column(columnDefinition = "TEXT")
-    private String guideDetails;
-
     @OneToMany(mappedBy = "dayPlan", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<Location> locations = new ArrayList<>();
 
     @OneToOne(mappedBy = "dayPlan", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private Route route;
-
-    // Add new relationship
-    @ManyToOne
-    @JoinColumn(name = "guide_reservation_id")
-    private GuideReservationByTraveler guideReservation;
-
-    // Add getter and setter
-    public GuideReservationByTraveler getGuideReservation() {
-        return guideReservation;
-    }
-
-        public void setGuideReservation(GuideReservationByTraveler guideReservation) {
-            this.guideReservation = guideReservation;
-        }
     }

@@ -32,6 +32,7 @@ import UpdateUserProfile from "./pages/profile/components/UpdateUserProfile.jsx"
 import ProfileView from "./pages/ProfileView.jsx";
 import AdminDashboard from "./pages/AdminDashboard.jsx";
 import UsersSocialPage from "./pages/UsersSocialPage.jsx";
+import SpeechToTextDemo from "./pages/SpeechToTextDemo.jsx";
 // import ProfileView from "./pages/ProfileView.jsx";
 
 
@@ -51,6 +52,7 @@ const App = () => {
           <Route path="/weather-details" element={<Weather />} />
           <Route path="/weather-card" element={<WeatherCard />} />
           <Route path="/finalize-itinerary" element={<FinalizeItinerary />} />
+          <Route path="/speech-demo" element={<SpeechToTextDemo />} />
           <Route path="/" element={<Login />} />
           
           {/* Email verification pending */}

@@ -10,11 +10,9 @@ import com.yamu.backend.model.DayPlan;
 import com.yamu.backend.model.Itinerary;
 import com.yamu.backend.model.Location;
 import com.yamu.backend.model.Route;
-import com.yamu.backend.model.GuideReservationByTraveler;
 import com.yamu.backend.repository.DayPlanRepository;
 import com.yamu.backend.repository.ItineraryRepository;
 import com.yamu.backend.repository.LocationRepository;
-import com.yamu.backend.repository.GuideReservationByTravelerRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -35,15 +33,8 @@ public class DayPlanService {
     @Autowired
     private LocationRepository locationRepository;
     
-    // Removed unused RouteRepository
-    // @Autowired
-    // private RouteRepository routeRepository;
-    
     @Autowired
-    private RouteService routeService; // New service for route operations
-    
-    @Autowired
-    private GuideReservationByTravelerRepository reservationRepository; // For linking guide reservations
+    private RouteService routeService;
 
     @Transactional
     public DayPlanDetailResponse createDayPlan(Long itineraryId, DayPlanCreateRequest request) {
@@ -60,15 +51,7 @@ public class DayPlanService {
         dayPlan.setDate(request.getDate());
         dayPlan.setHotelDetails(request.getHotelDetails());
         dayPlan.setTransportDetails(request.getTransportDetails());
-        dayPlan.setGuideDetails(request.getGuideDetails());
         dayPlan.setItinerary(itinerary);
-        
-        // Link guide reservation if provided
-        if (request.getGuideReservationId() != null) {
-            GuideReservationByTraveler reservation = reservationRepository.findById(request.getGuideReservationId())
-                .orElseThrow(() -> new RuntimeException("Guide reservation not found"));
-            dayPlan.setGuideReservation(reservation);
-        }
         
         // Save dayPlan first to generate ID
         dayPlan = dayPlanRepository.save(dayPlan);
@@ -125,14 +108,6 @@ public class DayPlanService {
         response.setDate(dayPlan.getDate());
         response.setHotelDetails(dayPlan.getHotelDetails());
         response.setTransportDetails(dayPlan.getTransportDetails());
-        response.setGuideDetails(dayPlan.getGuideDetails());
-        
-        // Add guide reservation ID if exists
-        if (dayPlan.getGuideReservation() != null) {
-            response.setGuideReservationId(dayPlan.getGuideReservation().getId());
-        } else {
-            response.setGuideReservationId(null);
-        }
         
         // Map locations
         List<LocationDetailResponse> locationResponses = new ArrayList<>();

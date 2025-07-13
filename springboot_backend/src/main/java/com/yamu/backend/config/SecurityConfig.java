@@ -51,22 +51,23 @@ public class SecurityConfig {
             .csrf(AbstractHttpConfigurer::disable)
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .authorizeHttpRequests(auth -> auth
-                // Public endpoints
+                // Public endpoints - NO AUTHENTICATION REQUIRED FOR DEMO
                 .requestMatchers("/api/auth/**").permitAll()
-                // .requestMatchers("/api/day-plans/**").permitAll()
-
+                .requestMatchers("/api/day-plans/**").permitAll()
+                .requestMatchers("/api/day-plan-guides/**").permitAll()
+                .requestMatchers("/api/reservations/**").permitAll()
+                .requestMatchers("/api/users/**").permitAll()
+                
                 // Protected endpoints
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
                 .requestMatchers("/api/guide/**").hasAnyRole("GUIDE", "ADMIN")
                 .requestMatchers("/api/traveler/**").hasRole("TRAVELER")
-                .requestMatchers("/api/users/**").hasAnyRole("ADMIN", "GUIDE", "TRAVELER")
 
                 // All other endpoints require authentication
                 .anyRequest().authenticated()
             )
             .exceptionHandling(ex -> ex
                 .authenticationEntryPoint((req, res, ex2) ->
-                    // res.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Authentication required"))
                     res.getWriter().write("Access denied. Please log in - semi.")
                 ))
             .sessionManagement(sess -> sess

@@ -13,11 +13,6 @@ public class DayPlanDetailResponse {
     private Date date;
     private String hotelDetails;
     private String transportDetails;
-    private String guideDetails;
     private List<LocationDetailResponse> locations;
     private RouteDetailResponse route;
-    public void setGuideReservationId(Long guideReservationId) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'setGuideReservationId'");
-    }
 }

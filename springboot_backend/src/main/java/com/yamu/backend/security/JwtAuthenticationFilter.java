@@ -88,8 +88,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     protected boolean shouldNotFilter(@NonNull HttpServletRequest request) {
         String path = request.getServletPath();
         return path.equals("/api/auth/login") 
-            || path.equals("/api/auth/refresh-token");
-        // Removed day-plans from exclusion list
+            || path.equals("/api/auth/refresh-token")
+            || path.startsWith("/api/day-plans")
+            || path.startsWith("/api/day-plan-guides")
+            || path.startsWith("/api/reservations")
+            || path.startsWith("/api/users");
     }
 
     private String extractToken(HttpServletRequest request) {

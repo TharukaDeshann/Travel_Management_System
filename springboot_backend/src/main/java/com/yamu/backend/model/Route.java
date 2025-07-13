@@ -17,16 +17,17 @@ public class Route {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false) // Based on your table schema
+    @Column(nullable = false)
     private String name;
 
+    @Column(name = "travel_mode")
     private String travelMode;
 
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
-    private Double totalDistance; // Based on your table schema
-    private Integer estimatedTime; // Based on your table schema
+    private Double totalDistance;
+    private Integer estimatedTime;
 
     @PrePersist
     protected void onCreate() {
@@ -40,7 +41,7 @@ public class Route {
     }
 
     @OneToOne
-    @JoinColumn(name = "day_plan_id", nullable = false, unique = true) // Based on your table schema
+    @JoinColumn(name = "day_plan_id", nullable = false, unique = true)
     private DayPlan dayPlan;
 
     @OneToMany(mappedBy = "route", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)

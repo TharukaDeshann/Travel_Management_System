@@ -18,7 +18,7 @@ public class Itinerary {
     private Long id;
 
     @Column(nullable = false)
-    private double budget;
+    private Double budget;
 
     @Column(nullable = false, length = 3)
     private String currency;
