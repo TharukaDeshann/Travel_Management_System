@@ -34,8 +34,6 @@ import AdminDashboard from "./pages/AdminDashboard.jsx";
 import UsersSocialPage from "./pages/UsersSocialPage.jsx";
 import SpeechToTextDemo from "./pages/SpeechToTextDemo.jsx";
 
-import EmergencyContacts from "./pages/EmergencyContacts.jsx";
-import UserSearch from "./components/UserSearch.jsx";
 
 
 const App = () => {
