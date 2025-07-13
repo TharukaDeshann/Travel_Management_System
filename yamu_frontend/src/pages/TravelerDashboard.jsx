@@ -213,8 +213,8 @@ export default function TravelerDashboard({ currentUser }) {
       const formData = new FormData();
       formData.append("image", file);
 
-      const endpoint = "https://southeastasia.api.cognitive.microsoft.com/customvision/v3.0/Prediction/0b950bb8-98a3-42d8-bc95-011f5c6efc99/detect/iterations/Iteration3/image";
-      const predictionKey = "4d3e08b59e25443ab5f3d26e5c428a05";
+      const endpoint = "https://projectyamunew-prediction.cognitiveservices.azure.com/customvision/v3.0/Prediction/cc863e72-507b-4771-a727-1189da24add9/detect/iterations/Iteration1/image";
+      const predictionKey = "UNrxBtUvLBxVeBihEbFwwybT1NEpJ8DOlAtQcZErGpPx41QI3aurJQQJ99BGACqBBLyXJ3w3AAAIACOGUGpE";
 
       const response = await fetch(endpoint, {
         method: "POST",

@@ -87,10 +87,12 @@ const GuideModal = ({ guide, onClose }) => {
       }
     }
 
-    // Validate dates are not in the past, sequential, and within the current year
+    // Validate dates are not in the past, sequential, and within 365 days
     const today = new Date();
-    today.setHours(0, 0, 0, 0); // Reset time part for accurate comparison
-    const endOfYear = new Date(today.getFullYear(), 11, 31); // Last day of the current year
+    today.setHours(0, 0, 0, 0);
+
+    const maxDate = new Date();
+    maxDate.setDate(maxDate.getDate() + 365);
 
     for (let i = 0; i < reservationDetails.length; i++) {
       const detail = reservationDetails[i];
@@ -101,8 +103,8 @@ const GuideModal = ({ guide, onClose }) => {
         return;
       }
 
-      if (selectedDate > endOfYear) {
-        setError(`Date for Day ${i + 1} must be within the current year`);
+      if (selectedDate > maxDate) {
+        setError(`Date for Day ${i + 1} must be within 365 days from today`);
         return;
       }
 
@@ -237,192 +239,184 @@ const GuideModal = ({ guide, onClose }) => {
     </div>
   );
 
-  const renderReservationForm = () => (
-    <div style={{ padding: '20px' }}>
-      <h2 style={{ marginTop: 0, color: '#532321' }}>Create Reservation</h2>
-      <p style={{ color: '#666', marginBottom: '20px' }}>
-        Booking guide: {guide.firstName} {guide.lastName} ({guide.expertiseCityRegion})
-      </p>
+  const renderReservationForm = () => {
+    const todayStr = new Date().toISOString().split('T')[0];
+    const maxDate = new Date();
+    maxDate.setDate(maxDate.getDate() + 365);
+    const maxDateStr = maxDate.toISOString().split('T')[0];
 
-      <div style={{ marginBottom: '20px' }}>
-        <label style={{ display: 'block', marginBottom: '10px' }}>
-          <strong>Number of Days:</strong>
-          <input
-            type="number"
-            min="1"
-            max="30"
-            value={numberOfDays}
-            onChange={handleDayChange}
-            style={{
-              marginLeft: '10px',
-              padding: '5px',
-              width: '60px',
+    return (
+      <div style={{ padding: '20px' }}>
+        <h2 style={{ marginTop: 0, color: '#532321' }}>Create Reservation</h2>
+        <p style={{ color: '#666', marginBottom: '20px' }}>
+          Booking guide: {guide.firstName} {guide.lastName} ({guide.expertiseCityRegion})
+        </p>
+
+        <div style={{ marginBottom: '20px' }}>
+          <label style={{ display: 'block', marginBottom: '10px' }}>
+            <strong>Number of Days:</strong>
+            <input
+              type="number"
+              min="1"
+              max="30"
+              value={numberOfDays}
+              onChange={handleDayChange}
+              style={{
+                marginLeft: '10px',
+                padding: '5px',
+                width: '60px',
+                border: '1px solid #ddd',
+                borderRadius: '4px'
+              }}
+            />
+          </label>
+
+          {reservationDetails.map((detail, index) => (
+            <div key={index} style={{
               border: '1px solid #ddd',
-              borderRadius: '4px'
-            }}
-          />
-        </label>
+              borderRadius: '8px',
+              padding: '20px',
+              marginBottom: '20px',
+              backgroundColor: '#f9f9f9'
+            }}>
+              <h4 style={{ marginTop: 0, marginBottom: '15px', color: '#532321' }}>
+                Day {index + 1} Details
+              </h4>
 
-        {reservationDetails.map((detail, index) => (
-          <div key={index} style={{
-            border: '1px solid #ddd',
-            borderRadius: '8px',
-            padding: '20px',
-            marginBottom: '20px',
-            backgroundColor: '#f9f9f9'
-          }}>
-            <h4 style={{ marginTop: 0, marginBottom: '15px', color: '#532321' }}>
-              Day {index + 1} Details
-            </h4>
-
-            <div style={{ marginBottom: '15px' }}>
-              <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>
-                Places to Visit:
-              </label>
-              <input
-                type="text"
-                value={detail.place}
-                onChange={(e) => handleDetailChange(index, 'place', e.target.value)}
-                style={{
-                  width: '100%',
-                  padding: '8px 12px',
-                  borderRadius: '4px',
-                  border: '1px solid #ddd',
-                  fontSize: '14px'
-                }}
-                placeholder="Enter the places to visit"
-                required
-              />
-            </div>
-
-            <div style={{ marginBottom: '15px' }}>
-              <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>
-                Date:
-              </label>
-              <input
-                type="date"
-                value={detail.date}
-                onChange={(e) => handleDetailChange(index, 'date', e.target.value)}
-                min={
-                  index === 0
-                    ? new Date().toISOString().split('T')[0] // Today's date for Day 1
-                    : reservationDetails[index - 1]?.date // Previous day's date for subsequent days
-                }
-                max={new Date(new Date().getFullYear(), 11, 31).toISOString().split('T')[0]} // Last day of the current year
-                style={{
-                  width: '100%',
-                  padding: '8px 12px',
-                  borderRadius: '4px',
-                  border: '1px solid #ddd',
-                  fontSize: '14px'
-                }}
-                required
-              />
-            </div>
-
-            <div style={{ marginBottom: '15px' }}>
-              <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>
-                Number of Travelers:
-              </label>
-              <input
-                type="number"
-                min="1"
-                value={detail.travelers}
-                onChange={(e) => handleDetailChange(index, 'travelers', parseInt(e.target.value))}
-                style={{
-                  width: '100%',
-                  padding: '8px 12px',
-                  borderRadius: '4px',
-                  border: '1px solid #ddd',
-                  fontSize: '14px'
-                }}
-                required
-              />
-            </div>
-
-            {guide.vehicleAvailability && (
               <div style={{ marginBottom: '15px' }}>
-                <label style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  marginBottom: '8px',
-                  cursor: 'pointer'
-                }}>
-                  <input
-                    type="checkbox"
-                    checked={detail.vehicleRequested}
-                    onChange={(e) => handleDetailChange(index, 'vehicleRequested', e.target.checked)}
-                    style={{
-                      marginRight: '10px',
-                      width: '18px',
-                      height: '18px',
-                      cursor: 'pointer'
-                    }}
-                  />
-                  <span style={{ fontWeight: '500' }}>Request Vehicle for this day</span>
+                <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>
+                  Places to Visit:
                 </label>
-
-                {detail.vehicleRequested && (
-                  <div style={{ marginTop: '10px' }}>
-                    <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>
-                      Vehicle Details:
-                    </label>
-                    <textarea
-                      value={detail.vehicleDetails}
-                      onChange={(e) => handleDetailChange(index, 'vehicleDetails', e.target.value)}
-                      style={{
-                        width: '100%',
-                        padding: '8px 12px',
-                        borderRadius: '4px',
-                        border: '1px solid #ddd',
-                        minHeight: '80px',
-                        fontSize: '14px'
-                      }}
-                      placeholder="Any special requirements for the vehicle?"
-                    />
-                  </div>
-                )}
+                <input
+                  type="text"
+                  value={detail.place}
+                  onChange={(e) => handleDetailChange(index, 'place', e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '8px 12px',
+                    borderRadius: '4px',
+                    border: '1px solid #ddd',
+                    fontSize: '14px'
+                  }}
+                  placeholder="Enter the places to visit"
+                  required
+                />
               </div>
-            )}
-          </div>
-        ))}
-      </div>
 
-      {error && (
-        <div style={{
-          color: 'red',
-          margin: '15px 0',
-          padding: '10px',
-          backgroundColor: '#ffebee',
-          borderRadius: '4px',
-          textAlign: 'center'
-        }}>
-          {error}
+              <div style={{ marginBottom: '15px' }}>
+                <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>
+                  Date:
+                </label>
+                <input
+                  type="date"
+                  value={detail.date}
+                  onChange={(e) => handleDetailChange(index, 'date', e.target.value)}
+                  min={
+                    index === 0
+                      ? todayStr
+                      : reservationDetails[index - 1]?.date
+                  }
+                  max={maxDateStr}
+                  style={{
+                    width: '100%',
+                    padding: '8px 12px',
+                    borderRadius: '4px',
+                    border: '1px solid #ddd',
+                    fontSize: '14px'
+                  }}
+                  required
+                />
+              </div>
+
+              <div style={{ marginBottom: '15px' }}>
+                <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>
+                  Number of Travelers:
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  value={detail.travelers}
+                  onChange={(e) => handleDetailChange(index, 'travelers', parseInt(e.target.value))}
+                  style={{
+                    width: '100%',
+                    padding: '8px 12px',
+                    borderRadius: '4px',
+                    border: '1px solid #ddd',
+                    fontSize: '14px'
+                  }}
+                  required
+                />
+              </div>
+
+              {guide.vehicleAvailability && (
+                <div style={{ marginBottom: '15px' }}>
+                  <label style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    marginBottom: '8px',
+                    cursor: 'pointer'
+                  }}>
+                    <input
+                      type="checkbox"
+                      checked={detail.vehicleRequested}
+                      onChange={(e) => handleDetailChange(index, 'vehicleRequested', e.target.checked)}
+                      style={{
+                        marginRight: '10px',
+                        width: '18px',
+                        height: '18px',
+                        cursor: 'pointer'
+                      }}
+                    />
+                    <span style={{ fontWeight: '500' }}>Request Vehicle for this day</span>
+                  </label>
+
+                  {detail.vehicleRequested && (
+                    <div style={{ marginTop: '10px' }}>
+                      <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>
+                        Vehicle Details:
+                      </label>
+                      <textarea
+                        value={detail.vehicleDetails}
+                        onChange={(e) => handleDetailChange(index, 'vehicleDetails', e.target.value)}
+                        style={{
+                          width: '100%',
+                          padding: '8px 12px',
+                          borderRadius: '4px',
+                          border: '1px solid #ddd',
+                          minHeight: '80px',
+                          fontSize: '14px'
+                        }}
+                        placeholder="Any special requirements for the vehicle?"
+                      />
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          ))}
         </div>
-      )}
 
-      <div style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        gap: '15px',
-        marginTop: '20px'
-      }}>
-        <button
-          onClick={() => setCurrentStep(1)}
-          style={{
-            padding: '10px 20px',
-            backgroundColor: '#f0f0f0',
-            border: 'none',
+        {error && (
+          <div style={{
+            color: 'red',
+            margin: '15px 0',
+            padding: '10px',
+            backgroundColor: '#ffebee',
             borderRadius: '4px',
-            cursor: 'pointer',
-            fontWeight: '500'
-          }}
-        >
-          Back
-        </button>
-        <div style={{ display: 'flex', gap: '15px' }}>
+            textAlign: 'center'
+          }}>
+            {error}
+          </div>
+        )}
+
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          gap: '15px',
+          marginTop: '20px'
+        }}>
           <button
-            onClick={onClose}
+            onClick={() => setCurrentStep(1)}
             style={{
               padding: '10px 20px',
               backgroundColor: '#f0f0f0',
@@ -432,28 +426,43 @@ const GuideModal = ({ guide, onClose }) => {
               fontWeight: '500'
             }}
           >
-            Cancel
+            Back
           </button>
-          <button
-            onClick={handleSubmit}
-            disabled={isSubmitting}
-            style={{
-              padding: '10px 20px',
-              backgroundColor: '#532321',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: 'pointer',
-              fontWeight: '500',
-              opacity: isSubmitting ? 0.7 : 1
-            }}
-          >
-            {isSubmitting ? 'Submitting...' : 'Confirm Reservation'}
-          </button>
+          <div style={{ display: 'flex', gap: '15px' }}>
+            <button
+              onClick={onClose}
+              style={{
+                padding: '10px 20px',
+                backgroundColor: '#f0f0f0',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                fontWeight: '500'
+              }}
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleSubmit}
+              disabled={isSubmitting}
+              style={{
+                padding: '10px 20px',
+                backgroundColor: '#532321',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                fontWeight: '500',
+                opacity: isSubmitting ? 0.7 : 1
+              }}
+            >
+              {isSubmitting ? 'Submitting...' : 'Confirm Reservation'}
+            </button>
+          </div>
         </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   return (
     <div style={{
