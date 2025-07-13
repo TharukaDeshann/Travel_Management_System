@@ -4,6 +4,7 @@ import com.yamu.backend.security.JwtAuthenticationFilter;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -57,19 +58,38 @@ public class SecurityConfig {
                 .requestMatchers("/api/day-plan-guides/**").permitAll()
                 .requestMatchers("/api/reservations/**").permitAll()
                 .requestMatchers("/api/users/**").permitAll()
+                .requestMatchers("/api/drivers/**").permitAll()
+                .requestMatchers("/api/weather/**").permitAll()
+                .requestMatchers("/api/hotels/**").permitAll()
+                .requestMatchers("/api/hotels/bookings/**").permitAll()
+                .requestMatchers("/h2-console/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/reviews/**").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/reviews/**").authenticated()
+                .requestMatchers(HttpMethod.DELETE, "/api/reviews/**").authenticated()
+                .requestMatchers("/ws/**", "/app/**", "/topic/**", "/queue/**", "/user/**").permitAll()
+                .requestMatchers("/api/auth/login", "/api/auth/register",
+                        "/api/auth/refresh-token", "/api/auth/user", "api/auth/me", 
+                        "/api/locations/**", "/api/auth/verify-email", "api/auth/resend-verification",
+                        "/api/itineraries/**", "/api/dayplans/**")
+                .permitAll()
+                .requestMatchers(HttpMethod.PUT, "/api/users/{id}").authenticated()
+                .requestMatchers(HttpMethod.PUT, "/api/users/{id}/update-email").authenticated()
+                .requestMatchers(HttpMethod.PUT, "/api/users/{id}/update-password").authenticated()
+                .requestMatchers(HttpMethod.PUT, "/api/itineraries/{id}").authenticated()
                 
                 // Protected endpoints
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
-                .requestMatchers("/api/guide/**").hasAnyRole("GUIDE", "ADMIN")
+                .requestMatchers("/api/guide/**").hasAnyRole("GUIDE", "ADMIN", "TRAVELER")
                 .requestMatchers("/api/traveler/**").hasRole("TRAVELER")
+                .requestMatchers("/api/users/**", "/api/search/**").hasAnyRole("ADMIN", "GUIDE", "TRAVELER")
+                .requestMatchers("/api/itineraries/**").hasRole("TRAVELER") // Restrict itineraries to TRAVELER
 
                 // All other endpoints require authentication
                 .anyRequest().authenticated()
             )
             .exceptionHandling(ex -> ex
-                .authenticationEntryPoint((req, res, ex2) ->
-                    res.getWriter().write("Access denied. Please log in - semi.")
-                ))
+                .authenticationEntryPoint((req, res, ex2) -> res.sendError(HttpServletResponse.SC_UNAUTHORIZED,
+                        "Authentication required")))
             .sessionManagement(sess -> sess
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             )

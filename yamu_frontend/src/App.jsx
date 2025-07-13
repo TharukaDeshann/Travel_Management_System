@@ -8,7 +8,7 @@ import Register from "./pages/Register.jsx";
 import Home from "./pages/Home.jsx";
 import ProtectedRoute from "./routes/ProtectedRoute.jsx";
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
-
+import Reservations from "./pages/Reservations.jsx";
 import WeatherPage from "./pages/WeatherPage.jsx";
 import Weather from "./components/Weather.jsx";
 import VisitPlanPage from "./pages/VisitPlanPage";
@@ -33,8 +33,9 @@ import ProfileView from "./pages/ProfileView.jsx";
 import AdminDashboard from "./pages/AdminDashboard.jsx";
 import UsersSocialPage from "./pages/UsersSocialPage.jsx";
 import SpeechToTextDemo from "./pages/SpeechToTextDemo.jsx";
-// import ProfileView from "./pages/ProfileView.jsx";
 
+import EmergencyContacts from "./pages/EmergencyContacts.jsx";
+import UserSearch from "./components/UserSearch.jsx";
 
 
 const App = () => {
@@ -47,7 +48,8 @@ const App = () => {
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
 
-          
+          {/* ai search */}
+          <Route path="/user-search" element={<UserSearch />} />
           <Route path="/weather" element={<WeatherPage />} />
           <Route path="/weather-details" element={<Weather />} />
           <Route path="/weather-card" element={<WeatherCard />} />
@@ -62,9 +64,11 @@ const App = () => {
           />
           {/* Email verification */}
           <Route path="/verify-email" element={<VerifyEmail />} />
+          <Route path="/emergency-contacts" element={<EmergencyContacts />} />
 
           {/* Protected Routes */}
           <Route element={<ProtectedRoute />}>
+            <Route path="/inbox" element={<Inbox />} />
             <Route path="/home" element={<Home />} />
             <Route path="/traveler-dashboard" element={<TravelerDashboard />} />
             <Route path="/guide-dashboard" element={<GuideDashboard />} />
@@ -76,7 +80,7 @@ const App = () => {
             <Route path="/users/users-by-role" element={<UsersSocialPage />} />
             <Route path="/map" element={<Map />} />
             <Route path="/itinerary-planner" element={<ItineraryPlanner />} />
-
+            <Route path="/reservations" element={<Reservations></Reservations>}></Route>
           
         
 
@@ -86,6 +90,7 @@ const App = () => {
             {/* <Route path="/users/profile/" */}
             <Route path="/profile" element={<UserProfile />} />
             <Route path="/profile/update-profile" element={<UpdateUserProfile />} />
+            <Route path="/users/profile/:userId" element={<ProfileView />} />
           </Route>
 
           
