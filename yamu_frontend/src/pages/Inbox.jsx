@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Client } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
+import { Client } from '@stomp/stompjs';
+import SockJS from 'sockjs-client';
 import apiClient from '../services/axiosInstance';
 import { useUser } from '../context/UserContext';
 
@@ -25,6 +27,7 @@ const Inbox = () => {
   const [allUsers, setAllUsers] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [isConnected, setIsConnected] = useState(false);
+  const [stompClient, setStompClient] = useState(null);
   const [stompClient, setStompClient] = useState(null);
 
   const handleIncomingMessage = useCallback((message) => {
@@ -287,6 +290,7 @@ const Inbox = () => {
         setMessages(prev => prev.map(msg => 
           msg.id === tempId ? response.data : msg
         ));
+        console.log("Database endpoint")
       }
     } catch (error) {
       console.error('[Message] Error sending message:', error);
@@ -347,6 +351,8 @@ const Inbox = () => {
       top: '10px',
       right: '10px',
       padding: '8px 16px',
+      backgroundColor: isConnected ? '#4CAF50' : '#FFC107',
+      color: 'white',
       backgroundColor: isConnected ? '#4CAF50' : '#FFC107',
       color: 'white',
       borderRadius: '20px',
@@ -513,6 +519,9 @@ const Inbox = () => {
 
   return (
     <div style={styles.container}>
+      <div style={styles.connectionBanner}>
+        {isConnected ? 'Connected' : 'Offline Mode - Messages may be delayed'}
+      </div>
       <div style={styles.connectionBanner}>
         {isConnected ? 'Connected' : 'Offline Mode - Messages may be delayed'}
       </div>

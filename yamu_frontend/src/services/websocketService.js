@@ -97,6 +97,7 @@ class WebSocketService {
     if (this.connectionState.retryCount <= this.connectionState.maxRetries) {
       console.warn(`Connection attempt ${this.connectionState.retryCount}/${this.connectionState.maxRetries}`);
       setTimeout(() => this.connect(), this.connectionState.reconnectDelay);
+      setTimeout(() => this.connect(), this.connectionState.reconnectDelay);
     } else {
       this.notifyConnectionChange(false);
       console.error('Max connection retries reached');
@@ -104,6 +105,15 @@ class WebSocketService {
         this.connectionPromise.reject(new Error('Max connection retries reached'));
         this.connectionPromise = null;
       }
+    }
+  }
+
+  handleDisconnection() {
+    this.connectionState.isConnected = false;
+    this.notifyConnectionChange(false);
+    if (this.connectionPromise) {
+      this.connectionPromise.reject(new Error('Disconnected'));
+      this.connectionPromise = null;
     }
   }
 
@@ -193,6 +203,7 @@ class WebSocketService {
   }
 
   isConnected() {
+    return this.connectionState.isConnected;
     return this.connectionState.isConnected;
   }
 }

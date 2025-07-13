@@ -1,12 +1,14 @@
 package com.yamu.backend.controller;
 
 import com.yamu.backend.dto.*;
+import com.yamu.backend.dto.*;
 import com.yamu.backend.model.*;
 import com.yamu.backend.service.GuideReservationByTravelerService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -41,6 +43,7 @@ public class GuideReservationByTravelerController {
         
         // Map other reservation details
         dto.setNumberOfDays(reservation.getNumberOfDays());
+        dto.setEstimatedPrice(reservation.getEstimatedPrice());
         dto.setEstimatedPrice(reservation.getEstimatedPrice());
         
         // Map reservation status if available

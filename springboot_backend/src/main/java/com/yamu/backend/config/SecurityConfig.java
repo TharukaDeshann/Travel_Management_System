@@ -79,7 +79,12 @@ public class SecurityConfig {
                         .requestMatchers("/api/users/**", "/api/search/**").hasAnyRole("ADMIN", "GUIDE", "TRAVELER")
                         .requestMatchers("/api/itineraries/**").hasRole("TRAVELER") // Restrict itineraries to TRAVELER
                         .anyRequest().authenticated())
+>
                 .exceptionHandling(ex -> ex
+                        .authenticationEntryPoint((req, res, ex2) -> res.sendError(
+                                HttpServletResponse.SC_UNAUTHORIZED,
+                                "Authentication required"))
+                )
                         .authenticationEntryPoint((req, res, ex2) -> res.sendError(
                                 HttpServletResponse.SC_UNAUTHORIZED,
                                 "Authentication required"))

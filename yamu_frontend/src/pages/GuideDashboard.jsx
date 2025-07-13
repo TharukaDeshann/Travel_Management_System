@@ -23,6 +23,13 @@ const GuideDashboard = () => {
   const [priceError, setPriceError] = useState('');
   const [showCompletionConfirm, setShowCompletionConfirm] = useState(false);
 
+
+  const [showPricePrompt, setShowPricePrompt] = useState(false);
+  const [currentReservationId, setCurrentReservationId] = useState(null);
+  const [estimatedPrice, setEstimatedPrice] = useState('');
+  const [priceError, setPriceError] = useState('');
+  const [showCompletionConfirm, setShowCompletionConfirm] = useState(false);
+
   const [selectedCurrency, setSelectedCurrency] = useState('LKR');
   const { user: loggedUser } = useUser();
 
@@ -112,6 +119,7 @@ const GuideDashboard = () => {
       const response = await apiClient.put(`/api/reservations/${currentReservationId}/confirm`);
       
       const updatedReservations = reservations.map(res => 
+        res.id === currentReservationId ? response.data : res
         res.id === currentReservationId ? response.data : res
       );
       
@@ -282,6 +290,16 @@ const GuideDashboard = () => {
                 <strong>Estimated Price:</strong> LKR {reservation.estimatedPrice.toLocaleString()}
               </p>
             )}
+            {reservation.estimatedPrice && (
+              <p style={{ 
+                margin: "4px 0", 
+                fontSize: "14px",
+                color: "#2196F3",
+                fontWeight: "bold"
+              }}>
+                <strong>Estimated Price:</strong> LKR {reservation.estimatedPrice.toLocaleString()}
+              </p>
+            )}
           </div>
         </div>
 
@@ -352,6 +370,7 @@ const GuideDashboard = () => {
                 </button>
                 <button
                   onClick={() => handleConfirmClick(reservation.id)}
+                  onClick={() => handleConfirmClick(reservation.id)}
                   style={{
                     padding: "8px 16px",
                     backgroundColor: "#4CAF50",
@@ -368,6 +387,7 @@ const GuideDashboard = () => {
 
             {reservation.status === 'CONFIRMED' && (
               <button
+                onClick={() => handleCompleteClick(reservation.id)}
                 onClick={() => handleCompleteClick(reservation.id)}
                 style={{
                   padding: "8px 16px",

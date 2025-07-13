@@ -10,6 +10,7 @@ const TravelerUpcomingTrips = ({ currentUser }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('upcoming');
+  const [activeTab, setActiveTab] = useState('upcoming');
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -82,6 +83,150 @@ const TravelerUpcomingTrips = ({ currentUser }) => {
     'PENDING': '#FFA500',
     'CONFIRMED': '#4CAF50',
     'DECLINED': '#F44336',
+    'COMPLETED': '#2196F3',
+    'CANCELLED': '#9E9E9E'
+  };
+
+  const upcomingReservations = reservations.filter(res => res.status !== 'COMPLETED');
+  const pastReservations = reservations.filter(res => res.status === 'COMPLETED');
+
+  const ReservationCard = ({ reservation }) => {
+    const firstDayDate = reservation.dayDetails && reservation.dayDetails.length > 0
+      ? new Date(reservation.dayDetails[0].date)
+      : new Date(reservation.createdAt);
+
+    return (
+      <div style={{
+        backgroundColor: "white",
+        borderRadius: "8px",
+        boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+        padding: "20px",
+        position: "relative"
+      }}>
+        <div style={{
+          position: "absolute",
+          top: "20px",
+          right: "20px",
+          padding: "4px 8px",
+          borderRadius: "4px",
+          color: "white",
+          fontSize: "12px",
+          fontWeight: "600",
+          backgroundColor: statusColors[reservation.status] || '#9E9E9E'
+        }}>
+          {reservation.status}
+        </div>
+
+        <div style={{ marginBottom: "15px" }}>
+          <h3 style={{
+            margin: "0 0 5px 0",
+            fontSize: "18px",
+            fontWeight: "600",
+            color: "#532321"
+          }}>Reservation #{reservation.id}</h3>
+          <p style={{
+            margin: "4px 0",
+            color: "#666",
+            fontSize: "14px"
+          }}>
+            <strong>Trip Date:</strong> {firstDayDate.toLocaleDateString()}
+          </p>
+          <p style={{
+            margin: "4px 0",
+            color: "#666",
+            fontSize: "14px"
+          }}>
+            <strong>Created:</strong> {new Date(reservation.createdAt).toLocaleString()}
+          </p>
+        </div>
+
+        <div style={{
+          display: "flex",
+          gap: "20px",
+          marginBottom: "15px"
+        }}>
+          <div>
+            <h4 style={{
+              margin: "0 0 8px 0",
+              fontSize: "14px",
+              color: "#532321",
+              fontWeight: "500"
+            }}>Guide Details</h4>
+            <p style={{ margin: "4px 0", fontSize: "14px" }}>
+              <strong>Name:</strong> {reservation.guideName || 'Not available'}
+            </p>
+            <p style={{ margin: "4px 0", fontSize: "14px" }}>
+              <strong>Contact:</strong> {reservation.guideContact || 'Not available'}
+            </p>
+          </div>
+
+          <div>
+            <h4 style={{
+              margin: "0 0 8px 0",
+              fontSize: "14px",
+              color: "#532321",
+              fontWeight: "500"
+            }}>Tour Details</h4>
+            <p style={{ margin: "4px 0", fontSize: "14px" }}>
+              <strong>Days:</strong> {reservation.numberOfDays}
+            </p>
+            <p style={{ margin: "4px 0", fontSize: "14px" }}>
+              <strong>Travelers:</strong> {reservation.dayDetails?.[0]?.numberOfTravelers || 'N/A'}
+            </p>
+            {reservation.estimatedPrice && (
+              <p style={{
+                margin: "4px 0",
+                fontSize: "14px",
+                color: "#2196F3",
+                fontWeight: "bold"
+              }}>
+                <strong>Estimated Price:</strong> LKR {reservation.estimatedPrice.toLocaleString()}
+              </p>
+            )}
+          </div>
+        </div>
+
+        <div style={{ marginBottom: "20px" }}>
+          <h4 style={{
+            margin: "0 0 8px 0",
+            fontSize: "14px",
+            color: "#532321",
+            fontWeight: "500"
+          }}>Itinerary</h4>
+          {reservation.dayDetails && reservation.dayDetails.length > 0 ? (
+            <div style={{ display: "grid", gap: "10px" }}>
+              {reservation.dayDetails.map((day, index) => (
+                <div key={index} style={{
+                  padding: "10px",
+                  backgroundColor: "#f9f9f9",
+                  borderRadius: "4px"
+                }}>
+                  <p style={{ margin: "4px 0", fontWeight: "500" }}>
+                    Day {day.dayNumber}: {day.places}
+                  </p>
+                  <p style={{ margin: "4px 0", fontSize: "13px" }}>
+                    <strong>Date:</strong> {new Date(day.date).toLocaleDateString()}
+                  </p>
+                  {day.vehicleRequested && (
+                    <p style={{ margin: "4px 0", fontSize: "13px" }}>
+                      <strong>Vehicle:</strong> {day.vehicleDetails || 'No details'}
+                    </p>
+                  )}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p style={{ color: "#999", fontStyle: "italic" }}>No itinerary details available</p>
+          )}
+        </div>
+
+        <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px" }}>
+          {reservation.guideId && (
+            <MessageButton guideId={reservation.guideId} />
+          )}
+        </div>
+      </div>
+    );
     'COMPLETED': '#2196F3',
     'CANCELLED': '#9E9E9E'
   };

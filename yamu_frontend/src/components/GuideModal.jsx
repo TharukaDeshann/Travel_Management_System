@@ -126,6 +126,7 @@ const GuideModal = ({ guide, onClose, currentUser }) => {
     }
 
     // Validate all fields are filled
+    // Validate all fields are filled
     for (let i = 0; i < reservationDetails.length; i++) {
       const detail = reservationDetails[i];
       if (!detail.place || !detail.date || !detail.travelers) {

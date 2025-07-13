@@ -49,11 +49,10 @@ public class GuideReservationByTraveler {
     @Column(nullable = false)
     private LocalDateTime updatedAt = LocalDateTime.now();
 
-    // Estimated price for the reservation
     @Column
     private Double estimatedPrice;
 
-    // Enum for reservation statuses
+
     public enum ReservationStatus {
         PENDING, CONFIRMED, DECLINED, COMPLETED
     }

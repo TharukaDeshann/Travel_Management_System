@@ -23,7 +23,9 @@ import ItineraryPlanner from "./pages/ItineraryPlanner.jsx";
 
 import FinalizeItinerary from "./pages/FinalizeItinerary.jsx"; 
 import Inbox from "./pages/Inbox.jsx";
+import Inbox from "./pages/Inbox.jsx";
 import TravelerUpcomingTrips from "./pages/TravelerUpcomingTrips";
+import CancellationModal from "./components/CancellationModal.jsx"; // Import CancellationModal
 import CancellationModal from "./components/CancellationModal.jsx"; // Import CancellationModal
 
 import VerifyEmail from "./pages/VerifyEmail.jsx";
@@ -61,6 +63,7 @@ const App = () => {
           
           {/* Email verification pending */}
           <Route path="/verify-email-pending" element={<VerifyEmailPending />} />
+          <Route path="/verify-email-pending" element={<VerifyEmailPending />} />
           {/* Email verification */}
           <Route path="/verify-email" element={<VerifyEmail />} />
           <Route path="/emergency-contacts" element={<EmergencyContacts />} />
@@ -70,6 +73,7 @@ const App = () => {
             <Route path="/inbox" element={<Inbox />} />
             <Route path="/home" element={<Home />} />
             <Route path="/traveler-dashboard" element={<TravelerDashboard />} />
+            <Route path="/traveler-upcoming-trips" element={<TravelerUpcomingTrips />} />
             <Route path="/traveler-upcoming-trips" element={<TravelerUpcomingTrips />} />
             <Route path="/guide-dashboard" element={<GuideDashboard />} />
             <Route path="/admin-dashboard" element={<AdminDashboard />} />
