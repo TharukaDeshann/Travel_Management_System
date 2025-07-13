@@ -91,4 +91,8 @@ public class GuideReservationByTravelerService {
         reservation.setUpdatedAt(LocalDateTime.now());
         return reservationRepository.save(reservation);
     }
+    
+    public boolean hasCompletedReservationWithGuide(Long travelerId, Long guideId) {
+        return reservationRepository.existsCompletedReservationByTravelerAndGuide(travelerId, guideId);
+    }
 }
