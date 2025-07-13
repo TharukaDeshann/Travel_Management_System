@@ -9,7 +9,8 @@ const HotelBookingModal = ({
   availability, 
   checkInDate, 
   checkOutDate,
-  onBookingComplete 
+  onBookingComplete ,
+  travelerId
 }) => {
   const [bookingData, setBookingData] = useState({
     guestName: '',
@@ -135,8 +136,8 @@ const HotelBookingModal = ({
         currencyCode: "LKR"
       };
 
-      console.log('📝 Creating hotel booking:', bookingRequest);
-      const result = await createHotelBooking(bookingRequest);
+      console.log('📝 Creating hotel booking:', bookingRequest,travelerId);
+      const result = await createHotelBooking(bookingRequest,travelerId);
       
       console.log('✅ Booking successful:', result);
       onBookingComplete(result);

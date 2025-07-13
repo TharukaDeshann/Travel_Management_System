@@ -18,7 +18,7 @@ import BookTransportButton from "./BookTransportButton";
 import AvailableDriversPopup from "./AvailableDriversPopup";
 import ConfirmDriverSelection from "./ConfirmDriverSelection";
 import apiClient from "../services/axiosInstance";
-
+import { fetchLoggedInUser } from "../services/authService";
 // Marker icon configuration
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
@@ -81,6 +81,8 @@ const FitBoundsControl = ({ locations }) => {
 };
 
 const Map = () => {
+  const [loggedInUser, setLoggedInUser] = useState(null);
+
   const navigate = useNavigate();
   const location = useLocation();
   const { showSuccess, showError, showWarning } = useNotification();
@@ -120,6 +122,20 @@ const Map = () => {
   const [selectedDriverId, setSelectedDriverId] = useState(null);
   const [showConfirm, setShowConfirm] = useState(false);
   const [selectedDriverSummary, setSelectedDriverSummary] = useState(null); // For passing to confirmation
+
+  useEffect(() => {
+    const loadUser = async () => {
+      try {
+        const user = await fetchLoggedInUser();
+        setLoggedInUser(user);
+      } catch (error) {
+        console.error("Error fetching logged in user:", error);
+        showError("Failed to load user data. Please try again.");
+      }
+    }
+    loadUser();
+
+  },[])
 
   useEffect(() => {
     if (dates.length === 0) navigate("/");
@@ -656,6 +672,7 @@ const Map = () => {
             : dates[currentIndex]
         }
         onBookingComplete={handleBookingComplete}
+        travelerId={loggedInUser ? loggedInUser.id : null}
       />
     </div>
   );

@@ -103,10 +103,10 @@ const formatRoomTypeName = (roomTypeEnum) => {
 };
 
 // Create Hotel Booking
-export const createHotelBooking = async (bookingData) => {
+export const createHotelBooking = async (bookingData, travelerId) => {
   try {
     console.log('📝 Creating booking:', bookingData);
-    const response = await apiClient.post('/api/hotels/bookings?travelerId=57', bookingData);
+    const response = await apiClient.post(`/api/hotels/bookings?travelerId=${travelerId}`, bookingData);
     console.log('✅ Booking created:', response.data);
     return response.data;
   } catch (error) {
@@ -123,6 +123,20 @@ export const getTravelerBookings = async (travelerId) => {
     return response.data;
   } catch (error) {
     console.error('Error fetching traveler bookings:', error);
+    throw error;
+  }
+};
+
+// Cancel Hotel Booking
+export const cancelHotelBooking = async (bookingReference, travelerId) => {
+  try {
+    console.log('🚫 Cancelling booking:', bookingReference);
+    const response = await apiClient.put(`/api/hotels/bookings/${bookingReference}/cancel?travelerId=${travelerId}`);
+    console.log('✅ Booking cancelled:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('❌ Error cancelling booking:', error);
+    console.error('Error details:', error.response?.data || error.message);
     throw error;
   }
 };
