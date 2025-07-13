@@ -30,8 +30,11 @@ import VerifyEmailPending from "./pages/VerifyEmailPending.jsx";
 import UserProfile from "./pages/profile/UserProfile.jsx";
 import UpdateUserProfile from "./pages/profile/components/UpdateUserProfile.jsx";
 import ProfileView from "./pages/ProfileView.jsx";
-import AdminDashboard from "./pages/AdminDashboard.jsx";
 import UsersSocialPage from "./pages/UsersSocialPage.jsx";
+
+
+{/* admin dashboard */}
+import Overview from "./pages/admin_dashboard/Overview.jsx";
 
 
 import EmergencyContacts from "./pages/EmergencyContacts.jsx";
@@ -67,11 +70,11 @@ const App = () => {
 
           {/* Protected Routes */}
           <Route element={<ProtectedRoute />}>
+            <Route path="/admin-overview" element={<Overview />} />
             <Route path="/inbox" element={<Inbox />} />
             <Route path="/home" element={<Home />} />
             <Route path="/traveler-dashboard" element={<TravelerDashboard />} />
             <Route path="/guide-dashboard" element={<GuideDashboard />} />
-            <Route path="/admin-dashboard" element={<AdminDashboard />} />
             <Route path="/guide-reviews" element={<GuideReview />} />
             <Route path="/guide-calendar" element={<GuideCalendar />} />
             <Route path="/visit-plan" element={<VisitPlanPage />} />

@@ -71,10 +71,9 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.PUT, "/api/users/{id}/update-email").authenticated()
                         .requestMatchers(HttpMethod.PUT, "/api/users/{id}/update-password").authenticated()
                         .requestMatchers(HttpMethod.PUT, "/api/itineraries/{id}").authenticated()
-                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
-                        .requestMatchers("/api/guide/**").hasAnyRole("GUIDE", "ADMIN", "TRAVELER")
+                        .requestMatchers("/api/admin/**", "/api/search/guides/**").hasRole("ADMIN")
+                        .requestMatchers("/api/guide/**", "/api/users/**", "/api/search/**").hasAnyRole("GUIDE", "ADMIN", "TRAVELER")
                         .requestMatchers("/api/traveler/**").hasRole("TRAVELER")
-                        .requestMatchers("/api/users/**", "/api/search/**").hasAnyRole("ADMIN", "GUIDE", "TRAVELER")
                         .requestMatchers("/api/itineraries/**").hasRole("TRAVELER") // Restrict itineraries to TRAVELER
                         .anyRequest().authenticated())
                 .exceptionHandling(ex -> ex
@@ -83,7 +82,7 @@ public class SecurityConfig {
                 .sessionManagement(sess -> sess
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
-                .headers(headers -> headers.frameOptions().disable());
+                .headers(headers -> headers.frameOptions().sameOrigin());
 
         return http.build();
     }

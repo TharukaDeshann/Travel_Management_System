@@ -2,6 +2,7 @@ package com.yamu.backend.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -222,30 +223,30 @@ public class GuideSearchController {
         }
     }
     
-    // Get guides with recent reviews
-    @GetMapping("/recent-reviews")
-    public ResponseEntity<GuideSearchResponse> getGuidesWithRecentReviews(
-            @RequestParam(required = false) Integer minRating,
-            @RequestParam(defaultValue = "30") int daysSince,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
+    // // Get guides with recent reviews
+    // @GetMapping("/recent-reviews")
+    // public ResponseEntity<GuideSearchResponse> getGuidesWithRecentReviews(
+    //         @RequestParam(required = false) Integer minRating,
+    //         @RequestParam(defaultValue = "30") int daysSince,
+    //         @RequestParam(defaultValue = "0") int page,
+    //         @RequestParam(defaultValue = "10") int size) {
         
-        try {
-            List<String> filters = new ArrayList<>();
-            filters.add("review_created_at ge " + java.time.LocalDateTime.now().minusDays(daysSince).toString());
+    //     try {
+    //         List<String> filters = new ArrayList<>();
+    //         filters.add("review_created_at ge " + java.time.LocalDateTime.now().minusDays(daysSince).toString());
             
-            if (minRating != null) {
-                filters.add("review_rating ge " + minRating);
-            }
+    //         if (minRating != null) {
+    //             filters.add("review_rating ge " + minRating);
+    //         }
             
-            GuideSearchResponse response = guideSearchService.searchGuides("*", filters, page, size, "review_created_at desc", null);
-            return ResponseEntity.ok(response);
+    //         GuideSearchResponse response = guideSearchService.searchGuides("*", filters, page, size, "review_created_at desc", null);
+    //         return ResponseEntity.ok(response);
             
-        } catch (Exception e) {
-            e.printStackTrace();
-            return ResponseEntity.internalServerError().build();
-        }
-    }
+    //     } catch (Exception e) {
+    //         e.printStackTrace();
+    //         return ResponseEntity.internalServerError().build();
+    //     }
+    // }
     
     // Get guides with specific reservation status
     @GetMapping("/by-reservation-status")
