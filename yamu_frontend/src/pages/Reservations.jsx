@@ -65,6 +65,9 @@ const Reservations = () => {
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [bookingToCancel, setBookingToCancel] = useState(null);
   
+  // Booking filter states
+  const [bookingFilter, setBookingFilter] = useState('active'); // 'active' or 'cancelled'
+  
   // Search parameters
   const [searchParams, setSearchParams] = useState({
     radius: 5000, // 5km default
@@ -90,6 +93,7 @@ const Reservations = () => {
     
     try {
       const bookings = await getTravelerBookings(loggedUser.id);
+      console.log('🏨 Loaded hotel bookings:', bookings);
       setHotelBookings(bookings);
     } catch (error) {
       console.error('Failed to load hotel bookings:', error);
@@ -287,6 +291,27 @@ const Reservations = () => {
     return unique;
   };
 
+  // Function to filter and sort bookings
+  const getFilteredAndSortedBookings = () => {
+    let filtered = hotelBookings;
+    
+    // Filter by status
+    if (bookingFilter === 'active') {
+      filtered = hotelBookings.filter(booking => booking.bookingStatus !== 'CANCELLED');
+    } else if (bookingFilter === 'cancelled') {
+      filtered = hotelBookings.filter(booking => booking.bookingStatus === 'CANCELLED');
+    }
+    
+    // Sort by check-in date (nearest first)
+    filtered.sort((a, b) => {
+      const dateA = new Date(a.checkInDate);
+      const dateB = new Date(b.checkInDate);
+      return dateA - dateB;
+    });
+    
+    return filtered;
+  };
+
   return (
     <Layout
       user={loggedUser}
@@ -341,15 +366,52 @@ const Reservations = () => {
               {/* Hotel Bookings Section */}
               <div className="bg-white rounded-lg shadow-sm">
                 <div className="p-6 border-b border-gray-200">
-                  <div className="flex justify-between items-center">
-                    <h2 className="text-xl font-semibold text-gray-900">Your Hotel Bookings</h2>
-                    <button
-                      onClick={loadHotelBookings}
-                      disabled={loadingBookings}
-                      className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:bg-gray-400"
-                    >
-                      {loadingBookings ? ' Refreshing...' : ' Refresh'}
-                    </button>
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                    <div>
+                      <h2 className="text-xl font-semibold text-gray-900">Your Hotel Bookings</h2>
+                      <p className="text-sm text-gray-600 mt-1">
+                        {(() => {
+                          const activeCount = hotelBookings.filter(b => b.bookingStatus !== 'CANCELLED').length;
+                          const cancelledCount = hotelBookings.filter(b => b.bookingStatus === 'CANCELLED').length;
+                          return `${activeCount} active, ${cancelledCount} cancelled bookings`;
+                        })()}
+                      </p>
+                    </div>
+                    
+                    <div className="flex flex-col sm:flex-row gap-3">
+                      {/* Filter Buttons */}
+                      <div className="flex bg-gray-100 rounded-lg p-1">
+                        <button
+                          onClick={() => setBookingFilter('active')}
+                          className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
+                            bookingFilter === 'active'
+                              ? 'bg-white text-blue-600 shadow-sm'
+                              : 'text-gray-600 hover:text-gray-900'
+                          }`}
+                        >
+                          Active Bookings
+                        </button>
+                        <button
+                          onClick={() => setBookingFilter('cancelled')}
+                          className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
+                            bookingFilter === 'cancelled'
+                              ? 'bg-white text-blue-600 shadow-sm'
+                              : 'text-gray-600 hover:text-gray-900'
+                          }`}
+                        >
+                          Cancelled
+                        </button>
+                      </div>
+                      
+                      {/* Refresh Button */}
+                      <button
+                        onClick={loadHotelBookings}
+                        disabled={loadingBookings}
+                        className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:bg-gray-400 text-sm"
+                      >
+                        {loadingBookings ? 'Refreshing...' : 'Refresh'}
+                      </button>
+                    </div>
                   </div>
                 </div>
 
@@ -380,74 +442,157 @@ const Reservations = () => {
                     </div>
                   )}
 
-                  {!loadingBookings && !bookingsError && hotelBookings.length > 0 && (
-                    <div className="grid gap-4">
-                      {hotelBookings.map((booking) => (
-                        <div key={booking.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
-                          <div className="flex justify-between items-start">
-                            <div className="flex-1">
-                              <h3 className="text-lg font-semibold text-gray-900">{booking.hotelName}</h3>
-                              <p className="text-gray-600 text-sm">{booking.roomType}</p>
-                              <div className="mt-2 grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                                <div>
-                                  <span className="text-gray-500">Check-in:</span>
-                                  <p className="font-medium">{formatDate(booking.checkInDate)}</p>
+                  {!loadingBookings && !bookingsError && hotelBookings.length > 0 && (() => {
+                    const filteredBookings = getFilteredAndSortedBookings();
+                    
+                    if (filteredBookings.length === 0) {
+                      return (
+                        <div className="text-center py-8">
+                          <div className="text-gray-500 text-lg">
+                            {bookingFilter === 'active' ? '📅' : '❌'} No {bookingFilter} bookings found
+                          </div>
+                          <p className="text-sm text-gray-400 mt-2">
+                            {bookingFilter === 'active' 
+                              ? 'All your bookings have been cancelled or completed' 
+                              : 'You have no cancelled bookings'
+                            }
+                          </p>
+                        </div>
+                      );
+                    }
+                    
+                    return (
+                      <>
+                        {/* Results Summary */}
+                        <div className="mb-4 text-sm text-gray-600">
+                          Showing {filteredBookings.length} {bookingFilter} booking{filteredBookings.length !== 1 ? 's' : ''} 
+                          (sorted by check-in date)
+                        </div>
+                        
+                        <div className="grid gap-6">
+                          {filteredBookings.map((booking) => (
+                            <div key={booking.id} className="border rounded-lg overflow-hidden hover:shadow-lg transition-shadow">
+                              <div className="flex">
+                                {/* Hotel Image */}
+                                <div className="w-48 h-36 flex-shrink-0">
+                                  <img
+                                    src={booking.hotel?.photoUrl || '/hotels/1.webp'}
+                                    alt={booking.hotel?.name || booking.hotelName}
+                                    className="w-full h-full object-cover"
+                                    onError={(e) => {
+                                      e.target.src = '/hotels/1.webp';
+                                    }}
+                                  />
                                 </div>
-                                <div>
-                                  <span className="text-gray-500">Check-out:</span>
-                                  <p className="font-medium">{formatDate(booking.checkOutDate)}</p>
-                                </div>
-                                <div>
-                                  <span className="text-gray-500">Guests:</span>
-                                  <p className="font-medium">{booking.numberOfGuests}</p>
-                                </div>
-                                <div>
-                                  <span className="text-gray-500">Total:</span>
-                                  <p className="font-medium">LKR {booking.totalPrice?.toLocaleString()}</p>
+                                
+                                {/* Booking Details */}
+                                <div className="flex-1 p-4">
+                                  <div className="flex justify-between items-start">
+                                    <div className="flex-1">
+                                      <div className="flex items-start justify-between mb-2">
+                                        <div>
+                                          <h3 className="text-lg font-semibold text-gray-900">
+                                            {booking.hotel?.name || booking.hotelName}
+                                          </h3>
+                                          {booking.hotel?.address && (
+                                            <p className="text-gray-600 text-sm mb-1">{booking.hotel.address}</p>
+                                          )}
+                                          <div className="flex items-center gap-2 mb-2">
+                                            {booking.hotel?.rating && (
+                                              <div className="flex items-center">
+                                                <span className="text-yellow-500">★</span>
+                                                <span className="text-sm font-medium text-gray-700 ml-1">
+                                                  {booking.hotel.rating}
+                                                </span>
+                                                {booking.hotel.totalRatings && (
+                                                  <span className="text-xs text-gray-500 ml-1">
+                                                    ({booking.hotel.totalRatings} reviews)
+                                                  </span>
+                                                )}
+                                              </div>
+                                            )}
+                                            <span className="text-gray-400">•</span>
+                                            <span className="text-sm text-gray-600">{booking.roomType}</span>
+                                          </div>
+                                        </div>
+                                        
+                                        {/* Status and Actions */}
+                                        <div className="text-right">
+                                          <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${
+                                            booking.bookingStatus === 'CONFIRMED' ? 'bg-green-100 text-green-800' :
+                                            booking.bookingStatus === 'PENDING' ? 'bg-yellow-100 text-yellow-800' :
+                                            booking.bookingStatus === 'CANCELLED' ? 'bg-red-100 text-red-800' :
+                                            'bg-gray-100 text-gray-800'
+                                          }`}>
+                                            {booking.bookingStatus}
+                                          </span>
+                                          {booking.bookingStatus === 'CONFIRMED' && (
+                                            <button
+                                              onClick={() => handleCancelBooking(booking)}
+                                              disabled={booking.isCanelling}
+                                              className={`mt-2 px-3 py-1 rounded text-xs font-medium transition-colors block w-full ${
+                                                booking.isCanelling 
+                                                  ? 'bg-gray-400 text-white cursor-not-allowed'
+                                                  : 'bg-red-600 text-white hover:bg-red-700'
+                                              }`}
+                                            >
+                                              {booking.isCanelling ? (
+                                                <span className="flex items-center justify-center gap-1">
+                                                  <svg className="animate-spin h-3 w-3" viewBox="0 0 24 24">
+                                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                                                  </svg>
+                                                  Cancelling...
+                                                </span>
+                                              ) : (
+                                                'Cancel Booking'
+                                              )}
+                                            </button>
+                                          )}
+                                        </div>
+                                      </div>
+                                      
+                                      {/* Booking Information Grid */}
+                                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                                        <div>
+                                          <span className="text-gray-500">Check-in:</span>
+                                          <p className="font-medium">{formatDate(booking.checkInDate)}</p>
+                                        </div>
+                                        <div>
+                                          <span className="text-gray-500">Check-out:</span>
+                                          <p className="font-medium">{formatDate(booking.checkOutDate)}</p>
+                                        </div>
+                                        <div>
+                                          <span className="text-gray-500">Guests:</span>
+                                          <p className="font-medium">{booking.numberOfGuests}</p>
+                                        </div>
+                                        <div>
+                                          <span className="text-gray-500">Total:</span>
+                                          <p className={`font-medium text-lg ${
+                                            booking.bookingStatus === 'CANCELLED' ? 'text-gray-500 line-through' : 'text-green-600'
+                                          }`}>
+                                            LKR {booking.totalPrice?.toLocaleString()}
+                                          </p>
+                                        </div>
+                                      </div>
+                                      
+                                      {/* Booking Reference */}
+                                      <div className="mt-3 pt-3 border-t border-gray-100">
+                                        <div className="flex justify-between items-center text-xs text-gray-500">
+                                          <span>Booking Reference: {booking.bookingReference}</span>
+                                          <span>Booked on: {formatDate(booking.createdAt)}</span>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
                                 </div>
                               </div>
                             </div>
-                            <div className="ml-4 text-right">
-                              <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${
-                                booking.status === 'CONFIRMED' ? 'bg-green-100 text-green-800' :
-                                booking.status === 'PENDING' ? 'bg-yellow-100 text-yellow-800' :
-                                booking.status === 'CANCELLED' ? 'bg-red-100 text-red-800' :
-                                'bg-gray-100 text-gray-800'
-                              }`}>
-                                {booking.status}
-                              </span>
-                              <p className="text-xs text-gray-500 mt-1">
-                                Ref: {booking.bookingReference}
-                              </p>
-                              {booking.status === 'CONFIRMED' && (
-                                <button
-                                  onClick={() => handleCancelBooking(booking)}
-                                  disabled={booking.isCanelling}
-                                  className={`mt-2 px-3 py-1 rounded text-xs font-medium transition-colors ${
-                                    booking.isCanelling 
-                                      ? 'bg-gray-400 text-white cursor-not-allowed'
-                                      : 'bg-red-600 text-white hover:bg-red-700'
-                                  }`}
-                                >
-                                  {booking.isCanelling ? (
-                                    <span className="flex items-center gap-1">
-                                      <svg className="animate-spin h-3 w-3" viewBox="0 0 24 24">
-                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                                      </svg>
-                                      Cancelling...
-                                    </span>
-                                  ) : (
-                                    'Cancel Booking'
-                                  )}
-                                </button>
-                              )}
-                            </div>
-                          </div>
+                          ))}
                         </div>
-                      ))}
-                    </div>
-                  )}
+                      </>
+                    );
+                  })()}
                 </div>
               </div>
 
@@ -639,7 +784,7 @@ const Reservations = () => {
                 
                 <div className="bg-gray-50 rounded-lg p-4 mb-6 text-left">
                   <div className="space-y-2 text-sm">
-                    <div><strong>Hotel:</strong> {bookingToCancel.hotelName}</div>
+                    <div><strong>Hotel:</strong> {bookingToCancel.hotel?.name || bookingToCancel.hotelName}</div>
                     <div><strong>Room:</strong> {bookingToCancel.roomType}</div>
                     <div><strong>Check-in:</strong> {formatDate(bookingToCancel.checkInDate)}</div>
                     <div><strong>Check-out:</strong> {formatDate(bookingToCancel.checkOutDate)}</div>
