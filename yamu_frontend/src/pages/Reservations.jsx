@@ -2,10 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Layout } from '../components/Layout';
 import { getTravelerBookings, searchHotelsAlongRoute, cancelHotelBooking } from '../services/hotelService';
+import { transportationService } from '../services/transportationService';
 import HotelCard from '../components/HotelCard';
 import HotelSearchPopup from '../components/HotelSearchPopup';
 import RoomAvailabilityModal from '../components/RoomAvailabilityModal';
 import HotelBookingModal from '../components/HotelBookingModal';
+import AvailableDriversPopup from '../components/AvailableDriversPopup';
+import ConfirmDriverSelection from '../components/ConfirmDriverSelection';
 import useNotification from '../hooks/useNotification';
 import { fetchLoggedInUser } from '../services/authService';
 const Reservations = () => {
@@ -68,6 +71,25 @@ const Reservations = () => {
   // Booking filter states
   const [bookingFilter, setBookingFilter] = useState('active'); // 'active' or 'cancelled'
   
+  // Transportation states
+  const [transportBookings, setTransportBookings] = useState([]);
+  const [loadingTransportBookings, setLoadingTransportBookings] = useState(false);
+  const [transportBookingsError, setTransportBookingsError] = useState(null);
+  const [transportFilter, setTransportFilter] = useState('active');
+  
+  // Driver booking states
+  const [showDriverSelection, setShowDriverSelection] = useState(false);
+  const [showDriverConfirmation, setShowDriverConfirmation] = useState(false);
+  const [selectedDriver, setSelectedDriver] = useState(null);
+  const [selectedDate, setSelectedDate] = useState('');
+  const [startLocation, setStartLocation] = useState({ name: '', latitude: 0, longitude: 0 });
+  const [endLocation, setEndLocation] = useState({ name: '', latitude: 0, longitude: 0 });
+  const [bookingDriverId, setBookingDriverId] = useState(null);
+  
+  // Transport booking cancel states
+  const [showTransportCancelModal, setShowTransportCancelModal] = useState(false);
+  const [transportBookingToCancel, setTransportBookingToCancel] = useState(null);
+  
   // Search parameters
   const [searchParams, setSearchParams] = useState({
     radius: 5000, // 5km default
@@ -79,6 +101,8 @@ const Reservations = () => {
     if (activeTab === 'hotels') {
       loadHotelBookings();
       getCurrentLocation();
+    } else if (activeTab === 'transportation') {
+      loadTransportBookings();
     }
   }, [activeTab]);
 
@@ -100,6 +124,27 @@ const Reservations = () => {
       setBookingsError('Failed to load your hotel reservations');
     } finally {
       setLoadingBookings(false);
+    }
+  };
+
+  const loadTransportBookings = async () => {
+    if (!loggedUser?.id) {
+      setTransportBookingsError('User not loaded');
+      return;
+    }
+
+    setLoadingTransportBookings(true);
+    setTransportBookingsError(null);
+    
+    try {
+      const bookings = await transportationService.getTravelerBookings(loggedUser.id);
+      console.log('🚗 Loaded transport bookings:', bookings);
+      setTransportBookings(bookings);
+    } catch (error) {
+      console.error('Failed to load transport bookings:', error);
+      setTransportBookingsError('Failed to load your transportation bookings');
+    } finally {
+      setLoadingTransportBookings(false);
     }
   };
 
@@ -226,6 +271,85 @@ const Reservations = () => {
     }
   };
 
+  // Transportation related functions
+  const handleBookTransport = () => {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    setSelectedDate(tomorrow.toISOString().split('T')[0]);
+    setShowDriverSelection(true);
+  };
+
+  const handleDriverSelect = async (driverId, driverSummary) => {
+    try {
+      const driverDetails = await transportationService.getDriverDetails(driverId);
+      setSelectedDriver(driverDetails);
+      setBookingDriverId(driverId);
+      setShowDriverSelection(false);
+      setShowDriverConfirmation(true);
+    } catch (error) {
+      console.error('Failed to get driver details:', error);
+      showError('Failed to load driver details');
+    }
+  };
+
+  const handleConfirmDriverBooking = async () => {
+    if (!selectedDriver || !bookingDriverId || !selectedDate) return;
+
+    try {
+      const bookingData = {
+        driverId: bookingDriverId,
+        date: selectedDate,
+        travelerId: loggedUser.id,
+        startLocation: startLocation.name ? startLocation : null,
+        endLocation: endLocation.name ? endLocation : null
+      };
+
+      const result = await transportationService.bookDriver(bookingData);
+      
+      if (result === 'BOOKED') {
+        showSuccess(`Driver ${selectedDriver.name} booked successfully for ${formatDate(selectedDate)}!`, 'Booking Confirmed');
+        loadTransportBookings(); // Refresh bookings
+      } else {
+        showError('Driver is already booked for this date');
+      }
+    } catch (error) {
+      console.error('Failed to book driver:', error);
+      showError('Failed to book driver. Please try again.');
+    } finally {
+      setShowDriverConfirmation(false);
+      setSelectedDriver(null);
+      setBookingDriverId(null);
+    }
+  };
+
+  const handleCancelTransportBooking = (booking) => {
+    setTransportBookingToCancel(booking);
+    setShowTransportCancelModal(true);
+  };
+
+  const confirmCancelTransportBooking = async () => {
+    if (!transportBookingToCancel) return;
+
+    try {
+      const cancelData = {
+        driverId: transportBookingToCancel.driverId,
+        date: transportBookingToCancel.bookingDate,
+        travelerId: loggedUser.id
+      };
+
+      await transportationService.cancelDriverBooking(cancelData);
+      showSuccess(`Transport booking cancelled successfully!`, 'Booking Cancelled');
+      loadTransportBookings(); // Refresh the list
+      setShowTransportCancelModal(false);
+      setTransportBookingToCancel(null);
+    } catch (error) {
+      console.error('Failed to cancel transport booking:', error);
+      showError('Failed to cancel booking. Please try again.');
+      setShowTransportCancelModal(false);
+      setTransportBookingToCancel(null);
+    }
+  };
+
   const handleCloseModals = () => {
     setShowHotelSearch(false);
     setShowRoomAvailability(false);
@@ -312,6 +436,27 @@ const Reservations = () => {
     return filtered;
   };
 
+  // Function to filter and sort transport bookings
+  const getFilteredAndSortedTransportBookings = () => {
+    let filtered = transportBookings;
+    
+    // Filter by status
+    if (transportFilter === 'active') {
+      filtered = transportBookings.filter(booking => booking.status !== 'CANCELLED');
+    } else if (transportFilter === 'cancelled') {
+      filtered = transportBookings.filter(booking => booking.status === 'CANCELLED');
+    }
+    
+    // Sort by booking date (nearest first)
+    filtered.sort((a, b) => {
+      const dateA = new Date(a.bookingDate);
+      const dateB = new Date(b.bookingDate);
+      return dateA - dateB;
+    });
+    
+    return filtered;
+  };
+
   return (
     <Layout
       user={loggedUser}
@@ -352,9 +497,6 @@ const Reservations = () => {
                   }`}
                 >
                   🚗 Transportation
-                  <span className="ml-2 bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded">
-                    Coming Soon
-                  </span>
                 </button>
               </nav>
             </div>
@@ -705,35 +847,258 @@ const Reservations = () => {
 
           {/* Transportation Tab */}
           {activeTab === 'transportation' && (
-            <div className="bg-white rounded-lg shadow-sm p-12">
-              <div className="text-center">
-                <div className="text-6xl mb-4">🚧</div>
-                <h3 className="text-2xl font-semibold text-gray-900 mb-2">Transportation Reservations</h3>
-                <p className="text-gray-600 mb-6">
-                  This feature is currently under development. Soon you'll be able to:
-                </p>
-                <div className="text-left max-w-md mx-auto space-y-2 text-gray-600">
-                  <div className="flex items-center">
-                    <span className="mr-3">🚗</span>
-                    <span>Book rental cars and vehicles</span>
-                  </div>
-                  <div className="flex items-center">
-                    <span className="mr-3">🚌</span>
-                    <span>Reserve bus and shuttle services</span>
-                  </div>
-                  <div className="flex items-center">
-                    <span className="mr-3">✈️</span>
-                    <span>Manage flight bookings</span>
-                  </div>
-                  <div className="flex items-center">
-                    <span className="mr-3">🚂</span>
-                    <span>Book train tickets</span>
+            <div className="space-y-6">
+              {/* Transport Bookings Section */}
+              <div className="bg-white rounded-lg shadow-sm">
+                <div className="p-6 border-b border-gray-200">
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                    <div>
+                      <h2 className="text-xl font-semibold text-gray-900">Your Transportation Bookings</h2>
+                      <p className="text-sm text-gray-600 mt-1">
+                        {(() => {
+                          const activeCount = transportBookings.filter(b => b.status !== 'CANCELLED').length;
+                          const cancelledCount = transportBookings.filter(b => b.status === 'CANCELLED').length;
+                          return `${activeCount} active, ${cancelledCount} cancelled bookings`;
+                        })()}
+                      </p>
+                    </div>
+                    
+                    <div className="flex flex-col sm:flex-row gap-3">
+                      {/* Filter Buttons */}
+                      <div className="flex bg-gray-100 rounded-lg p-1">
+                        <button
+                          onClick={() => setTransportFilter('active')}
+                          className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
+                            transportFilter === 'active'
+                              ? 'bg-white text-blue-600 shadow-sm'
+                              : 'text-gray-600 hover:text-gray-900'
+                          }`}
+                        >
+                          Active Bookings
+                        </button>
+                        <button
+                          onClick={() => setTransportFilter('cancelled')}
+                          className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
+                            transportFilter === 'cancelled'
+                              ? 'bg-white text-blue-600 shadow-sm'
+                              : 'text-gray-600 hover:text-gray-900'
+                          }`}
+                        >
+                          Cancelled
+                        </button>
+                      </div>
+                      
+                      {/* Refresh Button */}
+                      <button
+                        onClick={loadTransportBookings}
+                        disabled={loadingTransportBookings}
+                        className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:bg-gray-400 text-sm"
+                      >
+                        {loadingTransportBookings ? '🔄 Refreshing...' : '🔄 Refresh'}
+                      </button>
+                    </div>
                   </div>
                 </div>
-                <div className="mt-8">
-                  <span className="bg-yellow-100 text-yellow-800 px-4 py-2 rounded-full text-sm font-medium">
-                    Coming Soon
-                  </span>
+
+                <div className="p-6">
+                  {loadingTransportBookings && (
+                    <div className="text-center py-8">
+                      <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                      <p className="mt-2 text-gray-600">Loading your transport bookings...</p>
+                    </div>
+                  )}
+
+                  {transportBookingsError && (
+                    <div className="text-center py-8">
+                      <div className="text-red-600 text-lg">⚠️ {transportBookingsError}</div>
+                      <button
+                        onClick={loadTransportBookings}
+                        className="mt-4 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+                      >
+                        Try Again
+                      </button>
+                    </div>
+                  )}
+
+                  {!loadingTransportBookings && !transportBookingsError && transportBookings.length === 0 && (
+                    <div className="text-center py-8">
+                      <div className="text-gray-500 text-lg">🚗 No transportation bookings found</div>
+                      <p className="text-sm text-gray-400 mt-2">Book your first transport below!</p>
+                    </div>
+                  )}
+
+                  {!loadingTransportBookings && !transportBookingsError && transportBookings.length > 0 && (() => {
+                    const filteredBookings = getFilteredAndSortedTransportBookings();
+                    
+                    if (filteredBookings.length === 0) {
+                      return (
+                        <div className="text-center py-8">
+                          <div className="text-gray-500 text-lg">
+                            {transportFilter === 'active' ? '📅' : '❌'} No {transportFilter} transport bookings found
+                          </div>
+                          <p className="text-sm text-gray-400 mt-2">
+                            {transportFilter === 'active' 
+                              ? 'All your transport bookings have been cancelled or completed' 
+                              : 'You have no cancelled transport bookings'
+                            }
+                          </p>
+                        </div>
+                      );
+                    }
+                    
+                    return (
+                      <>
+                        {/* Results Summary */}
+                        <div className="mb-4 text-sm text-gray-600">
+                          Showing {filteredBookings.length} {transportFilter} transport booking{filteredBookings.length !== 1 ? 's' : ''} 
+                          (sorted by booking date)
+                        </div>
+                        
+                        <div className="grid gap-6">
+                          {filteredBookings.map((booking, index) => (
+                            <div key={booking.id || index} className="border rounded-lg overflow-hidden hover:shadow-lg transition-shadow">
+                              <div className="flex">
+                                {/* Driver Photo */}
+                                <div className="w-48 h-36 flex-shrink-0 bg-gray-100 flex items-center justify-center">
+                                  {booking.driver?.photoBase64 ? (
+                                    <img
+                                      src={`data:image/jpeg;base64,${booking.driver.photoBase64}`}
+                                      alt={booking.driver.name}
+                                      className="w-full h-full object-cover"
+                                    />
+                                  ) : (
+                                    <div className="text-gray-400 text-6xl">�</div>
+                                  )}
+                                </div>
+                                
+                                {/* Booking Details */}
+                                <div className="flex-1 p-4">
+                                  <div className="flex justify-between items-start">
+                                    <div className="flex-1">
+                                      <div className="flex items-start justify-between mb-2">
+                                        <div>
+                                          <h3 className="text-lg font-semibold text-gray-900">
+                                            {booking.driver?.name || 'Driver Name'}
+                                          </h3>
+                                          <p className="text-gray-600 text-sm mb-1">
+                                            {booking.driver?.vehicleType} - {booking.driver?.vehicleNumber}
+                                          </p>
+                                          <div className="flex items-center gap-2 mb-2">
+                                            <div className="flex items-center">
+                                              <span className="text-yellow-500">★</span>
+                                              <span className="text-sm font-medium text-gray-700 ml-1">
+                                                {booking.driver?.rating || 'N/A'}
+                                              </span>
+                                            </div>
+                                            <span className="text-gray-400">•</span>
+                                            <span className="text-sm text-gray-600">
+                                              {booking.driver?.vehicleBrand} {booking.driver?.vehicleModel}
+                                            </span>
+                                          </div>
+                                        </div>
+                                        
+                                        {/* Status and Actions */}
+                                        <div className="text-right">
+                                          <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${
+                                            booking.status === 'BOOKED' ? 'bg-green-100 text-green-800' :
+                                            booking.status === 'CANCELLED' ? 'bg-red-100 text-red-800' :
+                                            'bg-gray-100 text-gray-800'
+                                          }`}>
+                                            {booking.status}
+                                          </span>
+                                          {booking.status === 'BOOKED' && (
+                                            <button
+                                              onClick={() => handleCancelTransportBooking(booking)}
+                                              className="mt-2 px-3 py-1 rounded text-xs font-medium transition-colors block w-full bg-red-600 text-white hover:bg-red-700"
+                                            >
+                                              Cancel Booking
+                                            </button>
+                                          )}
+                                        </div>
+                                      </div>
+                                      
+                                      {/* Booking Information Grid */}
+                                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                                        <div>
+                                          <span className="text-gray-500">Booking Date:</span>
+                                          <p className="font-medium">{formatDate(booking.bookingDate)}</p>
+                                        </div>
+                                        <div>
+                                          <span className="text-gray-500">From:</span>
+                                          <p className="font-medium">{booking.startLocationName || 'Not specified'}</p>
+                                        </div>
+                                        <div>
+                                          <span className="text-gray-500">To:</span>
+                                          <p className="font-medium">{booking.endLocationName || 'Not specified'}</p>
+                                        </div>
+                                      </div>
+                                      
+                                      {/* Booking Reference */}
+                                      <div className="mt-3 pt-3 border-t border-gray-100">
+                                        <div className="flex justify-between items-center text-xs text-gray-500">
+                                          <span>Driver ID: {booking.driverId}</span>
+                                          <span>Traveler ID: {booking.travelerId}</span>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </>
+                    );
+                  })()}
+                </div>
+              </div>
+
+              {/* Book New Transport Section */}
+              <div className="bg-white rounded-lg shadow-sm">
+                <div className="p-6 border-b border-gray-200">
+                  <h2 className="text-xl font-semibold text-gray-900">Book Transportation</h2>
+                  <p className="text-gray-600 text-sm mt-1">Find and book available drivers for your trips</p>
+                </div>
+
+                <div className="p-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                    {/* Start Location */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Pick-up Location (Optional)
+                      </label>
+                      <input
+                        type="text"
+                        value={startLocation.name}
+                        onChange={(e) => setStartLocation({...startLocation, name: e.target.value})}
+                        placeholder="Enter pick-up location"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      />
+                    </div>
+
+                    {/* End Location */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Drop-off Location (Optional)
+                      </label>
+                      <input
+                        type="text"
+                        value={endLocation.name}
+                        onChange={(e) => setEndLocation({...endLocation, name: e.target.value})}
+                        placeholder="Enter drop-off location"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="text-center">
+                    <button
+                      onClick={handleBookTransport}
+                      className="bg-purple-600 hover:bg-purple-700 text-white px-8 py-3 rounded-lg font-medium transition-colors"
+                    >
+                      🚗 Find Available Drivers
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -762,7 +1127,27 @@ const Reservations = () => {
           travelerId={loggedUser?.id}
         />
 
-        {/* Cancel Booking Confirmation Modal */}
+        {/* Transportation Modals */}
+        <AvailableDriversPopup
+          isOpen={showDriverSelection}
+          onClose={() => setShowDriverSelection(false)}
+          date={selectedDate}
+          onSelectDriver={handleDriverSelect}
+        />
+
+        {selectedDriver && (
+          <ConfirmDriverSelection
+            driver={selectedDriver}
+            onConfirm={handleConfirmDriverBooking}
+            onCancel={() => {
+              setShowDriverConfirmation(false);
+              setSelectedDriver(null);
+              setBookingDriverId(null);
+            }}
+          />
+        )}
+
+        {/* Cancel Hotel Booking Confirmation Modal */}
         {showCancelModal && bookingToCancel && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-lg max-w-md w-full p-6">
@@ -811,6 +1196,58 @@ const Reservations = () => {
                   className="flex-1 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 disabled:bg-gray-400 font-medium"
                 >
                   {bookingToCancel?.isCanelling ? 'Cancelling...' : 'Cancel Booking'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Cancel Transport Booking Confirmation Modal */}
+        {showTransportCancelModal && transportBookingToCancel && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg max-w-md w-full p-6">
+              <div className="flex items-center mb-4">
+                <div className="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100">
+                  <svg className="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L4.268 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                  </svg>
+                </div>
+              </div>
+              
+              <div className="text-center">
+                <h3 className="text-lg font-medium text-gray-900 mb-2">
+                  Cancel Transport Booking
+                </h3>
+                <p className="text-sm text-gray-500 mb-4">
+                  Are you sure you want to cancel this transport booking? This action cannot be undone.
+                </p>
+                
+                <div className="bg-gray-50 rounded-lg p-4 mb-6 text-left">
+                  <div className="space-y-2 text-sm">
+                    <div><strong>Driver:</strong> {transportBookingToCancel.driver?.name || 'Driver'}</div>
+                    <div><strong>Vehicle:</strong> {transportBookingToCancel.driver?.vehicleType}</div>
+                    <div><strong>Date:</strong> {formatDate(transportBookingToCancel.bookingDate)}</div>
+                    <div><strong>From:</strong> {transportBookingToCancel.startLocationName || 'Not specified'}</div>
+                    <div><strong>To:</strong> {transportBookingToCancel.endLocationName || 'Not specified'}</div>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="flex gap-3">
+                <button
+                  onClick={() => {
+                    setShowTransportCancelModal(false);
+                    setTransportBookingToCancel(null);
+                  }}
+                  className="flex-1 bg-gray-100 text-gray-900 px-4 py-2 rounded-lg hover:bg-gray-200 font-medium"
+                >
+                  Keep Booking
+                </button>
+                <button
+                  onClick={confirmCancelTransportBooking}
+                  className="flex-1 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 font-medium"
+                >
+                  Cancel Booking
                 </button>
               </div>
             </div>

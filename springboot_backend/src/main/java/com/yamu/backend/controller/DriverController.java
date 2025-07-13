@@ -4,6 +4,7 @@ import com.yamu.backend.dto.BookDriverRequest;
 import com.yamu.backend.dto.CancelBookingRequest;
 import com.yamu.backend.dto.DriverDetailsDTO;
 import com.yamu.backend.dto.DriverSummaryDTO;
+import com.yamu.backend.dto.DriverBookingResponseDTO;
 import com.yamu.backend.model.Driver;
 import com.yamu.backend.model.DriverBooking;
 import com.yamu.backend.repository.DriverBookingRepository;
@@ -12,7 +13,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
-import java.util.Base64;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -87,5 +87,14 @@ public class DriverController {
             bookingRepository.save(b);
         });
         return "CANCELLED";
+    }
+
+    // Get traveler's driver bookings
+    @GetMapping("/bookings/traveler/{travelerId}")
+    public List<DriverBookingResponseDTO> getTravelerBookings(@PathVariable Long travelerId) {
+        List<DriverBooking> bookings = bookingRepository.findByTravelerIdOrderByBookingDateAsc(travelerId);
+        return bookings.stream()
+                .map(DriverBookingResponseDTO::fromDriverBooking)
+                .collect(Collectors.toList());
     }
 }
