@@ -6,7 +6,11 @@ import L from "leaflet";
 import "leaflet-routing-machine";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import { searchLocations } from "../services/map/locationService";
-import { fetchRoute, optimizeRoute, nearestNeighborOptimization } from "../services/map/routeService";
+import {
+  fetchRoute,
+  optimizeRoute,
+  nearestNeighborOptimization,
+} from "../services/map/routeService";
 import { useNotification } from "../hooks/useNotification";
 import axios from "axios";
 
@@ -81,7 +85,8 @@ const FitBoundsControl = ({ locations }) => {
   return null;
 };
 
-const GOOGLE_MAPS_STYLE = "https://{s}.google.com/vt/lyrs=s,h&x={x}&y={y}&z={z}"; // satellite + hybrid labels
+const GOOGLE_MAPS_STYLE =
+  "https://{s}.google.com/vt/lyrs=s,h&x={x}&y={y}&z={z}"; // satellite + hybrid labels
 
 const MODERN_BG_GRADIENT =
   "bg-gradient-to-br from-gray-100 via-white to-blue-100 dark:from-gray-900 dark:to-blue-950";
@@ -135,6 +140,8 @@ const Map = () => {
   const [selectedDriverId, setSelectedDriverId] = useState(null);
   const [showConfirm, setShowConfirm] = useState(false);
   const [selectedDriverSummary, setSelectedDriverSummary] = useState(null);
+  const [totalCost, setTotalCost] = useState(0);
+  const [distanceKm, setDistanceKm] = useState(0);
 
   useEffect(() => {
     const loadUser = async () => {
@@ -283,7 +290,10 @@ const Map = () => {
       setLocations(updatedLocations);
       showSuccess("Route optimized successfully!", "Route Optimization");
     } catch (error) {
-      showError("Failed to optimize route. Please try again.", "Optimization Failed");
+      showError(
+        "Failed to optimize route. Please try again.",
+        "Optimization Failed"
+      );
     }
   };
 
@@ -352,7 +362,10 @@ const Map = () => {
               Day {currentIndex + 1} &mdash; {dates[currentIndex]}
             </h2>
             <p className="mt-2 text-gray-500 font-medium">
-              Budget: <span className="font-bold">{currency} {budget}</span>
+              Budget:{" "}
+              <span className="font-bold">
+                {currency} {budget}
+              </span>
             </p>
           </div>
         </div>
@@ -403,7 +416,7 @@ const Map = () => {
                   </div>
                 )}
               </div>
-              
+
               {/* Route Controls */}
               <div className="flex gap-3 mt-2">
                 <button
@@ -431,14 +444,16 @@ const Map = () => {
 
               {/* Vehicle Segmented Control */}
               <div className="flex gap-2 mt-4">
-                {VEHICLE_OPTIONS.map(opt => (
+                {VEHICLE_OPTIONS.map((opt) => (
                   <button
                     key={opt.key}
                     type="button"
                     className={`flex-1 py-2 rounded-xl font-medium border 
-                      ${travelMode === opt.key 
-                        ? "bg-[#4285F4] text-white border-[#4285F4]" 
-                        : "bg-white hover:bg-blue-50 text-gray-700 border-gray-300"}
+                      ${
+                        travelMode === opt.key
+                          ? "bg-[#4285F4] text-white border-[#4285F4]"
+                          : "bg-white hover:bg-blue-50 text-gray-700 border-gray-300"
+                      }
                       transition shadow-sm flex flex-col items-center`}
                     onClick={() => setTravelMode(opt.key)}
                   >
@@ -462,7 +477,11 @@ const Map = () => {
               disabled={hotelBooked[currentIndex]}
             >
               {hotelBooked[currentIndex]
-                ? ` Hotel Booked${bookedHotels[currentIndex] ? ` - ${bookedHotels[currentIndex].hotel.name}` : ""}`
+                ? ` Hotel Booked${
+                    bookedHotels[currentIndex]
+                      ? ` - ${bookedHotels[currentIndex].hotel.name}`
+                      : ""
+                  }`
                 : "Book Hotel"}
             </button>
             {hotelBooked[currentIndex] && bookedHotels[currentIndex] && (
@@ -481,7 +500,10 @@ const Map = () => {
             <button
               className="w-full px-6 py-3 bg-[#F4B400] text-white rounded-xl font-semibold hover:bg-[#F4B400]/90 transition"
               onClick={() =>
-                showSuccess("Navigated to Tour Guide Booking Form.", "Tour Guide Booking")
+                showSuccess(
+                  "Navigated to Tour Guide Booking Form.",
+                  "Tour Guide Booking"
+                )
               }
             >
               Book Tour Guide
@@ -489,23 +511,40 @@ const Map = () => {
             <BookTransportButton
               onClick={() => setShowDriversPopup(true)}
               disabled={
-                transportBooked[currentIndex] || locations[currentIndex].length < 2
+                transportBooked[currentIndex] ||
+                locations[currentIndex].length < 2
               }
             />
             <AvailableDriversPopup
               isOpen={showDriversPopup}
               onClose={() => setShowDriversPopup(false)}
               date={dates[currentIndex]}
-              onSelectDriver={(driverId, summary) => {
+              onSelectDriver={async (driverId, summary) => {
                 setSelectedDriverId(driverId);
                 setSelectedDriverSummary(summary);
                 setShowDriversPopup(false);
+                // Calculate route and cost
+                const dayLocations = locations[currentIndex];
+                const startLocation = dayLocations[0];
+                const endLocation = dayLocations[dayLocations.length - 1];
+                const routeData = await fetchRoute(
+                  [startLocation, endLocation],
+                  travelMode
+                );
+                const distance =
+                  routeData.features[0].properties.summary.distance;
+                const distanceKm = distance / 1000;
+                setDistanceKm(distanceKm);
+                setTotalCost(distanceKm * summary.ratePerLng);
+
                 setShowConfirm(true);
               }}
             />
             {showConfirm && selectedDriverId && (
               <ConfirmDriverSelection
                 driver={selectedDriverSummary}
+                totalCost={totalCost}
+                distanceKm={distanceKm}
                 onConfirm={async () => {
                   const dayLocations = locations[currentIndex];
                   const startLocation = dayLocations[0];
@@ -529,6 +568,8 @@ const Map = () => {
                         latitude: endLocation.lat,
                         longitude: endLocation.lon,
                       },
+                      travelCost: totalCost, // <-- NEW
+                      travelLength: distanceKm, // <-- Optional, if you want to save length too
                     });
                     showSuccess("Driver Booked Successfully");
                     setTransportBooked((prev) => {
@@ -550,7 +591,9 @@ const Map = () => {
             onClick={handleNext}
             className="w-full px-6 py-3 bg-[#34A853] text-white rounded-xl font-bold hover:bg-[#34A853]/90 shadow-lg mt-2 transition"
           >
-            {currentIndex < dates.length - 1 ? "Next Day →" : "Finalize Itinerary"}
+            {currentIndex < dates.length - 1
+              ? "Next Day →"
+              : "Finalize Itinerary"}
           </button>
         </div>
 

@@ -59,6 +59,8 @@ public class DriverController {
         booking.setBookingDate(bookingDate);
         booking.setTravelerId(req.travelerId());
         booking.setStatus("BOOKED");
+        booking.setTravelCost(req.travelCost());
+        booking.setTravelLength(req.travelLength());
 
         // Set start and end location details
         if (req.startLocation() != null) {

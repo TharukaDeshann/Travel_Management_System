@@ -35,5 +35,8 @@ public class DriverBooking {
     private Double endLocationLat;
     private Double endLocationLon;
 
+    private Double travelCost;    // Total cost for this booking
+    private Double travelLength;  // Total distance in KM
+
     // Getters and Setters (if not using Lombok)
 }
