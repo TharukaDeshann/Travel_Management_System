@@ -16,7 +16,6 @@ import com.yamu.backend.service.GuideSearchService;
 
 @RestController
 @RequestMapping("/api/search/guides")
-@CrossOrigin(origins = "*")
 public class GuideSearchController {
     
     @Autowired

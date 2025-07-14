@@ -17,7 +17,6 @@ import com.yamu.backend.service.AzureSearchService;
 
 @RestController
 @RequestMapping("/api/search")
-@CrossOrigin(origins = "*") // For testing - restrict this in production
 public class SearchController {
     
     @Autowired

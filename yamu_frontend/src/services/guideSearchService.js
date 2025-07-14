@@ -119,18 +119,6 @@ class GuideSearchService {
     }
   }
 
-//   // Get guides with recent reviews
-//   async getGuidesWithRecentReviews(params = {}) {
-//     try {
-//       const response = await apiClient.get(`${this.baseURL}/recent-reviews`, {
-//         params
-//       });
-//       return response.data;
-//     } catch (error) {
-//       console.error('Error getting guides with recent reviews:', error);
-//       throw error;
-//     }
-//   }
 
   // Get guides by reservation status
   async getGuidesByReservationStatus(status, page = 0, size = 10) {

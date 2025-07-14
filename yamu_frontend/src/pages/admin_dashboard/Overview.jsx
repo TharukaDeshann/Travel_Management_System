@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Users, MapPin, Star, Car, TrendingUp, Activity } from 'lucide-react';
 import guideSearchService from '../../services/guideSearchService';
-import AdminLayout from './AdminLayout.jsx';
+import AdminLayout from '../../components/AdminLayout';
 
 const Overview = () => {
   const currentPage = "overview";

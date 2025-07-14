@@ -228,7 +228,7 @@ const ProfileDropdown = () => (
                                 {user?.role === 'ADMIN'
                                     ? 'Admin'
                                     : user?.role === 'GUIDE'
-                                    ? 'Tour Guide'
+                                    ? 'Guide'
                                     : 'Traveler'}
                             </span>
                         </div>
