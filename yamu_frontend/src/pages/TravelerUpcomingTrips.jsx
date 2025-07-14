@@ -4,15 +4,19 @@ import { Mail } from "lucide-react";
 import yamuLogo from '../images/yamu-logo.png';
 import profileIcon from '../images/profile.png';
 import apiClient from "../services/axiosInstance";
+import { getTravelerBookings } from '../services/hotelService';
+import { transportationService } from '../services/transportationService';
 
 const TravelerUpcomingTrips = ({ currentUser }) => {
   const [reservations, setReservations] = useState([]);
+  const [hotelBookings, setHotelBookings] = useState([]);
+  const [transportBookings, setTransportBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchReservations = async () => {
+    const fetchAllData = async () => {
       try {
         currentUser = JSON.parse(localStorage.getItem("user"));
         if (!currentUser?.id) {
@@ -20,9 +24,20 @@ const TravelerUpcomingTrips = ({ currentUser }) => {
           return;
         }
 
-        const response = await apiClient.get(`/api/reservations/traveler/${currentUser.id}`);
+        // Fetch all data in parallel
+        const [reservationsResponse, hotelBookingsData, transportBookingsData] = await Promise.all([
+          apiClient.get(`/api/reservations/traveler/${currentUser.id}`),
+          getTravelerBookings(currentUser.id).catch(err => {
+            console.error('Failed to load hotel bookings:', err);
+            return [];
+          }),
+          transportationService.getTravelerBookings(currentUser.id).catch(err => {
+            console.error('Failed to load transport bookings:', err);
+            return [];
+          })
+        ]);
         
-        const sortedReservations = response.data.sort((a, b) => {
+        const sortedReservations = reservationsResponse.data.sort((a, b) => {
           const dateA = a.dayDetails && a.dayDetails.length > 0 
             ? new Date(a.dayDetails[0].date) 
             : new Date(a.createdAt);
@@ -33,15 +48,17 @@ const TravelerUpcomingTrips = ({ currentUser }) => {
         });
         
         setReservations(sortedReservations);
+        setHotelBookings(hotelBookingsData);
+        setTransportBookings(transportBookingsData);
       } catch (err) {
-        console.error("Error loading reservations:", err);
-        setError("Failed to load reservations. Please try again.");
+        console.error("Error loading data:", err);
+        setError("Failed to load trip information. Please try again.");
       } finally {
         setLoading(false);
       }
     };
 
-    fetchReservations();
+    fetchAllData();
   }, []);
 
   const handleCancelReservation = async (reservationId) => {
@@ -58,6 +75,33 @@ const TravelerUpcomingTrips = ({ currentUser }) => {
 
   const handleMessageClick = (guideId) => {
     navigate(`/inbox?select=${guideId}`);
+  };
+
+  // Function to get hotel bookings for a specific date
+  const getHotelBookingsForDate = (date) => {
+    const targetDate = new Date(date);
+    return hotelBookings.filter(booking => {
+      const checkInDate = new Date(booking.checkInDate);
+      const checkOutDate = new Date(booking.checkOutDate);
+      return targetDate >= checkInDate && targetDate <= checkOutDate && booking.bookingStatus !== 'CANCELLED';
+    });
+  };
+
+  // Function to get transport bookings for a specific date
+  const getTransportBookingsForDate = (date) => {
+    const targetDate = new Date(date).toDateString();
+    return transportBookings.filter(booking => {
+      const bookingDate = new Date(booking.bookingDate).toDateString();
+      return bookingDate === targetDate && booking.status !== 'CANCELLED';
+    });
+  };
+
+  const formatDate = (dateString) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
   };
 
   const MessageButton = ({ guideId }) => (
@@ -330,28 +374,71 @@ const TravelerUpcomingTrips = ({ currentUser }) => {
                       fontSize: "14px",
                       color: "#532321",
                       fontWeight: "500"
-                    }}>Itinerary</h4>
+                    }}>Itinerary & Bookings</h4>
                     {reservation.dayDetails && reservation.dayDetails.length > 0 ? (
                       <div style={{ display: "grid", gap: "10px" }}>
-                        {reservation.dayDetails.map((day, index) => (
-                          <div key={index} style={{
-                            padding: "10px",
-                            backgroundColor: "#f9f9f9",
-                            borderRadius: "4px"
-                          }}>
-                            <p style={{ margin: "4px 0", fontWeight: "500" }}>
-                              Day {day.dayNumber}: {day.places}
-                            </p>
-                            <p style={{ margin: "4px 0", fontSize: "13px" }}>
-                              <strong>Date:</strong> {new Date(day.date).toLocaleDateString()}
-                            </p>
-                            {day.vehicleRequested && (
-                              <p style={{ margin: "4px 0", fontSize: "13px" }}>
-                                <strong>Vehicle:</strong> {day.vehicleDetails || 'No details'}
+                        {reservation.dayDetails.map((day, index) => {
+                          const dayHotelBookings = getHotelBookingsForDate(day.date);
+                          const dayTransportBookings = getTransportBookingsForDate(day.date);
+                          
+                          return (
+                            <div key={index} style={{
+                              padding: "10px",
+                              backgroundColor: "#f9f9f9",
+                              borderRadius: "4px"
+                            }}>
+                              <p style={{ margin: "4px 0", fontWeight: "500" }}>
+                                Day {day.dayNumber}: {day.places}
                               </p>
-                            )}
-                          </div>
-                        ))}
+                              <p style={{ margin: "4px 0", fontSize: "13px" }}>
+                                <strong>Date:</strong> {new Date(day.date).toLocaleDateString()}
+                              </p>
+                              {day.vehicleRequested && (
+                                <p style={{ margin: "4px 0", fontSize: "13px" }}>
+                                  <strong>Vehicle:</strong> {day.vehicleDetails || 'No details'}
+                                </p>
+                              )}
+                              
+                              {/* Hotel Bookings for this date */}
+                              {dayHotelBookings.length > 0 && (
+                                <div style={{ marginTop: "8px", padding: "8px", backgroundColor: "#e3f2fd", borderRadius: "4px" }}>
+                                  <p style={{ margin: "0 0 4px 0", fontSize: "12px", fontWeight: "500", color: "#1976d2" }}>
+                                    🏨 Hotel Bookings:
+                                  </p>
+                                  {dayHotelBookings.map((booking, idx) => (
+                                    <div key={idx} style={{ fontSize: "11px", color: "#1565c0", marginBottom: "2px" }}>
+                                      • {booking.hotel?.name || booking.hotelName} - {booking.roomType} 
+                                      ({formatDate(booking.checkInDate)} to {formatDate(booking.checkOutDate)})
+                                      <span style={{ color: booking.bookingStatus === 'CONFIRMED' ? '#4caf50' : '#ff9800', marginLeft: '4px' }}>
+                                        [{booking.bookingStatus}]
+                                      </span>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                              
+                              {/* Transport Bookings for this date */}
+                              {dayTransportBookings.length > 0 && (
+                                <div style={{ marginTop: "8px", padding: "8px", backgroundColor: "#f3e5f5", borderRadius: "4px" }}>
+                                  <p style={{ margin: "0 0 4px 0", fontSize: "12px", fontWeight: "500", color: "#7b1fa2" }}>
+                                    🚗 Transport Bookings:
+                                  </p>
+                                  {dayTransportBookings.map((booking, idx) => (
+                                    <div key={idx} style={{ fontSize: "11px", color: "#6a1b9a", marginBottom: "2px" }}>
+                                      • {booking.driver?.name || 'Driver'} - {booking.driver?.vehicleType} {booking.driver?.vehicleNumber}
+                                      {booking.startLocationName && booking.endLocationName && (
+                                        <span> ({booking.startLocationName} → {booking.endLocationName})</span>
+                                      )}
+                                      <span style={{ color: booking.status === 'BOOKED' ? '#4caf50' : '#ff5722', marginLeft: '4px' }}>
+                                        [{booking.status}]
+                                      </span>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
                       </div>
                     ) : (
                       <p style={{ color: "#999", fontStyle: "italic" }}>No itinerary details available</p>
@@ -380,6 +467,22 @@ const TravelerUpcomingTrips = ({ currentUser }) => {
                         Cancel Reservation
                       </button>
                     )}
+                    <button
+                      onClick={() => navigate('/reservations')}
+                      style={{
+                        padding: "8px 16px",
+                        backgroundColor: "#2196F3",
+                        color: "white",
+                        border: "none",
+                        borderRadius: "4px",
+                        cursor: "pointer",
+                        ':hover': {
+                          backgroundColor: "#1976D2"
+                        }
+                      }}
+                    >
+                      Manage Bookings
+                    </button>
                   </div>
                 </div>
               );
