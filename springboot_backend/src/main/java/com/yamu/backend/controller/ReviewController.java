@@ -5,6 +5,7 @@ import com.yamu.backend.dto.ReviewResponseDto;
 import com.yamu.backend.model.User;
 import com.yamu.backend.repository.UserRepository;
 import com.yamu.backend.service.ReviewService;
+import com.yamu.backend.service.GuideReservationByTravelerService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -19,10 +20,13 @@ import java.util.List;
 public class ReviewController {
     private final ReviewService reviewService;
     private final UserRepository userRepository;
+    private final GuideReservationByTravelerService reservationService;
 
-    public ReviewController(ReviewService reviewService, UserRepository userRepository) {
+    public ReviewController(ReviewService reviewService, UserRepository userRepository, 
+                          GuideReservationByTravelerService reservationService) {
         this.userRepository = userRepository;
         this.reviewService = reviewService;
+        this.reservationService = reservationService;
     }
 
     @PostMapping("/guide/{guideId}")
@@ -30,13 +34,18 @@ public class ReviewController {
             @PathVariable Long guideId,
             @RequestBody @Valid ReviewDto reviewDto) {
         
-        
-        
         try {
             String email = SecurityContextHolder.getContext().getAuthentication().getName();
-            User user =  userRepository.findByEmail(email)
+            User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
             Long travelerId = user.getId();
+            
+            // Check if the traveler has previously completed a booking with this guide
+            if (!reservationService.hasCompletedReservationWithGuide(travelerId, guideId)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body("You can only review guides you have previously booked and completed a trip with.");
+            }
+            
             ReviewResponseDto response = reviewService.createOrUpdateReview(travelerId, guideId, reviewDto);
             return ResponseEntity.ok(response);
         } catch (Exception e) {
