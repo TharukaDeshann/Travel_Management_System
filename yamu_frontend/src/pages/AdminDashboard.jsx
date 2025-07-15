@@ -27,6 +27,7 @@ export default function AdminDashboard() {
         const user = await fetchLoggedInUser();
         setCurrentUser(user);
         
+        
         // Load initial stats
         const statsData = await guideSearchService.getGuideStats();
         setStats(statsData);

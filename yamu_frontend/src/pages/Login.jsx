@@ -90,9 +90,8 @@ const Login = () => {
           } else if (userData.role === "GUIDE") {
             navigate("/guide-dashboard");
           } else if (userData.role === "ADMIN") {
-            navigate("/admin-dashboard");
-          }
-           else {
+            navigate("/admin-overview");
+          } else {
             // Default fallback if role is not recognized
             navigate("/dashboard");
           }

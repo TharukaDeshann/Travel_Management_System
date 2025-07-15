@@ -51,6 +51,7 @@ public class SearchController {
             @RequestParam(required = false, defaultValue = "false") boolean verified,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
+                
         
         try {
             List<String> filters = new ArrayList<>();

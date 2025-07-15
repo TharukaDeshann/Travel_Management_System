@@ -20,6 +20,7 @@ const AdminLayout = ({ children, currentPage = 'overview' }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  const location = useLocation();
 
   const loggedUser = useUser().user;
   const unreadCount = loggedUser?.unreadCount || 0;
@@ -47,21 +48,54 @@ const AdminLayout = ({ children, currentPage = 'overview' }) => {
     if (isMobile) {
       setSidebarOpen(false);
     }
-  }, [currentPage, isMobile]);
+  }, [location.pathname, isMobile]);
 
+  // Navigation items with proper route paths
   const navigationItems = [
-    { id: 'overview', label: 'Overview', icon: LayoutDashboard },
-    { id: 'user-management', label: 'User Management', icon: Users },
-    { id: 'guide-management', label: 'Guide Management', icon: MapPin },
-    { id: 'traveler-management', label: 'Traveler Management', icon: Users },
-    { id: 'analytics', label: 'Analytics', icon: BarChart3 }
+    { 
+      id: 'overview', 
+      label: 'Overview', 
+      icon: LayoutDashboard, 
+      path: '/admin-overview' 
+    },
+    { 
+      id: 'user-management', 
+      label: 'User Management', 
+      icon: Users, 
+      path: '/admin-user-management' 
+    },
+    { 
+      id: 'guide-management', 
+      label: 'Guide Management', 
+      icon: MapPin, 
+      path: '/admin-guide-management' 
+    },
+    { 
+      id: 'traveler-management', 
+      label: 'Traveler Management', 
+      icon: Users, 
+      path: '/admin-traveler-management' 
+    },
+    { 
+      id: 'analytics', 
+      label: 'Analytics', 
+      icon: BarChart3, 
+      path: '/admin-analytics' 
+    }
   ];
 
-  const NavItem = ({ item, isActive }) => {
+  // Function to determine if a navigation item is active
+  const isActiveRoute = (path) => {
+    return location.pathname === path;
+  };
+
+  const NavItem = ({ item }) => {
     const Icon = item.icon;
+    const isActive = isActiveRoute(item.path);
+    
     return (
       <Link
-        to={`#${item.id}`}
+        to={item.path}
         className={`flex items-center px-4 lg:px-6 py-3 text-sm font-medium transition-colors duration-200 ${
           isActive
             ? 'bg-blue-50 text-blue-600 border-r-4 border-blue-600'
@@ -111,30 +145,10 @@ const AdminLayout = ({ children, currentPage = 'overview' }) => {
                 <NavItem
                   key={item.id}
                   item={item}
-                  isActive={currentPage === item.id}
                 />
               ))}
             </div>
           </nav>
-
-          {/* Sidebar footer - only visible on larger screens */}
-          <div className="hidden lg:block p-4 border-t border-gray-200">
-            <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
-                <span className="text-white text-sm font-medium">
-                  {loggedUser?.name?.charAt(0) || 'A'}
-                </span>
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-gray-900 truncate">
-                  {loggedUser?.name || 'Admin'}
-                </p>
-                <p className="text-xs text-gray-500 truncate">
-                  {loggedUser?.email || 'admin@example.com'}
-                </p>
-              </div>
-            </div>
-          </div>
         </aside>
 
         {/* Mobile overlay */}
@@ -162,47 +176,12 @@ const AdminLayout = ({ children, currentPage = 'overview' }) => {
 
                 {/* Page title */}
                 <h2 className="text-lg sm:text-xl font-semibold text-gray-900 capitalize truncate">
-                  {currentPage.replace('-', ' ')}
+                  {getCurrentPageTitle()}
                 </h2>
               </div>
 
               {/* Right section */}
               <div className="flex items-center space-x-2 sm:space-x-4">
-                {/* Search - Desktop */}
-                <div className="relative hidden md:block">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                  <input
-                    type="text"
-                    placeholder="Search..."
-                    className="pl-10 pr-4 py-2 w-48 lg:w-64 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
-                  />
-                </div>
-
-                {/* Search - Mobile */}
-                <button
-                  onClick={() => setSearchOpen(!searchOpen)}
-                  className="md:hidden p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 transition-colors"
-                >
-                  <Search className="h-5 w-5" />
-                </button>
-
-                {/* Notifications */}
-                <div className="relative">
-                  <button className="p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 transition-colors">
-                    <Bell className="h-5 w-5" />
-                    {unreadCount > 0 && (
-                      <span className="absolute -top-1 -right-1 h-4 w-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
-                        {unreadCount > 9 ? '9+' : unreadCount}
-                      </span>
-                    )}
-                  </button>
-                </div>
-
-                {/* Settings - Hidden on mobile */}
-                <button className="hidden sm:block p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 transition-colors">
-                  <Settings className="h-5 w-5" />
-                </button>
-
                 {/* User menu - Mobile */}
                 <div className="sm:hidden">
                   <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
@@ -213,21 +192,6 @@ const AdminLayout = ({ children, currentPage = 'overview' }) => {
                 </div>
               </div>
             </div>
-
-            {/* Mobile search bar */}
-            {searchOpen && (
-              <div className="md:hidden px-4 pb-3 border-t border-gray-200">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                  <input
-                    type="text"
-                    placeholder="Search..."
-                    className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    autoFocus
-                  />
-                </div>
-              </div>
-            )}
           </div>
 
           {/* Page content */}
@@ -240,6 +204,12 @@ const AdminLayout = ({ children, currentPage = 'overview' }) => {
       </div>
     </Layout>
   );
+
+  // Helper function to get current page title based on pathname
+  function getCurrentPageTitle() {
+    const currentItem = navigationItems.find(item => item.path === location.pathname);
+    return currentItem ? currentItem.label : 'Admin Dashboard';
+  }
 };
 
 export default AdminLayout;
