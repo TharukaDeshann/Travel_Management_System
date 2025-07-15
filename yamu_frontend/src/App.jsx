@@ -23,11 +23,8 @@ import ItineraryPlanner from "./pages/ItineraryPlanner.jsx";
 
 import FinalizeItinerary from "./pages/FinalizeItinerary.jsx"; 
 import Inbox from "./pages/Inbox.jsx";
-import Inbox from "./pages/Inbox.jsx";
 import TravelerUpcomingTrips from "./pages/TravelerUpcomingTrips";
 import CancellationModal from "./components/CancellationModal.jsx"; // Import CancellationModal
-import CancellationModal from "./components/CancellationModal.jsx"; // Import CancellationModal
-
 import VerifyEmail from "./pages/VerifyEmail.jsx";
 import VerifyEmailPending from "./pages/VerifyEmailPending.jsx";
 import UserProfile from "./pages/profile/UserProfile.jsx";
@@ -73,7 +70,6 @@ const App = () => {
             <Route path="/inbox" element={<Inbox />} />
             <Route path="/home" element={<Home />} />
             <Route path="/traveler-dashboard" element={<TravelerDashboard />} />
-            <Route path="/traveler-upcoming-trips" element={<TravelerUpcomingTrips />} />
             <Route path="/traveler-upcoming-trips" element={<TravelerUpcomingTrips />} />
             <Route path="/guide-dashboard" element={<GuideDashboard />} />
             <Route path="/admin-dashboard" element={<AdminDashboard />} />

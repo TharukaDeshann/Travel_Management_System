@@ -77,6 +77,40 @@ const GuideModal = ({ guide, onClose, currentUser }) => {
     setReservationDetails(updatedDetails);
   };
 
+  const getDateInputProps = (index) => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const maxDate = new Date();
+    maxDate.setDate(maxDate.getDate() + 365);
+
+    // For the first day, min date is today
+    if (index === 0) {
+      return {
+        min: today.toISOString().split('T')[0],
+        max: maxDate.toISOString().split('T')[0]
+      };
+    }
+
+    // For subsequent days, min date is the day after the previous day's date
+    const prevDayDate = new Date(reservationDetails[index - 1].date);
+    if (prevDayDate && !isNaN(prevDayDate.getTime())) {
+      const nextDay = new Date(prevDayDate);
+      nextDay.setDate(nextDay.getDate() + 1);
+      
+      return {
+        min: nextDay.toISOString().split('T')[0],
+        max: maxDate.toISOString().split('T')[0]
+      };
+    }
+
+    // Fallback to today if previous date isn't set
+    return {
+      min: today.toISOString().split('T')[0],
+      max: maxDate.toISOString().split('T')[0]
+    };
+  };
+
   const handleReviewSubmit = async (reviewData) => {
     try {
       setIsSubmitting(true);
@@ -90,7 +124,6 @@ const GuideModal = ({ guide, onClose, currentUser }) => {
       await fetchReviews();
       setReviewToEdit(null);
       
-      // Clear success message after a delay
       setTimeout(() => setReviewSuccess(null), 3000);
     } catch (err) {
       console.error("Review submission error:", err);
@@ -108,7 +141,6 @@ const GuideModal = ({ guide, onClose, currentUser }) => {
       await fetchReviews();
       setConfirmDeleteId(null);
       
-      // Clear success message after a delay
       setTimeout(() => setReviewSuccess(null), 3000);
     } catch (err) {
       console.error("Review deletion error:", err);
@@ -119,13 +151,12 @@ const GuideModal = ({ guide, onClose, currentUser }) => {
   };
 
   const handleSubmit = async () => {
-    if (!currentUser || !currentUser.id) {
+    if (!loggedUser || !loggedUser.id) {
       setError('Please login to make a reservation');
       navigate('/login');
       return;
     }
 
-    // Validate all fields are filled
     // Validate all fields are filled
     for (let i = 0; i < reservationDetails.length; i++) {
       const detail = reservationDetails[i];
@@ -135,30 +166,42 @@ const GuideModal = ({ guide, onClose, currentUser }) => {
       }
     }
 
-    // Validate dates are not in the past, sequential, and within 365 days
+    // Validate dates are within allowed range and sequential
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    const maxDate = new Date();
-    maxDate.setDate(maxDate.getDate() + 365);
+    const maxAllowedDate = new Date();
+    maxAllowedDate.setDate(maxAllowedDate.getDate() + 365);
 
     for (let i = 0; i < reservationDetails.length; i++) {
       const detail = reservationDetails[i];
       const selectedDate = new Date(detail.date);
 
+      // Check if date is valid
+      if (isNaN(selectedDate.getTime())) {
+        setError(`Invalid date for Day ${i + 1}`);
+        return;
+      }
+
+      // Check if date is in the past
       if (selectedDate < today) {
         setError(`Date for Day ${i + 1} cannot be in the past`);
         return;
       }
 
-      if (selectedDate > maxDate) {
+      // Check if date is within 365 days
+      if (selectedDate > maxAllowedDate) {
         setError(`Date for Day ${i + 1} must be within 365 days from today`);
         return;
       }
 
+      // Check if dates are sequential
       if (i > 0) {
         const previousDate = new Date(reservationDetails[i - 1].date);
-        if (selectedDate <= previousDate) {
+        const nextValidDate = new Date(previousDate);
+        nextValidDate.setDate(nextValidDate.getDate() + 1);
+        
+        if (selectedDate < nextValidDate) {
           setError(`Date for Day ${i + 1} must be after Day ${i}`);
           return;
         }
@@ -170,7 +213,7 @@ const GuideModal = ({ guide, onClose, currentUser }) => {
 
     try {
       const reservationData = {
-        travelerId: currentUser.id,
+        travelerId: loggedUser.id,
         guideId: guide.id,
         dayDetails: reservationDetails.map((detail, index) => ({
           dayNumber: index + 1,
@@ -213,9 +256,7 @@ const GuideModal = ({ guide, onClose, currentUser }) => {
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 overflow-y-auto">
-      {/* Modal Content */}
       <div className="w-full max-w-5xl bg-white rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
-        {/* Modal Header with Tabs */}
         <div className="bg-white border-b border-gray-100 sticky top-0 z-10">
           <div className="flex items-center justify-between px-6 pt-5 pb-3">
             <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-3">
@@ -235,7 +276,6 @@ const GuideModal = ({ guide, onClose, currentUser }) => {
             </button>
           </div>
           
-          {/* Tabs */}
           <div className="flex border-b border-gray-100">
             <button
               className={`px-6 py-3 font-medium text-sm transition-colors ${
@@ -279,9 +319,7 @@ const GuideModal = ({ guide, onClose, currentUser }) => {
           </div>
         </div>
         
-        {/* Tab Content */}
         <div className="flex-1 overflow-y-auto">
-          {/* Details Tab */}
           {activeTab === 'details' && (
             <div className="p-6">
               <div className="flex flex-col lg:flex-row gap-8">
@@ -386,10 +424,8 @@ const GuideModal = ({ guide, onClose, currentUser }) => {
             </div>
           )}
           
-          {/* Reviews Tab */}
           {activeTab === 'reviews' && !reviewToEdit && (
             <div className="p-6">
-              {/* Success message */}
               {reviewSuccess && (
                 <div className="mb-6 p-3 bg-green-50 border border-green-100 text-green-700 rounded-lg flex items-center gap-2">
                   <div className="shrink-0">✓</div>
@@ -483,7 +519,6 @@ const GuideModal = ({ guide, onClose, currentUser }) => {
                         </div>
                       )}
                       
-                      {/* Delete confirmation */}
                       {confirmDeleteId === review.id && (
                         <div className="mt-3 p-3 bg-red-50 border border-red-100 rounded-lg">
                           <p className="text-red-700 text-sm mb-2">Are you sure you want to delete this review?</p>
@@ -511,7 +546,6 @@ const GuideModal = ({ guide, onClose, currentUser }) => {
             </div>
           )}
           
-          {/* Review Form */}
           {activeTab === 'reviews' && reviewToEdit && (
             <div className="p-6">
               <div className="flex items-center justify-between mb-6">
@@ -585,7 +619,6 @@ const GuideModal = ({ guide, onClose, currentUser }) => {
             </div>
           )}
           
-          {/* Reservation Tab */}
           {activeTab === 'reservation' && (
             <div className="p-6">
               <h3 className="text-xl font-semibold text-gray-800 mb-4">Create Reservation</h3>
@@ -636,6 +669,8 @@ const GuideModal = ({ guide, onClose, currentUser }) => {
                           onChange={(e) => handleDetailChange(index, 'date', e.target.value)}
                           className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                           required
+                          min={getDateInputProps(index).min}
+                          max={getDateInputProps(index).max}
                         />
                       </div>
                       

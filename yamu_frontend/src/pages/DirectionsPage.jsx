@@ -3,10 +3,13 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { MapContainer, TileLayer, useMap, Marker, Popup } from "react-leaflet";
 import L from "leaflet";
 import "leaflet-routing-machine";
+import "leaflet/dist/leaflet.css";
+import "leaflet-routing-machine/dist/leaflet-routing-machine.css";
 import iconUrl from "leaflet/dist/images/marker-icon.png";
 import iconShadowUrl from "leaflet/dist/images/marker-shadow.png";
 import '../styles/DirectionsPage.css';
 
+// Fix default marker icons
 const DefaultIcon = L.icon({
   iconUrl,
   shadowUrl: iconShadowUrl,
@@ -16,11 +19,17 @@ const DefaultIcon = L.icon({
 });
 L.Marker.prototype.options.icon = DefaultIcon;
 
-const RoutingMachine = ({ from, to, onRouteError }) => {
+const RoutingMachine = ({ from, to, onRouteError, onRoutesFound }) => {
   const map = useMap();
+  const routingControlRef = useRef(null);
 
   useEffect(() => {
-    if (!from || !to || !from.lat || !from.lon || !to.lat || !to.lon) return;
+    if (!from || !to || !map) return;
+
+    // Remove any existing routing control
+    if (routingControlRef.current) {
+      map.removeControl(routingControlRef.current);
+    }
 
     const routingControl = L.Routing.control({
       waypoints: [L.latLng(from.lat, from.lon), L.latLng(to.lat, to.lon)],
@@ -28,21 +37,32 @@ const RoutingMachine = ({ from, to, onRouteError }) => {
         serviceUrl: "https://router.project-osrm.org/route/v1",
       }),
       lineOptions: { styles: [{ color: "#6FA1EC", weight: 4 }] },
+      show: true, // Show the instructions panel
       addWaypoints: false,
       draggableWaypoints: false,
       fitSelectedRoutes: true,
-      show: false,
       routeWhileDragging: false,
+      collapsible: false, // Keep panel always visible
+      instructionsContainer: document.createElement('div') // Create new container
     }).addTo(map);
+
+    routingControlRef.current = routingControl;
+
+    routingControl.on('routesfound', function(e) {
+      const routes = e.routes;
+      onRoutesFound?.(routes);
+    });
 
     routingControl.on('routingerror', (err) => {
       onRouteError?.('Failed to calculate route');
     });
 
     return () => {
-      map.removeControl(routingControl);
+      if (routingControlRef.current) {
+        map.removeControl(routingControlRef.current);
+      }
     };
-  }, [from, to, map, onRouteError]);
+  }, [from, to, map]);
 
   return null;
 };
@@ -59,6 +79,8 @@ const DirectionsPage = () => {
   const [autocompleteResults, setAutocompleteResults] = useState([]);
   const [showAutocomplete, setShowAutocomplete] = useState(false);
   const [routeCalculated, setRouteCalculated] = useState(false);
+  const [availableRoutes, setAvailableRoutes] = useState([]);
+  const [isCalculatingRoute, setIsCalculatingRoute] = useState(false);
   const autocompleteRef = useRef(null);
 
   const { currentLocation: initialCurrentLocation, destination, initialLocation, placeName } = location.state || {};
@@ -68,7 +90,12 @@ const DirectionsPage = () => {
       const response = await fetch(
         `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`
       );
-      return await response.json();
+      const data = await response.json();
+      return data.filter(result => 
+        result.lat && result.lon && 
+        !isNaN(parseFloat(result.lat)) && 
+        !isNaN(parseFloat(result.lon))
+      );
     } catch (error) {
       console.error("Geocoding error:", error);
       return null;
@@ -95,24 +122,21 @@ const DirectionsPage = () => {
   };
 
   const handleAutocompleteSelect = (result) => {
+    const lat = parseFloat(result.lat);
+    const lon = parseFloat(result.lon);
+    
+    if (isNaN(lat) || isNaN(lon)) {
+      setRouteError('Invalid location coordinates');
+      return;
+    }
+    
     setStartLocationInput(result.display_name);
-    setCurrentLocation({
-      lat: parseFloat(result.lat),
-      lon: parseFloat(result.lon),
-      name: result.display_name
-    });
+    setCurrentLocation({ lat, lon, name: result.display_name });
     setShowAutocomplete(false);
   };
 
   const fetchLocationData = async () => {
     try {
-      console.log('Received in DirectionsPage:', {
-        initialCurrentLocation,
-        destination,
-        initialLocation,
-        placeName
-      });
-
       if (placeName && (!destination || !destination.lat)) {
         const searchVariations = [
           `${placeName}, Sri Lanka`,
@@ -120,16 +144,11 @@ const DirectionsPage = () => {
           placeName.replace(/(Rock|Fortress|Temple)/gi, '').trim(),
           placeName.split(',')[0],
           placeName.split(' ')[0]
-        ].filter((value, index, self) => 
-          value && self.indexOf(value) === index
-        );
-
-        console.log('Trying search variations:', searchVariations);
+        ].filter((value, index, self) => value && self.indexOf(value) === index);
 
         let geocodingResults = [];
         
         for (const query of searchVariations) {
-          console.log('Attempting to geocode:', query);
           const results = await geocodePlace(query);
           if (results && results.length > 0) {
             geocodingResults = results;
@@ -137,73 +156,44 @@ const DirectionsPage = () => {
           }
         }
 
-        console.log('Geocoding results:', geocodingResults);
-
         if (geocodingResults.length > 0) {
           const firstResult = geocodingResults[0];
-          console.log('Using geocoding result:', {
-            lat: firstResult.lat,
-            lon: firstResult.lon,
-            name: placeName
-          });
           setDestinationCoords({
             lat: parseFloat(firstResult.lat),
             lon: parseFloat(firstResult.lon),
             name: placeName
           });
         } else {
-          console.error('No geocoding results found for any variation');
           throw new Error('Location not found');
         }
       } else if (destination) {
-        console.log('Using provided destination coordinates:', destination);
         setDestinationCoords(destination);
       } else if (initialLocation) {
-        console.log('Using provided initial location coordinates:', initialLocation);
         setDestinationCoords(initialLocation);
       }
 
       if (!initialCurrentLocation && navigator.geolocation) {
-        console.log('Attempting to get current location...');
         navigator.geolocation.getCurrentPosition(
           (position) => {
-            console.log('Got current location:', {
+            setCurrentLocation({
               lat: position.coords.latitude,
               lon: position.coords.longitude
             });
-            const newLocation = {
-              lat: position.coords.latitude,
-              lon: position.coords.longitude
-            };
-            setCurrentLocation(newLocation);
             setStartLocationInput("My Current Location");
           },
           (error) => {
-            console.error("Error getting current location:", error);
+            console.error("Geolocation error:", error);
             setIsLoading(false);
-          },
-          {
-            enableHighAccuracy: true,
-            timeout: 10000,
-            maximumAge: 0
           }
         );
       } else if (initialCurrentLocation) {
-        console.log('Using provided current location:', initialCurrentLocation);
         setCurrentLocation(initialCurrentLocation);
         setStartLocationInput("My Current Location");
       }
 
       setIsLoading(false);
     } catch (error) {
-      console.error("Error in fetchLocationData:", {
-        error: error.message,
-        state: {
-          destination,
-          initialLocation,
-          placeName
-        }
-      });
+      console.error("Location data error:", error);
       setRouteError("Could not find the specified location. Please try again.");
       setIsLoading(false);
     }
@@ -214,19 +204,25 @@ const DirectionsPage = () => {
       setRouteError("Please select a starting location");
       return;
     }
+    setIsCalculatingRoute(true);
     setRouteCalculated(true);
+    setAvailableRoutes([]);
+  };
+
+  const handleRoutesFound = (routes) => {
+    setAvailableRoutes(routes);
+    setIsCalculatingRoute(false);
+    setRouteError(null);
   };
 
   useEffect(() => {
     if (!destination && !initialLocation && !placeName) {
-      alert("No location information provided. Redirecting back...");
       navigate(-1);
       return;
     }
 
     fetchLocationData();
 
-    // Handle clicks outside autocomplete dropdown
     const handleClickOutside = (event) => {
       if (autocompleteRef.current && !autocompleteRef.current.contains(event.target)) {
         setShowAutocomplete(false);
@@ -234,10 +230,8 @@ const DirectionsPage = () => {
     };
 
     document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, [destination, initialLocation, placeName, initialCurrentLocation, navigate]);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   useEffect(() => {
     const debounceTimer = setTimeout(() => {
@@ -263,10 +257,7 @@ const DirectionsPage = () => {
 
   return (
     <div className="directions-page-container">
-      <button 
-        className="back-button"
-        onClick={() => navigate(-1)}
-      >
+      <button className="back-button" onClick={() => navigate(-1)}>
         ← Back
       </button>
       
@@ -277,22 +268,12 @@ const DirectionsPage = () => {
             <p>Suggestions:</p>
             <ul>
               <li>Try searching for a more specific location</li>
-              <li>Check your spelling</li>
-              <li>Try a nearby landmark instead</li>
-              <li>Use the full address if possible</li>
+              <li>Check your internet connection</li>
+              <li>Try again in a few moments</li>
             </ul>
           </div>
-          <button 
-            className="retry-button"
-            onClick={() => fetchLocationData()}
-          >
+          <button className="retry-button" onClick={calculateRoute}>
             Retry
-          </button>
-          <button 
-            className="dismiss-button"
-            onClick={() => setRouteError(null)}
-          >
-            Dismiss
           </button>
         </div>
       )}
@@ -327,46 +308,62 @@ const DirectionsPage = () => {
         <button 
           className="find-route-button"
           onClick={calculateRoute}
+          disabled={isCalculatingRoute}
         >
-          Find Route
+          {isCalculatingRoute ? (
+            <>
+              <span className="button-spinner"></span>
+              Calculating...
+            </>
+          ) : (
+            "Find Route"
+          )}
         </button>
       </div>
       
-      {!isLoading && (
-        <MapContainer 
-          key={`${center[0]}-${center[1]}`}
-          center={center} 
-          zoom={13} 
-          scrollWheelZoom 
-          style={{ height: "100%", width: "100%" }}
-          whenReady={() => setMapReady(true)}
-        >
-          <TileLayer
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+      <MapContainer 
+        key={`${center[0]}-${center[1]}-${routeCalculated}`}
+        center={center} 
+        zoom={13} 
+        style={{ height: "100%", width: "100%" }}
+        whenReady={() => setMapReady(true)}
+      >
+        <TileLayer
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        />
+
+        {mapReady && destinationCoords && (
+          <Marker position={[destinationCoords.lat, destinationCoords.lon]}>
+            <Popup>{destinationCoords.name || "Destination"}</Popup>
+          </Marker>
+        )}
+
+        {mapReady && routeCalculated && currentLocation && (
+          <Marker position={[currentLocation.lat, currentLocation.lon]}>
+            <Popup>Starting Point</Popup>
+          </Marker>
+        )}
+
+        {mapReady && routeCalculated && currentLocation && destinationCoords && (
+          <RoutingMachine 
+            from={currentLocation} 
+            to={destinationCoords} 
+            onRouteError={setRouteError}
+            onRoutesFound={handleRoutesFound}
           />
+        )}
+      </MapContainer>
 
-          {mapReady && destinationCoords && (
-            <Marker position={[destinationCoords.lat, destinationCoords.lon]}>
-              <Popup>{destinationCoords.name || "Destination"}</Popup>
-            </Marker>
-          )}
-
-          {mapReady && routeCalculated && currentLocation && (
-            <Marker position={[currentLocation.lat, currentLocation.lon]}>
-              <Popup>Starting Point</Popup>
-            </Marker>
-          )}
-
-          {mapReady && routeCalculated && currentLocation && destinationCoords && (
-            <RoutingMachine 
-              from={currentLocation} 
-              to={destinationCoords} 
-              onRouteError={(msg) => setRouteError(msg)}
-            />
-          )}
-        </MapContainer>
-      )}
+      {availableRoutes.length > 0 && (
+  <div className="route-info-panel">
+    <div className="route-summary">
+      <h4>Route Summary</h4>
+      <p><strong>Distance:</strong> {(availableRoutes[0].summary.totalDistance / 1000).toFixed(1)} km</p>
+      <p><strong>Estimated Time:</strong> {Math.floor(availableRoutes[0].summary.totalTime / 3600)} hours {Math.round((availableRoutes[0].summary.totalTime % 3600) / 60)} minutes</p>
+    </div>
+  </div>
+)}
     </div>
   );
 };

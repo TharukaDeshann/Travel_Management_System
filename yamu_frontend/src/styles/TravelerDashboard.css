@@ -474,12 +474,15 @@
 }
 
 .prediction-badge {
-    padding: 6px 12px;
-    border-radius: 20px;
-    font-size: 14px;
-    font-weight: 500;
-    color: white;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 500;
+  color: white;
+  position: relative; /* Ensure it doesn't overlap with the close button */
+  margin-top: 10px; /* Added margin to separate it from the close button */
 }
+
 
 .high-confidence {
     background-color: #10b981;
@@ -1228,8 +1231,8 @@
   
   .close-modal-button {
     position: absolute;
-    top: 15px;
-    right: 15px;
+    top: 0px;
+    right: 0px;
     background: none;
     border: none;
     font-size: 24px;

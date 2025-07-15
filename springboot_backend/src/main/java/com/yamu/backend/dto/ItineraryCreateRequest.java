@@ -11,7 +11,7 @@ import java.util.Date;
 import java.util.List;
 
 @Getter
-@Setter
+@Setter 
 public class ItineraryCreateRequest {
     @NotNull(message = "Budget is required")
     private Double budget;

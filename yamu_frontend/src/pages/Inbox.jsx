@@ -2,8 +2,6 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Client } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
-import { Client } from '@stomp/stompjs';
-import SockJS from 'sockjs-client';
 import apiClient from '../services/axiosInstance';
 import { useUser } from '../context/UserContext';
 
@@ -27,7 +25,6 @@ const Inbox = () => {
   const [allUsers, setAllUsers] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [isConnected, setIsConnected] = useState(false);
-  const [stompClient, setStompClient] = useState(null);
   const [stompClient, setStompClient] = useState(null);
 
   const handleIncomingMessage = useCallback((message) => {

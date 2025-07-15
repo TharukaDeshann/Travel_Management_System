@@ -24,11 +24,7 @@ const GuideDashboard = () => {
   const [showCompletionConfirm, setShowCompletionConfirm] = useState(false);
 
 
-  const [showPricePrompt, setShowPricePrompt] = useState(false);
-  const [currentReservationId, setCurrentReservationId] = useState(null);
-  const [estimatedPrice, setEstimatedPrice] = useState('');
-  const [priceError, setPriceError] = useState('');
-  const [showCompletionConfirm, setShowCompletionConfirm] = useState(false);
+
 
   const [selectedCurrency, setSelectedCurrency] = useState('LKR');
   const { user: loggedUser } = useUser();
@@ -120,7 +116,6 @@ const GuideDashboard = () => {
       
       const updatedReservations = reservations.map(res => 
         res.id === currentReservationId ? response.data : res
-        res.id === currentReservationId ? response.data : res
       );
       
       setReservations(updatedReservations);
@@ -211,198 +206,210 @@ const GuideDashboard = () => {
 
     return (
       <div style={{
-        backgroundColor: "white",
-        borderRadius: "8px",
-        boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-        padding: "20px",
-        position: "relative"
+      backgroundColor: "white",
+      borderRadius: "8px",
+      boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+      padding: "20px",
+      position: "relative"
       }}>
-        <div style={{
-          position: "absolute",
-          top: "20px",
-          right: "20px",
-          padding: "4px 8px",
-          borderRadius: "4px",
-          color: "white",
-          fontSize: "12px",
-          fontWeight: "600",
-          backgroundColor: statusColors[reservation.status] || '#9E9E9E'
+      {/* Status Badge */}
+      <div style={{
+        position: "absolute",
+        top: "20px",
+        right: "20px",
+        padding: "4px 8px",
+        borderRadius: "4px",
+        color: "white",
+        fontSize: "12px",
+        fontWeight: "600",
+        backgroundColor: statusColors[reservation.status] || '#9E9E9E'
+      }}>
+        {reservation.status}
+      </div>
+
+      {/* Reservation Header */}
+      <div style={{ marginBottom: "15px" }}>
+        <h4 style={{
+        margin: "0 0 5px 0",
+        fontSize: "18px",
+        fontWeight: "600",
+        color: "#532321"
+        }}>Reservation #{reservation.id}</h4>
+        <p style={{
+        margin: 0,
+        color: "#666",
+        fontSize: "14px"
         }}>
-          {reservation.status}
+        Created: {new Date(reservation.createdAt).toLocaleString()}
+        </p>
+      </div>
+
+      {/* Details Section */}
+      <div style={{
+        display: "flex",
+        gap: "20px",
+        marginBottom: "15px"
+      }}>
+        {/* Traveler Details */}
+        <div>
+        <h5 style={{
+          margin: "0 0 8px 0",
+          fontSize: "14px",
+          color: "#532321",
+          fontWeight: "500"
+        }}>Traveler Details</h5>
+        <p style={{ margin: "4px 0", fontSize: "14px" }}>
+          <strong>Name:</strong> {reservation.traveler?.firstName} {reservation.traveler?.lastName}
+        </p>
+        <p style={{ margin: "4px 0", fontSize: "14px" }}>
+          <strong>Contact:</strong> {reservation.traveler?.contactNumber}
+        </p>
         </div>
 
-        <div style={{ marginBottom: "15px" }}>
-          <h4 style={{
-            margin: "0 0 5px 0",
-            fontSize: "18px",
-            fontWeight: "600",
-            color: "#532321"
-          }}>Reservation #{reservation.id}</h4>
+        {/* Tour Details */}
+        <div>
+        <h5 style={{
+          margin: "0 0 8px 0",
+          fontSize: "14px",
+          color: "#532321",
+          fontWeight: "500"
+        }}>Tour Details</h5>
+        <p style={{ margin: "4px 0", fontSize: "14px" }}>
+          <strong>Days:</strong> {reservation.numberOfDays}
+        </p>
+        <p style={{ margin: "4px 0", fontSize: "14px" }}>
+          <strong>Travelers:</strong> {reservation.dayDetails?.[0]?.numberOfTravelers || 'N/A'}
+        </p>
+        {reservation.estimatedPrice && (
           <p style={{
-            margin: 0,
-            color: "#666",
-            fontSize: "14px"
+          margin: "4px 0",
+          fontSize: "14px",
+          color: "#2196F3",
+          fontWeight: "bold"
           }}>
-            Created: {new Date(reservation.createdAt).toLocaleString()}
+          <strong>Estimated Price:</strong> LKR {reservation.estimatedPrice.toLocaleString()}
           </p>
-        </div>
-
-        <div style={{
-          display: "flex",
-          gap: "20px",
-          marginBottom: "15px"
-        }}>
-          <div>
-            <h5 style={{
-              margin: "0 0 8px 0",
-              fontSize: "14px",
-              color: "#532321",
-              fontWeight: "500"
-            }}>Traveler Details</h5>
-            <p style={{ margin: "4px 0", fontSize: "14px" }}>
-              <strong>Name:</strong> {reservation.traveler?.firstName} {reservation.traveler?.lastName}
-            </p>
-            <p style={{ margin: "4px 0", fontSize: "14px" }}>
-              <strong>Contact:</strong> {reservation.traveler?.contactNumber}
-            </p>
-          </div>
-
-          <div>
-            <h5 style={{
-              margin: "0 0 8px 0",
-              fontSize: "14px",
-              color: "#532321",
-              fontWeight: "500"
-            }}>Tour Details</h5>
-            <p style={{ margin: "4px 0", fontSize: "14px" }}>
-              <strong>Days:</strong> {reservation.numberOfDays}
-            </p>
-            <p style={{ margin: "4px 0", fontSize: "14px" }}>
-              <strong>Travelers:</strong> {reservation.dayDetails?.[0]?.numberOfTravelers || 'N/A'}
-            </p>
-            {reservation.estimatedPrice && (
-              <p style={{ 
-                margin: "4px 0", 
-                fontSize: "14px",
-                color: "#2196F3",
-                fontWeight: "bold"
-              }}>
-                <strong>Estimated Price:</strong> LKR {reservation.estimatedPrice.toLocaleString()}
-              </p>
-            )}
-            {reservation.estimatedPrice && (
-              <p style={{ 
-                margin: "4px 0", 
-                fontSize: "14px",
-                color: "#2196F3",
-                fontWeight: "bold"
-              }}>
-                <strong>Estimated Price:</strong> LKR {reservation.estimatedPrice.toLocaleString()}
-              </p>
-            )}
-          </div>
-        </div>
-
-        <div style={{ marginBottom: "20px" }}>
-          <h5 style={{
-            margin: "0 0 8px 0",
-            fontSize: "14px",
-            color: "#532321",
-            fontWeight: "500"
-          }}>Itinerary</h5>
-          <div style={{ display: "grid", gap: "10px" }}>
-            {reservation.dayDetails?.map((day, index) => (
-              <div key={index} style={{
-                padding: "10px",
-                backgroundColor: "#f9f9f9",
-                borderRadius: "4px"
-              }}>
-                <p style={{ margin: "4px 0", fontWeight: "500" }}>
-                  Day {day.dayNumber}: {day.places}
-                </p>
-                <p style={{ margin: "4px 0", fontSize: "13px" }}>
-                  <strong>Date:</strong> {new Date(day.date).toLocaleDateString()}
-                </p>
-                {day.vehicleRequested && (
-                  <p style={{ margin: "4px 0", fontSize: "13px" }}>
-                    <strong>Vehicle:</strong> {day.vehicleDetails || 'No details'}
-                  </p>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {!isPast && (
-          <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px", alignItems: "center" }}>
-            {reservation.status !== 'DECLINED' && <MessageButton />}
-
-            {reservation.status === 'PENDING' && (
-              <>
-                <button
-                  onClick={() => {
-                    const response = window.confirm("Are you sure you want to decline this reservation?");
-                    if (response) {
-                      apiClient.put(`/api/reservations/${reservation.id}/decline`)
-                        .then(res => {
-                          const updated = reservations.map(r => 
-                            r.id === reservation.id ? res.data : r
-                          );
-                          setReservations(updated);
-                          localStorage.setItem(RESERVATIONS_STORAGE_KEY, JSON.stringify(updated));
-                        })
-                        .catch(err => {
-                          console.error("Failed to decline reservation:", err);
-                          setError("Failed to decline reservation. Please try again.");
-                        });
-                    }
-                  }}
-                  style={{
-                    padding: "8px 16px",
-                    backgroundColor: "#F44336",
-                    color: "white",
-                    border: "none",
-                    borderRadius: "4px",
-                    cursor: "pointer"
-                  }}
-                >
-                  Decline
-                </button>
-                <button
-                  onClick={() => handleConfirmClick(reservation.id)}
-                  onClick={() => handleConfirmClick(reservation.id)}
-                  style={{
-                    padding: "8px 16px",
-                    backgroundColor: "#4CAF50",
-                    color: "white",
-                    border: "none",
-                    borderRadius: "4px",
-                    cursor: "pointer"
-                  }}
-                >
-                  Confirm
-                </button>
-              </>
-            )}
-
-            {reservation.status === 'CONFIRMED' && (
-              <button
-                onClick={() => handleCompleteClick(reservation.id)}
-                onClick={() => handleCompleteClick(reservation.id)}
-                style={{
-                  padding: "8px 16px",
-                  backgroundColor: "#2196F3",
-                  color: "white",
-                  border: "none",
-                  borderRadius: "4px",
-                  cursor: "pointer"
-                }}
-              >
-                Mark as Completed
-              </button>
-            )}
-          </div>
         )}
+        </div>
+      </div>
+
+      {/* Itinerary Section */}
+      <div style={{ marginBottom: "20px" }}>
+        <h5 style={{
+        margin: "0 0 8px 0",
+        fontSize: "14px",
+        color: "#532321",
+        fontWeight: "500"
+        }}>Itinerary</h5>
+        <div style={{ display: "grid", gap: "10px" }}>
+        {reservation.dayDetails?.map((day, index) => (
+          <div key={index} style={{
+          padding: "10px",
+          backgroundColor: "#f9f9f9",
+          borderRadius: "4px"
+          }}>
+          <p style={{ margin: "4px 0", fontWeight: "500" }}>
+            Day {day.dayNumber}:
+          </p>
+          {Array.from(
+            new Set(
+            day.places
+              .split(', Sri Lanka,')
+              .map(place => place.trim())
+              .filter(place => place !== '')
+            )
+          ).map((place, idx) => (
+            <p key={idx} style={{ margin: "4px 0", fontSize: "13px" }}>
+            {place}, Sri Lanka
+            </p>
+          ))}
+          <p style={{ margin: "4px 0", fontSize: "13px" }}>
+            <strong>Date:</strong> {new Date(day.date).toLocaleDateString()}
+          </p>
+          {day.vehicleRequested && (
+            <p style={{ margin: "4px 0", fontSize: "13px" }}>
+            <strong>Vehicle:</strong> {day.vehicleDetails || 'No details'}
+            </p>
+          )}
+          </div>
+        ))}
+        </div>
+      </div>
+
+      {/* Action Buttons */}
+      {!isPast && (
+        <div style={{
+        display: "flex",
+        justifyContent: "flex-end",
+        gap: "10px",
+        alignItems: "center"
+        }}>
+        {reservation.status !== 'DECLINED' && <MessageButton />}
+
+        {reservation.status === 'PENDING' && (
+          <>
+          <button
+            onClick={() => {
+            const response = window.confirm("Are you sure you want to decline this reservation?");
+            if (response) {
+              apiClient.put(`/api/reservations/${reservation.id}/decline`)
+              .then(res => {
+                const updated = reservations.map(r =>
+                r.id === reservation.id ? res.data : r
+                );
+                setReservations(updated);
+                localStorage.setItem(RESERVATIONS_STORAGE_KEY, JSON.stringify(updated));
+              })
+              .catch(err => {
+                console.error("Failed to decline reservation:", err);
+                setError("Failed to decline reservation. Please try again.");
+              });
+            }
+            }}
+            style={{
+            padding: "8px 16px",
+            backgroundColor: "#F44336",
+            color: "white",
+            border: "none",
+            borderRadius: "4px",
+            cursor: "pointer"
+            }}
+          >
+            Decline
+          </button>
+          <button
+            onClick={() => handleConfirmClick(reservation.id)}
+            style={{
+            padding: "8px 16px",
+            backgroundColor: "#4CAF50",
+            color: "white",
+            border: "none",
+            borderRadius: "4px",
+            cursor: "pointer"
+            }}
+          >
+            Confirm
+          </button>
+          </>
+        )}
+
+        {reservation.status === 'CONFIRMED' && (
+          <button
+          onClick={() => handleCompleteClick(reservation.id)}
+          style={{
+            padding: "8px 16px",
+            backgroundColor: "#2196F3",
+            color: "white",
+            border: "none",
+            borderRadius: "4px",
+            cursor: "pointer"
+          }}
+          >
+          Mark as Completed
+          </button>
+        )}
+        </div>
+      )}
       </div>
     );
   };

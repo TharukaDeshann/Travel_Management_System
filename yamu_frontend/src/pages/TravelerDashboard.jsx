@@ -213,8 +213,8 @@ export default function TravelerDashboard({ currentUser }) {
       const formData = new FormData();
       formData.append("image", file);
 
-      const endpoint = "https://projectyamunew-prediction.cognitiveservices.azure.com/customvision/v3.0/Prediction/cc863e72-507b-4771-a727-1189da24add9/detect/iterations/Iteration1/image";
-      const predictionKey = "UNrxBtUvLBxVeBihEbFwwybT1NEpJ8DOlAtQcZErGpPx41QI3aurJQQJ99BGACqBBLyXJ3w3AAAIACOGUGpE";
+      const endpoint = "https://southeastasia.api.cognitive.microsoft.com/customvision/v3.0/Prediction/cdd0d921-499c-474a-99d9-ace7cb81e749/classify/iterations/Iteration1/image";
+      const predictionKey = "02687dd249f748969ddaa93f23a7c68d";
 
       const response = await fetch(endpoint, {
         method: "POST",
@@ -673,18 +673,7 @@ export default function TravelerDashboard({ currentUser }) {
                   </div>
                   
                   <div className="button-group">
-                    <button 
-                      className="view-location-button"
-                      onClick={() => {
-                        if (relatedPlaces.length > 0) {
-                          setShowImageSearchModal(false);
-                          navigate(`/place-details/${relatedPlaces[0].id}`);
-                        }
-                      }}
-                      disabled={relatedPlaces.length === 0}
-                    >
-                      View Location Details
-                    </button>
+                    
                     
                     {relatedPlaces.length > 0 && (
                       <button 

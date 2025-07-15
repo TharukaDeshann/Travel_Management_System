@@ -78,17 +78,13 @@ public class SecurityConfig {
                         .requestMatchers("/api/traveler/**").hasRole("TRAVELER")
                         .requestMatchers("/api/users/**", "/api/search/**").hasAnyRole("ADMIN", "GUIDE", "TRAVELER")
                         .requestMatchers("/api/itineraries/**").hasRole("TRAVELER") // Restrict itineraries to TRAVELER
-                        .anyRequest().authenticated())
->
+.anyRequest().authenticated())
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint((req, res, ex2) -> res.sendError(
                                 HttpServletResponse.SC_UNAUTHORIZED,
                                 "Authentication required"))
                 )
-                        .authenticationEntryPoint((req, res, ex2) -> res.sendError(
-                                HttpServletResponse.SC_UNAUTHORIZED,
-                                "Authentication required"))
-                )
+              
                 .sessionManagement(sess -> sess
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
