@@ -30,9 +30,13 @@ import VerifyEmailPending from "./pages/VerifyEmailPending.jsx";
 import UserProfile from "./pages/profile/UserProfile.jsx";
 import UpdateUserProfile from "./pages/profile/components/UpdateUserProfile.jsx";
 import ProfileView from "./pages/ProfileView.jsx";
-import AdminDashboard from "./pages/AdminDashboard.jsx";
 import UsersSocialPage from "./pages/UsersSocialPage.jsx";
 
+
+{/* admin dashboard */}
+import AdminDashboard from "./pages/AdminDashboard.jsx";
+import Overview from "./pages/admin_dashboard/Overview.jsx";
+import UserManagement from "./pages/admin_dashboard/UserManagement.jsx";
 
 import EmergencyContacts from "./pages/EmergencyContacts.jsx";
 import UserSearch from "./components/UserSearch.jsx";
@@ -67,11 +71,14 @@ const App = () => {
 
           {/* Protected Routes */}
           <Route element={<ProtectedRoute />}>
+            <Route path="/admin-dashboard" element={<AdminDashboard />} />
+            <Route path="/admin-overview" element={<Overview />} />
+            <Route path="/admin-user-management" element={<UserManagement />} />
+
             <Route path="/inbox" element={<Inbox />} />
             <Route path="/home" element={<Home />} />
             <Route path="/traveler-dashboard" element={<TravelerDashboard />} />
             <Route path="/guide-dashboard" element={<GuideDashboard />} />
-            <Route path="/admin-dashboard" element={<AdminDashboard />} />
             <Route path="/guide-reviews" element={<GuideReview />} />
             <Route path="/guide-calendar" element={<GuideCalendar />} />
             <Route path="/visit-plan" element={<VisitPlanPage />} />
@@ -80,7 +87,9 @@ const App = () => {
             <Route path="/map" element={<Map />} />
             <Route path="/itinerary-planner" element={<ItineraryPlanner />} />
             <Route path="/reservations" element={<Reservations></Reservations>}></Route>
+
           <Route path="/traveler-upcoming-trips" element={<TravelerUpcomingTrips />} />
+
           <Route path="/finalize-itinerary" element={<FinalizeItinerary />} />
 
             

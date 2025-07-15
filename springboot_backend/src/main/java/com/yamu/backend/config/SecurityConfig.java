@@ -20,17 +20,12 @@ import org.springframework.http.HttpMethod;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
-import org.springframework.security.web.util.matcher.NegatedRequestMatcher;
-import org.springframework.security.web.util.matcher.OrRequestMatcher;
 
-import java.util.Arrays;
 import java.util.List;
 
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
-
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
     public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter) {
@@ -51,45 +46,56 @@ public class SecurityConfig {
     }
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http
-                .csrf(AbstractHttpConfigurer::disable)
-                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-                .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/drivers/**").permitAll()
-                        .requestMatchers("/api/weather/**").permitAll()
-                        .requestMatchers("/api/hotels/**").permitAll()
-                        .requestMatchers("/api/hotels/bookings/**").permitAll()
-                        .requestMatchers("/h2-console/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/reviews/**").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/reviews/**").authenticated()
-                        .requestMatchers(HttpMethod.DELETE, "/api/reviews/**").authenticated()
-                        .requestMatchers("/ws/**", "/app/**", "/topic/**", "/queue/**", "/user/**").permitAll()
-                        .requestMatchers("/api/auth/login", "/api/auth/register",
-                                "/api/auth/refresh-token", "/api/auth/user", "api/auth/me", 
-                                "/api/locations/**", "/api/auth/verify-email", "api/auth/resend-verification",
-                                "/api/itineraries/**", "/api/dayplans/**")
-                        .permitAll()
-                        .requestMatchers(HttpMethod.PUT, "/api/users/{id}").authenticated()
-                        .requestMatchers(HttpMethod.PUT, "/api/users/{id}/update-email").authenticated()
-                        .requestMatchers(HttpMethod.PUT, "/api/users/{id}/update-password").authenticated()
-                        .requestMatchers(HttpMethod.PUT, "/api/itineraries/{id}").authenticated()
-                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
-                        .requestMatchers("/api/guide/**").hasAnyRole("GUIDE", "ADMIN", "TRAVELER")
-                        .requestMatchers("/api/traveler/**").hasRole("TRAVELER")
-                        .requestMatchers("/api/users/**", "/api/search/**").hasAnyRole("ADMIN", "GUIDE", "TRAVELER")
-                        .requestMatchers("/api/itineraries/**").hasRole("TRAVELER") // Restrict itineraries to TRAVELER
-                        .anyRequest().authenticated())
-                .exceptionHandling(ex -> ex
-                        .authenticationEntryPoint((req, res, ex2) -> res.sendError(HttpServletResponse.SC_UNAUTHORIZED,
-                                "Authentication required")))
-                .sessionManagement(sess -> sess
-                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
-                .headers(headers -> headers.frameOptions().disable());
+public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    http
+            .csrf(AbstractHttpConfigurer::disable)
+            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+            .authorizeHttpRequests(auth -> auth
+                    .requestMatchers("/api/drivers/**").permitAll()
+                    .requestMatchers("/api/weather/**").permitAll()
+                    .requestMatchers("/api/hotels/**").permitAll()
+                    .requestMatchers("/api/hotels/bookings/**").permitAll()
+                    .requestMatchers("/h2-console/**").permitAll()
+                    .requestMatchers(HttpMethod.GET, "/api/reviews/**").permitAll()
+                    .requestMatchers(HttpMethod.POST, "/api/reviews/**").authenticated()
+                    .requestMatchers(HttpMethod.DELETE, "/api/reviews/**").authenticated()
+                    .requestMatchers("/ws/**", "/app/**", "/topic/**", "/queue/**", "/user/**").permitAll()
+                    
+                    // Allow OPTIONS requests for CORS preflight
+                    .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                    
+                    .requestMatchers(
+                            "/api/auth/login", 
+                            "/api/auth/register",
+                            "/api/auth/refresh-token", 
+                            "/api/auth/user", 
+                            "/api/auth/me", 
+                            "/api/locations/**", 
+                            "/api/auth/verify-email", 
+                            "/api/auth/resend-verification"
+                    ).permitAll()
+                    .requestMatchers(HttpMethod.PUT, "/api/users/{id}").authenticated()
+                    .requestMatchers(HttpMethod.PUT, "/api/users/{id}/update-email").authenticated()
+                    .requestMatchers(HttpMethod.PUT, "/api/users/{id}/update-password").authenticated()
+                    .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                    .requestMatchers("/api/guide/**").hasAnyRole("GUIDE", "ADMIN", "TRAVELER")
+                    .requestMatchers("/api/traveler/**").hasRole("TRAVELER")
+                    .requestMatchers("/api/users/**", "/api/search/**").hasAnyRole("ADMIN", "GUIDE", "TRAVELER")
+                    .requestMatchers("/api/itineraries/**").hasRole("TRAVELER") // Restrict itineraries to TRAVELER
+                    .anyRequest().authenticated())
 
-        return http.build();
-    }
+            .exceptionHandling(ex -> ex
+                    .authenticationEntryPoint((req, res, ex2) -> res.sendError(
+                            HttpServletResponse.SC_UNAUTHORIZED,
+                            "Authentication required"))
+            )
+            .sessionManagement(sess -> sess
+                    .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+            .headers(headers -> headers.frameOptions().disable());
+
+    return http.build();
+}
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {

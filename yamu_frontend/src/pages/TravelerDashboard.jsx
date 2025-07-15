@@ -146,8 +146,6 @@ export default function TravelerDashboard({ currentUser }) {
       unreadCount={unreadCount}
       onCurrencyChange={setSelectedCurrency}
       selectedCurrency={selectedCurrency}
-      navigate={navigate}
-      location={location}
     >
       <div className="main-content">
         <div className="search-container">
