@@ -1,209 +1,80 @@
-// services/guideSearchService.js
-import apiClient from './axiosInstance'; // Assuming you have an existing apiClient
+import apiClient from './axiosInstance';
 
-class GuideSearchService {
-  constructor() {
-    this.baseURL = '/api/search/guides';
-  }
+// Main search endpoint for guides
+export const searchGuides = async (params) => {
+  const response = await apiClient.get('/api/search/guides', { params });
+  return response.data;
+};
 
-  // Main search endpoint for guides
-  async searchGuides(params = {}) {
-    try {
-      const response = await apiClient.get(this.baseURL, { params });
-      return response.data;
-    } catch (error) {
-      console.error('Error searching guides:', error);
-      throw error;
-    }
-  }
+// Search guides by specific places
+export const searchGuidesByPlaces = async (params) => {
+  const response = await apiClient.get('/api/search/guides/by-places', { params });
+  return response.data;
+};
 
-  // Search guides by specific places
-  async searchGuidesByPlaces(places, page = 0, size = 10) {
-    try {
-      const response = await apiClient.get(`${this.baseURL}/by-places`, {
-        params: { places, page, size }
-      });
-      return response.data;
-    } catch (error) {
-      console.error('Error searching guides by places:', error);
-      throw error;
-    }
-  }
+// Get guides with highest ratings
+export const getTopRatedGuides = async (params) => {
+  const response = await apiClient.get('/api/search/guides/top-rated', { params });
+  return response.data;
+};
 
-  // Get top-rated guides
-  async getTopRatedGuides(minRating = 4, page = 0, size = 10) {
-    try {
-      const response = await apiClient.get(`${this.baseURL}/top-rated`, {
-        params: { minRating, page, size }
-      });
-      return response.data;
-    } catch (error) {
-      console.error('Error getting top-rated guides:', error);
-      throw error;
-    }
-  }
+// Get guides with available vehicles
+export const getGuidesWithAvailableVehicles = async (params) => {
+  const response = await apiClient.get('/api/search/guides/available-vehicles', { params });
+  return response.data;
+};
 
-  // Get guides with available vehicles
-  async getGuidesWithAvailableVehicles(params = {}) {
-    try {
-      const response = await apiClient.get(`${this.baseURL}/available-vehicles`, {
-        params
-      });
-      return response.data;
-    } catch (error) {
-      console.error('Error getting guides with available vehicles:', error);
-      throw error;
-    }
-  }
+// Get faceted search results
+export const getFacetedSearch = async (params) => {
+  const response = await apiClient.get('/api/search/guides/faceted', { params });
+  return response.data;
+};
 
-  // Get specific guide by ID
-  async getGuideById(guideId) {
-    try {
-      const response = await apiClient.get(`${this.baseURL}/${guideId}`);
-      return response.data;
-    } catch (error) {
-      console.error('Error getting guide by ID:', error);
-      throw error;
-    }
-  }
+// Search guides by expertise/region
+export const searchGuidesByRegion = async (params) => {
+  const response = await apiClient.get('/api/search/guides/by-region', { params });
+  return response.data;
+};
 
-  // Get suggestions for autocomplete
-  async getSuggestions(query) {
-    try {
-      const response = await apiClient.get(`${this.baseURL}/suggestions`, {
-        params: { query }
-      });
-      return response.data;
-    } catch (error) {
-      console.error('Error getting suggestions:', error);
-      throw error;
-    }
-  }
+// Search guides by language
+export const searchGuidesByLanguage = async (params) => {
+  const response = await apiClient.get('/api/search/guides/by-language', { params });
+  return response.data;
+};
 
-  // Get faceted search results
-  async getFacetedSearch(query = '*', page = 0, size = 10) {
-    try {
-      const response = await apiClient.get(`${this.baseURL}/faceted`, {
-        params: { query, page, size }
-      });
-      return response.data;
-    } catch (error) {
-      console.error('Error getting faceted search:', error);
-      throw error;
-    }
-  }
+// Get guides with specific reservation status
+export const getGuidesByReservationStatus = async (params) => {
+  const response = await apiClient.get('/api/search/guides/by-reservation-status', { params });
+  return response.data;
+};
 
-  // Search guides by region
-  async searchGuidesByRegion(region, page = 0, size = 10) {
-    try {
-      const response = await apiClient.get(`${this.baseURL}/by-region`, {
-        params: { region, page, size }
-      });
-      return response.data;
-    } catch (error) {
-      console.error('Error searching guides by region:', error);
-      throw error;
-    }
-  }
+// Get guides with upcoming reservations
+export const getGuidesWithUpcomingReservations = async (params) => {
+  const response = await apiClient.get('/api/search/guides/upcoming-reservations', { params });
+  return response.data;
+};
 
-  // Search guides by language
-  async searchGuidesByLanguage(language, page = 0, size = 10) {
-    try {
-      const response = await apiClient.get(`${this.baseURL}/by-language`, {
-        params: { language, page, size }
-      });
-      return response.data;
-    } catch (error) {
-      console.error('Error searching guides by language:', error);
-      throw error;
-    }
-  }
+// Get most experienced guides (based on completed reservations)
+export const getMostExperiencedGuides = async (params) => {
+  const response = await apiClient.get('/api/search/guides/most-experienced', { params });
+  return response.data;
+};
 
+// Get guides with multiple vehicles
+export const getGuidesWithMultipleVehicles = async (params) => {
+  const response = await apiClient.get('/api/search/guides/multi-vehicle', { params });
+  return response.data;
+};
 
-  // Get guides by reservation status
-  async getGuidesByReservationStatus(status, page = 0, size = 10) {
-    try {
-      const response = await apiClient.get(`${this.baseURL}/by-reservation-status`, {
-        params: { status, page, size }
-      });
-      return response.data;
-    } catch (error) {
-      console.error('Error getting guides by reservation status:', error);
-      throw error;
-    }
-  }
+// Advanced search with multiple criteria
+export const advancedSearch = async (requestBody) => {
+  const response = await apiClient.post('/api/search/guides/advanced-search', requestBody);
+  return response.data;
+};
 
-  // Get guides with upcoming reservations
-  async getGuidesWithUpcomingReservations(page = 0, size = 10) {
-    try {
-      const response = await apiClient.get(`${this.baseURL}/upcoming-reservations`, {
-        params: { page, size }
-      });
-      return response.data;
-    } catch (error) {
-      console.error('Error getting guides with upcoming reservations:', error);
-      throw error;
-    }
-  }
+// Get aggregated statistics
+export const getGuideStats = async () => {
+  const response = await apiClient.get('/api/search/guides/stats');
+  return response.data;
+};
 
-  // Get most experienced guides
-  async getMostExperiencedGuides(minCompletedReservations = 5, page = 0, size = 10) {
-    try {
-      const response = await apiClient.get(`${this.baseURL}/most-experienced`, {
-        params: { minCompletedReservations, page, size }
-      });
-      return response.data;
-    } catch (error) {
-      console.error('Error getting most experienced guides:', error);
-      throw error;
-    }
-  }
-
-  // Get guides with multiple vehicles
-  async getGuidesWithMultipleVehicles(minVehicles = 2, page = 0, size = 10) {
-    try {
-      const response = await apiClient.get(`${this.baseURL}/multi-vehicle`, {
-        params: { minVehicles, page, size }
-      });
-      return response.data;
-    } catch (error) {
-      console.error('Error getting guides with multiple vehicles:', error);
-      throw error;
-    }
-  }
-
-  // Advanced search with multiple criteria
-  async advancedSearch(searchRequest) {
-    try {
-      const response = await apiClient.post(`${this.baseURL}/advanced-search`, searchRequest);
-      return response.data;
-    } catch (error) {
-      console.error('Error performing advanced search:', error);
-      throw error;
-    }
-  }
-
-  // Get aggregated statistics
-  async getGuideStats() {
-    try {
-      const response = await apiClient.get(`${this.baseURL}/stats`);
-      return response.data;
-    } catch (error) {
-      console.error('Error getting guide stats:', error);
-      throw error;
-    }
-  }
-
-  // Health check
-  async healthCheck() {
-    try {
-      const response = await apiClient.get(`${this.baseURL}/health`);
-      return response.data;
-    } catch (error) {
-      console.error('Error checking health:', error);
-      throw error;
-    }
-  }
-}
-
-export default new GuideSearchService();

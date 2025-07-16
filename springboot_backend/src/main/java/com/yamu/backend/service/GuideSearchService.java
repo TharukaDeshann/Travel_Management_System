@@ -95,23 +95,23 @@ public class GuideSearchService {
         return response;
     }
     
-    public List<String> getSuggestions(String query) {
-        SuggestPagedIterable suggestions = searchClient.suggest(query, "sg-guides");
+    // public List<String> getSuggestions(String query) {
+    //     SuggestPagedIterable suggestions = searchClient.suggest(query, "sg-guides");
         
-        return suggestions.stream()
-            .limit(5)
-            .map(SuggestResult::getText)
-            .collect(Collectors.toList());
-    }
+    //     return suggestions.stream()
+    //         .limit(5)
+    //         .map(SuggestResult::getText)
+    //         .collect(Collectors.toList());
+    // }
     
-    public GuideSearchResult getGuideById(String guideId) {
-        try {
-            SearchDocument doc = searchClient.getDocument(guideId, SearchDocument.class);
-            return mapSearchDocumentToGuideResult(doc);
-        } catch (Exception e) {
-            return null;
-        }
-    }
+    // public GuideSearchResult getGuideById(String guideId) {
+    //     try {
+    //         SearchDocument doc = searchClient.getDocument(guideId, SearchDocument.class);
+    //         return mapSearchDocumentToGuideResult(doc);
+    //     } catch (Exception e) {
+    //         return null;
+    //     }
+    // }
     
     // Helper method to map SearchDocument to GuideSearchResult
     private GuideSearchResult mapSearchDocumentToGuideResult(SearchDocument doc) {
