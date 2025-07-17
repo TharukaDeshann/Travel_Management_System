@@ -88,7 +88,7 @@ public class TravelerSearchController {
     }
 
 
-      @GetMapping("/traveler/{travelerId}")
+      @GetMapping("/{travelerId}")
     public ResponseEntity<List<GuideReservationResponse>> getTravelerReservations(
             @PathVariable Long travelerId) {
         List<GuideReservationByTraveler> reservations = reservationService.getReservationsForTraveler(travelerId);
@@ -102,7 +102,7 @@ public class TravelerSearchController {
 
     
 
-     @GetMapping("/bookings/traveler/{travelerId}")
+     @GetMapping("/bookings/hotel/{travelerId}")
     public ResponseEntity<List<HotelBookingResponseDTO>> getTravelerHotelBookings(
             @PathVariable Long travelerId) {
         try {
@@ -131,7 +131,7 @@ public class TravelerSearchController {
     }
 
     // Get traveler's driver bookings
-    @GetMapping("/bookings/traveler/{travelerId}")
+    @GetMapping("/bookings/driver/{travelerId}")
     public List<DriverBookingResponseDTO> getTravelerDriverBookings(@PathVariable Long travelerId) {
         List<DriverBooking> bookings = bookingRepository.findByTravelerIdOrderByBookingDateAsc(travelerId);
         return bookings.stream()
