@@ -37,6 +37,7 @@ import UsersSocialPage from "./pages/UsersSocialPage.jsx";
 // import Overview from "./pages/admin_dashboard/Overview.jsx";
 import UserManagement from "./pages/admin_dashboard/UserManagement.jsx";
 import GuideManagement from "./pages/admin_dashboard/GuideManagement.jsx";
+import TravelerManagement from "./pages/admin_dashboard/TravelerManagement.jsx";
 
 import EmergencyContacts from "./pages/EmergencyContacts.jsx";
 import UserSearch from "./components/UserSearch.jsx";
@@ -74,6 +75,9 @@ const App = () => {
             {/* <Route path="/admin-overview" element={<Overview />} /> */}
             <Route path="/admin-user-management" element={<UserManagement />} />
             <Route path="/admin-guide-management" element={<GuideManagement />} />
+            <Route path="/admin-traveler-management" element={<TravelerManagement />} />
+            
+            {/* Traveler Management Routes */}
 
             <Route path="/inbox" element={<Inbox />} />
             <Route path="/home" element={<Home />} />

@@ -5,36 +5,44 @@ import java.util.stream.Collectors;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 import com.yamu.backend.dto.DriverBookingResponseDTO;
 import com.yamu.backend.dto.GuideReservationResponse;
 import com.yamu.backend.dto.HotelBookingResponseDTO;
 import com.yamu.backend.dto.UserDto;
+import com.yamu.backend.dto.UserResponseDTO;
+import com.yamu.backend.enums.UserRole;
 import com.yamu.backend.model.DriverBooking;
 import com.yamu.backend.model.GuideReservationByTraveler;
 import com.yamu.backend.model.GuideReservationDayDetail;
+import com.yamu.backend.model.User;
 import com.yamu.backend.repository.DriverBookingRepository;
 import com.yamu.backend.service.GuideReservationByTravelerService;
 import com.yamu.backend.service.HotelService;
+import com.yamu.backend.service.UserService;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @RestController
-@RequestMapping("/api/search/travelers")
-public class TravelerSearchController {
-    private static final Logger log = LoggerFactory.getLogger(TravelerSearchController.class);
-
-
+@RequestMapping("/api/admin/travelers")
+public class AdminTravelersController {
+    private static final Logger log = LoggerFactory.getLogger(AdminTravelersController.class);
 
     private final GuideReservationByTravelerService reservationService;
     private final HotelService hotelService;
     private final DriverBookingRepository bookingRepository;
+    private final UserService userService;
 
-    public TravelerSearchController(GuideReservationByTravelerService reservationService, HotelService hotelService, DriverBookingRepository bookingRepository) {
+    public AdminTravelersController(GuideReservationByTravelerService reservationService, HotelService hotelService, DriverBookingRepository bookingRepository, UserService userService) {
         this.reservationService = reservationService;
         this.hotelService = hotelService;
         this.bookingRepository = bookingRepository;
+        this.userService = userService;
     }
 
     private GuideReservationResponse convertToDto(GuideReservationByTraveler reservation) {
@@ -76,7 +84,7 @@ public class TravelerSearchController {
         return dto;
     }
 
-     private GuideReservationResponse.DayDetailDto convertDayDetailToDto(GuideReservationDayDetail dayDetail) {
+    private GuideReservationResponse.DayDetailDto convertDayDetailToDto(GuideReservationDayDetail dayDetail) {
         GuideReservationResponse.DayDetailDto dayDetailDto = new GuideReservationResponse.DayDetailDto();
         dayDetailDto.setDayNumber(dayDetail.getDayNumber());
         dayDetailDto.setPlaces(dayDetail.getPlaces());
@@ -87,59 +95,70 @@ public class TravelerSearchController {
         return dayDetailDto;
     }
 
-
-      @GetMapping("/{travelerId}")
-    public ResponseEntity<List<GuideReservationResponse>> getTravelerReservations(
+    // Get traveler's guide reservations
+    @GetMapping("/{travelerId}/guide-reservations")
+    public ResponseEntity<List<GuideReservationResponse>> getTravelerGuideReservations(
             @PathVariable Long travelerId) {
-        List<GuideReservationByTraveler> reservations = reservationService.getReservationsForTraveler(travelerId);
-        List<GuideReservationResponse> response = reservations.stream()
-            .map(this::convertToDto)
-            .collect(Collectors.toList());
-        return ResponseEntity.ok(response);
+        try {
+            List<GuideReservationByTraveler> reservations = reservationService.getReservationsForTraveler(travelerId);
+            List<GuideReservationResponse> response = reservations.stream()
+                .map(this::convertToDto)
+                .collect(Collectors.toList());
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            log.error("Error getting guide reservations for traveler {}: ", travelerId, e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
 
-    
-
-    
-
-     @GetMapping("/bookings/hotel/{travelerId}")
+    // Get traveler's hotel bookings
+    @GetMapping("/{travelerId}/hotel-bookings")
     public ResponseEntity<List<HotelBookingResponseDTO>> getTravelerHotelBookings(
             @PathVariable Long travelerId) {
         try {
             List<HotelBookingResponseDTO> bookings = hotelService.getTravelerBookings(travelerId);
             return ResponseEntity.ok(bookings);
         } catch (RuntimeException e) {
-            log.error("Error getting traveler bookings: ", e);
+            log.error("Error getting traveler hotel bookings: ", e);
             return ResponseEntity.badRequest().build();
         } catch (Exception e) {
-            log.error("Error getting bookings for traveler {}: ", travelerId, e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-        }
-    }
-
-     @GetMapping("/bookings/{bookingReference}")
-    public ResponseEntity<HotelBookingResponseDTO> getBookingDetails(
-            @PathVariable String bookingReference) {
-        try {
-            return hotelService.getBookingByReference(bookingReference)
-                    .map(booking -> ResponseEntity.ok(booking))
-                    .orElse(ResponseEntity.notFound().build());
-        } catch (Exception e) {
-            log.error("Error getting booking details for reference {}: ", bookingReference, e);
+            log.error("Error getting hotel bookings for traveler {}: ", travelerId, e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 
     // Get traveler's driver bookings
-    @GetMapping("/bookings/driver/{travelerId}")
-    public List<DriverBookingResponseDTO> getTravelerDriverBookings(@PathVariable Long travelerId) {
-        List<DriverBooking> bookings = bookingRepository.findByTravelerIdOrderByBookingDateAsc(travelerId);
-        return bookings.stream()
-                .map(DriverBookingResponseDTO::fromDriverBooking)
-                .collect(Collectors.toList());
+    @GetMapping("/{travelerId}/driver-bookings")
+    public ResponseEntity<List<DriverBookingResponseDTO>> getTravelerDriverBookings(
+            @PathVariable Long travelerId) {
+        try {
+            List<DriverBooking> bookings = bookingRepository.findByTravelerIdOrderByBookingDateAsc(travelerId);
+            List<DriverBookingResponseDTO> response = bookings.stream()
+                    .map(DriverBookingResponseDTO::fromDriverBooking)
+                    .collect(Collectors.toList());
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            log.error("Error getting driver bookings for traveler {}: ", travelerId, e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    // Get normal users by role
+    @GetMapping("/role/TRAVELER")
+    public ResponseEntity<List<UserResponseDTO>> getUsersByRole() {
+        
+
+        return ResponseEntity.ok(userService.getUsersByRole(UserRole.TRAVELER));
+    }
+
+    // Delete user (soft delete)
+    @DeleteMapping("/{id}")
+    public ResponseEntity<String> deleteUser(@PathVariable Long id) {
+        userService.deleteUser(id);
+        return ResponseEntity.ok("User deleted successfully");
     }
 
 
-
-
+   
+   
 }
