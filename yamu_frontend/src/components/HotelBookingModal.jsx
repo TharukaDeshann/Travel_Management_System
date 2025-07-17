@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { createHotelBooking } from '../services/hotelService';
+import { useCurrency } from '../context/CurrencyContext';
+import Price from './Price';
 
 const HotelBookingModal = ({ 
   isOpen, 
@@ -151,52 +153,70 @@ const HotelBookingModal = ({
     }
   };
 
+  // Use global currency context
+  const { formatPrice } = useCurrency();
+
   if (!isOpen) return null;
 
   const total = calculateTotal();
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-vertical">
-        {/* Header */}
-        <div className="bg-blue-600 text-white p-4">
-          <div className="flex justify-between items-start">
-            <div>
-              <h2 className="text-xl font-bold">Complete Your Booking</h2>
-              <p className="text-blue-100">{hotel.name}</p>
-              <p className="text-blue-100 text-sm">{selectedRoom.roomType}</p>
-            </div>
-            <button 
-              onClick={onClose}
-              className="text-white hover:text-gray-200 text-2xl"
-            >
-              ✕
-            </button>
-          </div>
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-2xl font-bold">Book Your Stay</h2>
+          <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
 
-          {/* Progress Steps */}
-          <div className="mt-4 flex justify-center">
-            <div className="flex items-center space-x-4">
-              <div className={`flex items-center ${currentStep >= 1 ? 'text-white' : 'text-blue-300'}`}>
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center ${currentStep >= 1 ? 'bg-white text-blue-600' : 'bg-blue-500'}`}>
-                  {currentStep > 1 ? '✓' : '1'}
-                </div>
-                <span className="ml-2">Guest Details</span>
+        {/* Hotel and Room Summary */}
+        <div className="mb-6 p-4 bg-gray-50 rounded-lg">
+          <h3 className="font-semibold text-lg mb-2">{hotel?.name}</h3>
+          <div className="grid grid-cols-2 gap-4 text-sm">
+            <div>
+              <span className="text-gray-600">Room Type:</span>
+              <p className="font-medium">{selectedRoom?.roomType}</p>
+            </div>
+            <div>
+              <span className="text-gray-600">Check-in:</span>
+              <p className="font-medium">{new Date(dateData.checkInDate).toLocaleDateString()}</p>
+            </div>
+            <div>
+              <span className="text-gray-600">Check-out:</span>
+              <p className="font-medium">{new Date(dateData.checkOutDate).toLocaleDateString()}</p>
+            </div>
+            <div>
+              <span className="text-gray-600">Nights:</span>
+              <p className="font-medium">{calculateNights()}</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Progress Steps */}
+        <div className="mt-4 flex justify-center">
+          <div className="flex items-center space-x-4">
+            <div className={`flex items-center ${currentStep >= 1 ? 'text-white' : 'text-blue-300'}`}>
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center ${currentStep >= 1 ? 'bg-white text-blue-600' : 'bg-blue-500'}`}>
+                {currentStep > 1 ? '✓' : '1'}
               </div>
-              <div className="w-8 h-0.5 bg-blue-400"></div>
-              <div className={`flex items-center ${currentStep >= 2 ? 'text-white' : 'text-blue-300'}`}>
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center ${currentStep >= 2 ? 'bg-white text-blue-600' : 'bg-blue-500'}`}>
-                  {currentStep > 2 ? '✓' : '2'}
-                </div>
-                <span className="ml-2">Payment</span>
+              <span className="ml-2">Guest Details</span>
+            </div>
+            <div className="w-8 h-0.5 bg-blue-400"></div>
+            <div className={`flex items-center ${currentStep >= 2 ? 'text-white' : 'text-blue-300'}`}>
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center ${currentStep >= 2 ? 'bg-white text-blue-600' : 'bg-blue-500'}`}>
+                {currentStep > 2 ? '✓' : '2'}
               </div>
-              <div className="w-8 h-0.5 bg-blue-400"></div>
-              <div className={`flex items-center ${currentStep >= 3 ? 'text-white' : 'text-blue-300'}`}>
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center ${currentStep >= 3 ? 'bg-white text-blue-600' : 'bg-blue-500'}`}>
-                  3
-                </div>
-                <span className="ml-2">Confirm</span>
+              <span className="ml-2">Payment</span>
+            </div>
+            <div className="w-8 h-0.5 bg-blue-400"></div>
+            <div className={`flex items-center ${currentStep >= 3 ? 'text-white' : 'text-blue-300'}`}>
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center ${currentStep >= 3 ? 'bg-white text-blue-600' : 'bg-blue-500'}`}>
+                3
               </div>
+              <span className="ml-2">Confirm</span>
             </div>
           </div>
         </div>
@@ -437,23 +457,27 @@ const HotelBookingModal = ({
                 </div>
               </div>
 
-              <div className="border-t pt-4">
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span>Room Cost ({calculateNights()} nights × LKR {selectedRoom.pricePerNight.toLocaleString()})</span>
-                    <span>LKR {total.roomTotal.toLocaleString()}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Taxes (12%)</span>
-                    <span>LKR {total.taxes.toLocaleString()}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Service Fee (5%)</span>
-                    <span>LKR {total.serviceFee.toLocaleString()}</span>
-                  </div>
-                  <div className="border-t pt-2 flex justify-between font-bold text-lg">
-                    <span>Total Amount</span>
-                    <span>LKR {total.grandTotal.toLocaleString()}</span>
+              {/* Price Summary */}
+              <div className="mb-6 p-4 bg-gray-50 rounded-lg">
+                <h3 className="font-semibold mb-3">Booking Summary</h3>
+                <div className="border-t pt-4">
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span>Room Cost ({calculateNights()} nights × <Price amount={selectedRoom.pricePerNight} />)</span>
+                      <Price amount={total.roomTotal} />
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Taxes (12%)</span>
+                      <Price amount={total.taxes} />
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Service Fee (5%)</span>
+                      <Price amount={total.serviceFee} />
+                    </div>
+                    <div className="border-t pt-2 flex justify-between font-bold text-lg">
+                      <span>Total Amount</span>
+                      <Price amount={total.grandTotal} />
+                    </div>
                   </div>
                 </div>
               </div>

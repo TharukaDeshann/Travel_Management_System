@@ -36,68 +36,67 @@ import UsersSocialPage from "./pages/UsersSocialPage.jsx";
 
 import EmergencyContacts from "./pages/EmergencyContacts.jsx";
 import UserSearch from "./components/UserSearch.jsx";
-
+import { CurrencyProvider } from "./context/CurrencyContext.jsx";
 
 const App = () => {
   return (
     <React.Fragment>
-      <Router>
-        <Routes>
-          {/* Public Routes */}
-          <Route path="/" element={<Home />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
+      <CurrencyProvider>
+        <Router>
+          <Routes>
+            {/* Public Routes */}
+            <Route path="/" element={<Home />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
 
-          {/* ai search */}
-          <Route path="/user-search" element={<UserSearch />} />
-          <Route path="/weather" element={<WeatherPage />} />
-          <Route path="/weather-details" element={<Weather />} />
-          <Route path="/weather-card" element={<WeatherCard />} />
+            {/* ai search */}
+            <Route path="/user-search" element={<UserSearch />} />
+            <Route path="/weather" element={<WeatherPage />} />
+            <Route path="/weather-details" element={<Weather />} />
+            <Route path="/weather-card" element={<WeatherCard />} />
 
-          <Route path="/" element={<Login />} />
-          
-          {/* Email verification pending */}
-          <Route
-            path="/verify-email-pending"
-            element={<VerifyEmailPending />}
-          />
-          {/* Email verification */}
-          <Route path="/verify-email" element={<VerifyEmail />} />
-          <Route path="/emergency-contacts" element={<EmergencyContacts />} />
+            <Route path="/" element={<Login />} />
+            
+            {/* Email verification pending */}
+            <Route
+              path="/verify-email-pending"
+              element={<VerifyEmailPending />}
+            />
+            {/* Email verification */}
+            <Route path="/verify-email" element={<VerifyEmail />} />
+            <Route path="/emergency-contacts" element={<EmergencyContacts />} />
 
-          {/* Protected Routes */}
-          <Route element={<ProtectedRoute />}>
-            <Route path="/inbox" element={<Inbox />} />
-            <Route path="/home" element={<Home />} />
-            <Route path="/traveler-dashboard" element={<TravelerDashboard />} />
-            <Route path="/guide-dashboard" element={<GuideDashboard />} />
-            <Route path="/admin-dashboard" element={<AdminDashboard />} />
-            <Route path="/guide-reviews" element={<GuideReview />} />
-            <Route path="/guide-calendar" element={<GuideCalendar />} />
-            <Route path="/visit-plan" element={<VisitPlanPage />} />
-            <Route path="/guides-page" element={<GuidesPage />} />
-            <Route path="/users/users-by-role" element={<UsersSocialPage />} />
-            <Route path="/map" element={<Map />} />
-            <Route path="/itinerary-planner" element={<ItineraryPlanner />} />
-            <Route path="/reservations" element={<Reservations></Reservations>}></Route>
-          <Route path="/traveler-upcoming-trips" element={<TravelerUpcomingTrips />} />
-          <Route path="/finalize-itinerary" element={<FinalizeItinerary />} />
+            {/* Protected Routes */}
+            <Route element={<ProtectedRoute />}>
+              <Route path="/inbox" element={<Inbox />} />
+              <Route path="/home" element={<Home />} />
+              <Route path="/traveler-dashboard" element={<TravelerDashboard />} />
+              <Route path="/guide-dashboard" element={<GuideDashboard />} />
+              <Route path="/admin-dashboard" element={<AdminDashboard />} />
+              <Route path="/guide-reviews" element={<GuideReview />} />
+              <Route path="/guide-calendar" element={<GuideCalendar />} />
+              <Route path="/visit-plan" element={<VisitPlanPage />} />
+              <Route path="/guides-page" element={<GuidesPage />} />
+              <Route path="/users/users-by-role" element={<UsersSocialPage />} />
+              <Route path="/map" element={<Map />} />
+              <Route path="/itinerary-planner" element={<ItineraryPlanner />} />
+              <Route path="/reservations" element={<Reservations />} />
+              <Route path="/traveler-upcoming-trips" element={<TravelerUpcomingTrips />} />
+              <Route path="/finalize-itinerary" element={<FinalizeItinerary />} />
+
+              {/* Profile Routes */}
+              <Route path="/profile" element={<UserProfile />} />
+              <Route path="/profile/update-profile" element={<UpdateUserProfile />} />
+              <Route path="/users/profile/:userId" element={<ProfileView />} />
+            </Route>
 
             
 
-            {/* Profile Routes */}
-            {/* <Route path="/users/profile/" */}
-            <Route path="/profile" element={<UserProfile />} />
-            <Route path="/profile/update-profile" element={<UpdateUserProfile />} />
-            <Route path="/users/profile/:userId" element={<ProfileView />} />
-          </Route>
-
-          
-
-          {/* Fallback Route */}
-          <Route path="*" element={<div>404 Not Found</div>} />
-        </Routes>
-      </Router>
+            {/* Fallback Route */}
+            <Route path="*" element={<div>404 Not Found</div>} />
+          </Routes>
+        </Router>
+      </CurrencyProvider>
     </React.Fragment>
   );
 };

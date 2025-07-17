@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { FaHotel, FaCar, FaUserCheck, FaFilePdf } from "react-icons/fa";
+import Price from "../components/Price";
 
 const FinalizeItinerary = () => {
   const tripData = {
@@ -79,11 +80,11 @@ const FinalizeItinerary = () => {
           </div>
           <div>
             <label className="text-gray-600">Total Budget:</label>
-            <p>LKR {tripData.budget.toLocaleString()}</p>
+            <p><Price amount={tripData.budget} /></p>
           </div>
           <div>
             <label className="text-gray-600">Estimated Cost:</label>
-            <p>LKR 87,500</p>
+            <p><Price amount={87500} /></p>
           </div>
         </div>
       </div>
@@ -149,7 +150,7 @@ const FinalizeItinerary = () => {
                   <label>Contact:</label> {day.hotel.contact}
                 </div>
                 <div>
-                  <label>Hotel Cost:</label> LKR {day.hotel.cost.toLocaleString()}
+                  <label>Hotel Cost:</label> <Price amount={day.hotel.cost} />
                 </div>
               </div>
             </div>
@@ -256,13 +257,13 @@ const FinalizeItinerary = () => {
         <h2 className="text-xl font-bold mb-4">Cost Summary</h2>
         <div className="grid grid-cols-2 gap-4">
           <div>Total Accommodation Cost</div>
-          <div>LKR 48,000</div>
+          <div><Price amount={48000} /></div>
           <div>Total Transportation Cost</div>
-          <div>LKR 18,000</div>
+          <div><Price amount={18000} /></div>
           <div>Total Guide Fees</div>
-          <div>LKR 12,000</div>
+          <div><Price amount={12000} /></div>
           <div className="font-bold">Remaining Budget</div>
-          <div className="font-bold text-green-600">LKR 22,000</div>
+          <div className="font-bold text-green-600"><Price amount={22000} /></div>
         </div>
       </div>
 

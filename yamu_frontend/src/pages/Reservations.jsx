@@ -13,6 +13,7 @@ import LocationSelector from '../components/LocationSelector';
 import useNotification from '../hooks/useNotification';
 import { fetchLoggedInUser } from '../services/authService';
 import apiClient from "../services/axiosInstance";
+import Price from '../components/Price';
 
 const Reservations = () => {
   const navigate = useNavigate();
@@ -1035,7 +1036,7 @@ const Reservations = () => {
                                           <p className={`font-medium text-lg ${
                                             booking.bookingStatus === 'CANCELLED' ? 'text-gray-500 line-through' : 'text-green-600'
                                           }`}>
-                                            LKR {booking.totalPrice?.toLocaleString()}
+                                            <Price amount={booking.totalPrice} />
                                           </p>
                                         </div>
                                       </div>

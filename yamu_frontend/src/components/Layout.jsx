@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
 import { Mail, Bell, User, ChevronDown, Menu, X, MapPin, Phone, Facebook, Instagram, Twitter, Globe, Settings } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import WeatherCard from './WeatherCard';
+import { useCurrency } from '../context/CurrencyContext';
 
 // Header Component
 const Header = ({ 
   user = {},
   unreadCount = 0,
-  onCurrencyChange = () => {},
-  selectedCurrency = 'LKR',
   navigate = () => {},
   location = { pathname: '' }
 }) => {
@@ -17,12 +17,8 @@ const Header = ({
   const [isCurrencyOpen, setIsCurrencyOpen] = useState(false);
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
 
-  const currencies = [
-    { code: 'USD', symbol: '$', name: 'US Dollar' },
-    { code: 'LKR', symbol: 'Rs.', name: 'Sri Lankan Rupee' },
-    { code: 'EUR', symbol: '€', name: 'Euro' },
-    { code: 'CHF', symbol: 'Fr.', name: 'Swiss Franc' }
-  ];
+  // Use global currency context
+  const { selectedCurrency, currencies, changeCurrency } = useCurrency();
 
   const notifications = [
     { id: 1, type: 'booking', message: 'Your booking has been confirmed', time: '2 min ago', unread: true },
@@ -83,7 +79,7 @@ const Header = ({
             <button
               key={currency.code}
               onClick={() => {
-                onCurrencyChange?.(currency.code);
+                changeCurrency(currency.code);
                 setIsCurrencyOpen(false);
               }}
               className={`w-full px-4 py-3 text-left hover:bg-blue-50 flex items-center justify-between transition-colors ${
@@ -306,6 +302,10 @@ const ProfileDropdown = () => (
 
           {/* Right side actions */}
           <div className="flex items-center gap-2">
+            {/* Weather Card */}
+            <div className="hidden md:block mr-2">
+              <WeatherCard />
+            </div>
             {/* Action buttons group */}
             <div className="flex items-center bg-gray-50 rounded-2xl p-2 gap-1">
               {/* Currency Selector (only for travelers) */}
@@ -486,7 +486,7 @@ const Footer = ({ navigate }) => {
 };
 
 // Main Layout Component
-const Layout = ({ children, user, unreadCount, onCurrencyChange, selectedCurrency}) => {
+const Layout = ({ children, user, unreadCount }) => {
   const navigate = useNavigate();
   const location = useLocation();
   
@@ -495,8 +495,6 @@ const Layout = ({ children, user, unreadCount, onCurrencyChange, selectedCurrenc
       <Header 
         user={user} 
         unreadCount={unreadCount}
-        onCurrencyChange={onCurrencyChange}
-        selectedCurrency={selectedCurrency}
         navigate={navigate}
         location={location}
       />

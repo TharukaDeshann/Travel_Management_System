@@ -11,6 +11,7 @@ import apiClient from "../services/axiosInstance";
 import GuideModal from "../components/GuideModal";
 import { useUser } from "../context/UserContext";
 import { Layout } from "../components/Layout";
+import { useCurrency } from "../context/CurrencyContext";
 
 const currencies = [
   { code: 'USD', symbol: '$' },
@@ -22,15 +23,15 @@ const currencies = [
 export default function TravelerDashboard({ currentUser }) {
   const navigate = useNavigate();
   const location = useLocation();
-  const [selectedCurrency, setSelectedCurrency] = useState('LKR');
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [exchangeRates, setExchangeRates] = useState({});
   const [guides, setGuides] = useState([]);
   const [showLeftButton, setShowLeftButton] = useState({});
   const [selectedGuide, setSelectedGuide] = useState(null);
   
   const loggedUser = useUser().user;
   const unreadCount = 0;
+
+  // Use global currency context
+  const { formatPrice } = useCurrency();
 
   useEffect(() => {
     const fetchGuides = async () => {
@@ -92,41 +93,7 @@ export default function TravelerDashboard({ currentUser }) {
     { name: "Package 3", price: 30000, image: "/src/images/hiriketiya.jpg", description: "2 Days Quick Escape" }
   ];
 
-  const [convertedPackages, setConvertedPackages] = useState(
-    packages.map(pkg => ({ ...pkg, convertedPrice: pkg.price }))
-  );
-
-  const fetchExchangeRates = async () => {
-    if (selectedCurrency === 'LKR') {
-      setConvertedPackages(packages.map(pkg => ({
-        ...pkg,
-        convertedPrice: pkg.price
-      })));
-      return;
-    }
-
-    try {
-      const response = await fetch(`https://v6.exchangerate-api.com/v6/ee302ff3be157ca6a021f6a0/pair/LKR/${selectedCurrency}`);
-      const data = await response.json();
-      
-      if (data && data.conversion_rate) {
-        const rate = data.conversion_rate;
-        const updatedPackages = packages.map(pkg => ({
-          ...pkg,
-          convertedPrice: Math.round((pkg.price * rate) * 100) / 100
-        }));
-        setConvertedPackages(updatedPackages);
-      }
-    } catch (error) {
-      console.error("Error fetching exchange rates:", error);
-    }
-  };
-
-  useEffect(() => {
-    fetchExchangeRates();
-    const intervalId = setInterval(fetchExchangeRates, 60000);
-    return () => clearInterval(intervalId);
-  }, [selectedCurrency]);
+  // Remove local currency management code and use global context
 
   const handleScroll = (e, title) => {
     const { scrollLeft } = e.target;
@@ -144,10 +111,6 @@ export default function TravelerDashboard({ currentUser }) {
     <Layout 
       user={loggedUser}
       unreadCount={unreadCount}
-      onCurrencyChange={setSelectedCurrency}
-      selectedCurrency={selectedCurrency}
-      navigate={navigate}
-      location={location}
     >
       <div className="main-content">
         <div className="search-container">
@@ -205,14 +168,15 @@ export default function TravelerDashboard({ currentUser }) {
                   <div 
                     key={item.name} 
                     className="card-container"
-                    onClick={() => section.title === "Discover Tour Guides" && setSelectedGuide(item.guide)}
+                    onClick={() => {
+                      if (item.guide) {
+                        setSelectedGuide(item.guide);
+                      }
+                    }}
                   >
                     <img src={item.image} alt={item.name} className="card-image" />
                     <div className="card-overlay">
                       <h3 className="card-title">{item.name}</h3>
-                      {section.title === "Discover Tour Guides" && (
-                        <p style={{ color: 'white', fontSize: '14px' }}>{item.guide.expertiseCityRegion}</p>
-                      )}
                     </div>
                   </div>
                 ))}
@@ -234,14 +198,13 @@ export default function TravelerDashboard({ currentUser }) {
           <h2 className="text-lg font-bold">Discover Packages</h2>
           <div className="cards-scroll-container">
             <div className="flex space-x-4">
-              {convertedPackages.map((pkg) => (
+              {packages.map((pkg) => (
                 <div key={pkg.name} className="card-container">
                   <img src={pkg.image} alt={pkg.name} className="card-image" />
                   <div className="card-overlay">
                     <h3 className="card-title">{pkg.name}</h3>
                     <p className="text-white text-lg">
-                      {selectedCurrency === 'LKR' ? 'Rs. ' : currencies.find(c => c.code === selectedCurrency)?.symbol}
-                      {pkg.convertedPrice?.toLocaleString()}
+                      {formatPrice(pkg.price)}
                     </p>
                     <p className="text-white text-sm">{pkg.description}</p>
                   </div>
