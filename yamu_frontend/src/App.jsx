@@ -87,8 +87,9 @@ const App = () => {
             <Route path="/map" element={<Map />} />
             <Route path="/itinerary-planner" element={<ItineraryPlanner />} />
             <Route path="/reservations" element={<Reservations></Reservations>}></Route>
-            <Route path="/traveler-upcoming-trips" element={<TravelerUpcomingTrips />} />
-          
+
+          <Route path="/traveler-upcoming-trips" element={<TravelerUpcomingTrips />} />
+
           <Route path="/finalize-itinerary" element={<FinalizeItinerary />} />
 
             

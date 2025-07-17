@@ -20,6 +20,7 @@ public class Driver {
     private String description;
     private double rating;
     private int phone;
+    private Double ratePerLng; // Rate per hour in cents
 
     @Lob
     private byte[] photo; // Blob for image
