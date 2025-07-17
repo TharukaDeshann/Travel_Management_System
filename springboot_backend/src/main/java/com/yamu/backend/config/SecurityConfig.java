@@ -72,17 +72,15 @@ public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Excepti
                             "/api/auth/me", 
                             "/api/locations/**", 
                             "/api/auth/verify-email", 
-                            "/api/auth/resend-verification",
-                            "/api/search/travelers/**"
+                            "/api/auth/resend-verification"
                     ).permitAll()
                     .requestMatchers(HttpMethod.PUT, "/api/users/{id}").authenticated()
                     .requestMatchers(HttpMethod.PUT, "/api/users/{id}/update-email").authenticated()
                     .requestMatchers(HttpMethod.PUT, "/api/users/{id}/update-password").authenticated()
-                    .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                    .requestMatchers("/api/admin/**", "/api/admin/travelers/**","/api/search/**").hasRole("ADMIN")
                     .requestMatchers("/api/guide/**").hasAnyRole("GUIDE", "ADMIN", "TRAVELER")
                     .requestMatchers("/api/traveler/**").hasRole("TRAVELER")
-                    .requestMatchers("/api/users/**",
-                    "/api/search/**", "/api/search/guides/**").hasAnyRole("ADMIN", "GUIDE", "TRAVELER")
+                    .requestMatchers("/api/users/**").hasAnyRole("ADMIN", "GUIDE", "TRAVELER")
                     .requestMatchers("/api/itineraries/**").hasRole("TRAVELER") // Restrict itineraries to TRAVELER
                     .anyRequest().authenticated())
 

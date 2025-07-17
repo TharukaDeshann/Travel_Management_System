@@ -27,8 +27,8 @@ const processQueue = (error, token = null) => {
 // Calculate token expiration time - we'll proactively refresh before it expires
 let tokenExpirationTime = null;
 const setTokenExpiration = () => {
-  // Set expiration to 55 seconds from now (for 60-second tokens)
-  tokenExpirationTime = Date.now() + 55 * 1000;
+  // Set expiration to 890 seconds from now (for 900-second tokens)
+  tokenExpirationTime = Date.now() + 890 * 1000;
 };
 
 // Initial token expiration time if user is already logged in

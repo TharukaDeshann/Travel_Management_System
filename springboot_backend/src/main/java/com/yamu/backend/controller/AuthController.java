@@ -230,7 +230,7 @@ public class AuthController {
                         .httpOnly(true)
                         .secure(true) // Set to true in production (requires HTTPS)
                         .path("/")
-                        .maxAge(60) // 1 minutes for access token
+                        .maxAge(900) // 15 minutes for access token
                         .sameSite("Strict")
                         .build();
 
