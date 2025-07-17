@@ -14,6 +14,8 @@ import com.yamu.backend.dto.GuideSearchResponse;
 import com.yamu.backend.dto.GuideSearchResult;
 import com.yamu.backend.service.GuideSearchService;
 
+import com.yamu.backend.dto.AdvancedSearchRequest;
+
 @RestController
 @RequestMapping("/api/search/guides")
 public class GuideSearchController {
@@ -137,32 +139,32 @@ public class GuideSearchController {
     }
     
     // Get specific guide by ID
-    @GetMapping("/{guideId}")
-    public ResponseEntity<GuideSearchResult> getGuideById(@PathVariable String guideId) {
-        try {
-            GuideSearchResult guide = guideSearchService.getGuideById(guideId);
-            if (guide != null) {
-                return ResponseEntity.ok(guide);
-            } else {
-                return ResponseEntity.notFound().build();
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-            return ResponseEntity.internalServerError().build();
-        }
-    }
+    // @GetMapping("/{guideId}")
+    // public ResponseEntity<GuideSearchResult> getGuideById(@PathVariable String guideId) {
+    //     try {
+    //         GuideSearchResult guide = guideSearchService.getGuideById(guideId);
+    //         if (guide != null) {
+    //             return ResponseEntity.ok(guide);
+    //         } else {
+    //             return ResponseEntity.notFound().build();
+    //         }
+    //     } catch (Exception e) {
+    //         e.printStackTrace();
+    //         return ResponseEntity.internalServerError().build();
+    //     }
+    // }
     
     // Get suggestions for autocomplete
-    @GetMapping("/suggestions")
-    public ResponseEntity<List<String>> getSuggestions(@RequestParam String query) {
-        try {
-            List<String> suggestions = guideSearchService.getSuggestions(query);
-            return ResponseEntity.ok(suggestions);
-        } catch (Exception e) {
-            e.printStackTrace();
-            return ResponseEntity.internalServerError().build();
-        }
-    }
+    // @GetMapping("/suggestions")
+    // public ResponseEntity<List<String>> getSuggestions(@RequestParam String query) {
+    //     try {
+    //         List<String> suggestions = guideSearchService.getSuggestions(query);
+    //         return ResponseEntity.ok(suggestions);
+    //     } catch (Exception e) {
+    //         e.printStackTrace();
+    //         return ResponseEntity.internalServerError().build();
+    //     }
+    // }
     
     // Get faceted search results
     @GetMapping("/faceted")
@@ -272,7 +274,7 @@ public class GuideSearchController {
             @RequestParam(defaultValue = "10") int size) {
         
         try {
-            List<String> filters = Arrays.asList("reservation_status eq 'confirmed'");
+            List<String> filters = Arrays.asList("reservation_status eq 'CONFIRMED'");
             GuideSearchResponse response = guideSearchService.searchGuides("*", filters, page, size, "reservation_created_at desc", null);
             return ResponseEntity.ok(response);
             
@@ -505,82 +507,7 @@ public class GuideSearchController {
         return filters;
     }
     
-    // Inner classes for request/response DTOs
-    public static class AdvancedSearchRequest {
-        private String query;
-        private List<String> regions;
-        private List<String> languages;
-        private List<String> vehicleTypes;
-        private Integer minCapacity;
-        private Integer maxCapacity;
-        private Boolean airConditioned;
-        private Boolean verified;
-        private Integer minRating;
-        private Double minPrice;
-        private Double maxPrice;
-        private List<String> reservationStatuses;
-        private String dateRangeStart;
-        private String dateRangeEnd;
-        private String orderBy;
-        private List<String> facets;
-        private int page = 0;
-        private int size = 10;
-        
-        // Getters and setters
-        public String getQuery() { return query; }
-        public void setQuery(String query) { this.query = query; }
-        
-        public List<String> getRegions() { return regions; }
-        public void setRegions(List<String> regions) { this.regions = regions; }
-        
-        public List<String> getLanguages() { return languages; }
-        public void setLanguages(List<String> languages) { this.languages = languages; }
-        
-        public List<String> getVehicleTypes() { return vehicleTypes; }
-        public void setVehicleTypes(List<String> vehicleTypes) { this.vehicleTypes = vehicleTypes; }
-        
-        public Integer getMinCapacity() { return minCapacity; }
-        public void setMinCapacity(Integer minCapacity) { this.minCapacity = minCapacity; }
-        
-        public Integer getMaxCapacity() { return maxCapacity; }
-        public void setMaxCapacity(Integer maxCapacity) { this.maxCapacity = maxCapacity; }
-        
-        public Boolean getAirConditioned() { return airConditioned; }
-        public void setAirConditioned(Boolean airConditioned) { this.airConditioned = airConditioned; }
-        
-        public Boolean getVerified() { return verified; }
-        public void setVerified(Boolean verified) { this.verified = verified; }
-        
-        public Integer getMinRating() { return minRating; }
-        public void setMinRating(Integer minRating) { this.minRating = minRating; }
-        
-        public Double getMinPrice() { return minPrice; }
-        public void setMinPrice(Double minPrice) { this.minPrice = minPrice; }
-        
-        public Double getMaxPrice() { return maxPrice; }
-        public void setMaxPrice(Double maxPrice) { this.maxPrice = maxPrice; }
-        
-        public List<String> getReservationStatuses() { return reservationStatuses; }
-        public void setReservationStatuses(List<String> reservationStatuses) { this.reservationStatuses = reservationStatuses; }
-        
-        public String getDateRangeStart() { return dateRangeStart; }
-        public void setDateRangeStart(String dateRangeStart) { this.dateRangeStart = dateRangeStart; }
-        
-        public String getDateRangeEnd() { return dateRangeEnd; }
-        public void setDateRangeEnd(String dateRangeEnd) { this.dateRangeEnd = dateRangeEnd; }
-        
-        public String getOrderBy() { return orderBy; }
-        public void setOrderBy(String orderBy) { this.orderBy = orderBy; }
-        
-        public List<String> getFacets() { return facets; }
-        public void setFacets(List<String> facets) { this.facets = facets; }
-        
-        public int getPage() { return page; }
-        public void setPage(int page) { this.page = page; }
-        
-        public int getSize() { return size; }
-        public void setSize(int size) { this.size = size; }
-    }
+    
     
     public static class GuideStatsResponse {
         private long totalGuides;

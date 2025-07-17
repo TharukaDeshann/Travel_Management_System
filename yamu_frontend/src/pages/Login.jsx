@@ -15,13 +15,13 @@ import {
   ErrorMessage,
   FlexContainer,
   LinkText,
-  Divider
+  Divider,
 } from "../components/StyledComponents";
 
 const Login = () => {
   const [formData, setFormData] = useState({
     email: "",
-    password: ""
+    password: "",
   });
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
@@ -31,104 +31,118 @@ const Login = () => {
 
   const validateForm = () => {
     const newErrors = {};
-    
+
     // Email validation
     if (!formData.email) {
       newErrors.email = "Email is required";
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
       newErrors.email = "Invalid email format";
     }
-    
+
     // Password validation
     if (!formData.password) {
       newErrors.password = "Password is required";
     }
-    
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prevState => ({
+    setFormData((prevState) => ({
       ...prevState,
-      [name]: value
+      [name]: value,
     }));
-    
+
     // Clear error when user starts typing
     if (errors[name]) {
       setErrors({
         ...errors,
-        [name]: ""
+        [name]: "",
       });
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!validateForm()) return;
     setLoading(true);
+
     try {
       const response = await login({
         email: formData.email,
         password: formData.password,
       });
+
       // Show success on successful login
       showSuccess("Login successful! Welcome back.");
-      
-      // Small delay to ensure notification is rendered before navigation
-      {
-        try {
-          const userData = await fetchLoggedInUser();
-          setUser(userData);
-          console.log("User data fetched:", userData);
-          localStorage.setItem("user", JSON.stringify(userData));
-          // Redirect based on role
-          if (userData.role === "TRAVELER") {
-            navigate("/traveler-dashboard");
-          } else if (userData.role === "GUIDE") {
-            navigate("/guide-dashboard");
-          } else if (userData.role === "ADMIN") {
-            navigate("/admin-overview");
-          } else {
-            // Default fallback if role is not recognized
-            navigate("/dashboard");
-          }
-        } catch (userError) {
-          // Handle error fetching user data
-          showError("Login successful but couldn't load user data. Please try again.");
-          console.error("Error fetching user data:", userError);
+
+      // Fetch user data and navigate
+      try {
+        const userData = await fetchLoggedInUser();
+        setUser(userData);
+        console.log("User data fetched:", userData);
+        localStorage.setItem("user", JSON.stringify(userData));
+
+        // Redirect based on role
+        if (userData.role === "TRAVELER") {
+          navigate("/traveler-dashboard");
+        } else if (userData.role === "GUIDE") {
+          navigate("/guide-dashboard");
+        } else if (userData.role === "ADMIN") {
+          navigate("/admin-overview");
+        } else {
+          navigate("/dashboard");
         }
+      } catch (userError) {
+        showError(
+          "Login successful but couldn't load user data. Please try again."
+        );
+        console.error("Error fetching user data:", userError);
       }
-      
     } catch (err) {
       console.error("Login error:", err);
-      
+
       // Handle detailed login errors
       let errorMsg = "Failed to login. Please try again.";
-      
+
       if (err.response) {
         // Handle specific HTTP error responses
         const status = err.response.status;
-        
+        const serverError = err.response.data?.error;
+
         if (status === 401) {
-          errorMsg = "Invalid email or password. Please check your credentials.";
+          // Use server-provided error message or default
+          errorMsg =
+            serverError ||
+            "Invalid email or password. Please check your credentials.";
         } else if (status === 403) {
-          errorMsg = "Your account has been locked. Please contact support.";
+          errorMsg =
+            serverError ||
+            "Your account has been locked. Please contact support.";
         } else if (status === 404) {
-          errorMsg = "Account not found. Please check your email or sign up.";
+          errorMsg =
+            serverError ||
+            "Account not found. Please check your email or sign up.";
         } else if (status === 429) {
-          errorMsg = "Too many login attempts. Please try again later.";
-        } else if (err.response.data?.error) {
-          // Use server-provided error if available
-          errorMsg = err.response.data.error;
+          errorMsg =
+            serverError || "Too many login attempts. Please try again later.";
+        } else if (status >= 500) {
+          errorMsg = "Server error. Please try again later.";
+        } else if (serverError) {
+          // Use any server-provided error message
+          errorMsg = serverError;
         }
       } else if (err.request) {
         // Network error
         errorMsg = "Network error. Please check your internet connection.";
+      } else {
+        // Other errors
+        errorMsg = "An unexpected error occurred. Please try again.";
       }
-      
+
       console.log("Showing error notification:", errorMsg);
       showError(errorMsg);
     } finally {
@@ -174,9 +188,9 @@ const Login = () => {
           type="primary"
           htmlType="submit"
           loading={loading}
-          style={{ width: "100%",marginTop: "16px" }}
+          style={{ width: "100%", marginTop: "16px" }}
           size="large"
-          >
+        >
           {loading ? "Logging in..." : "Log In"}
         </Button>
       </Form>
@@ -184,7 +198,7 @@ const Login = () => {
       <Divider>
         <span>Don't have an account?</span>
       </Divider>
-      
+
       <FlexContainer justifyContent="center">
         <LinkText to="/register">Sign up</LinkText>
       </FlexContainer>
