@@ -9,6 +9,7 @@ import {
   getAllTravelerBookings,
   getTravelerBookingCounts
 } from '../../services/travelerManagementService';
+import AdminLayout from '../../components/AdminLayout.jsx';
 
 const TravelerManagement = () => {
   const [travelers, setTravelers] = useState([]);
@@ -145,6 +146,7 @@ const TravelerManagement = () => {
   }
 
   return (
+    <AdminLayout currentPage="traveler-management">
     <div className="p-6 max-w-7xl mx-auto">
       <div className="mb-6">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">Traveler Management</h1>
@@ -523,6 +525,7 @@ const TravelerManagement = () => {
         </div>
       )}
     </div>
+    </AdminLayout>
   );
 };
 
