@@ -149,6 +149,7 @@ const LocationSelector = ({
   pickupLocation, 
   dropoffLocation, 
   onLocationChange, 
+  onRouteChange, // New prop to handle route information
   title = "Select Locations",
   height = "400px",
   compact = false, // New prop for compact mode
@@ -185,6 +186,13 @@ const LocationSelector = ({
       );
     }
   }, []);
+
+  // Pass route information to parent when it changes
+  useEffect(() => {
+    if (onRouteChange && routeInfo) {
+      onRouteChange(routeInfo);
+    }
+  }, [routeInfo, onRouteChange]);
 
   const handleSearch = async (query) => {
     if (query.length > 2) {

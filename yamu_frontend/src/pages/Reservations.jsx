@@ -94,6 +94,7 @@ const Reservations = () => {
   const [startLocation, setStartLocation] = useState({ name: '', latitude: 0, longitude: 0 });
   const [endLocation, setEndLocation] = useState({ name: '', latitude: 0, longitude: 0 });
   const [bookingDriverId, setBookingDriverId] = useState(null);
+  const [routeInfo, setRouteInfo] = useState(null); // Store route distance and duration
   
   // Transport booking cancel states
   const [showTransportCancelModal, setShowTransportCancelModal] = useState(false);
@@ -332,8 +333,25 @@ const Reservations = () => {
     }
   };
 
+  // Calculate total cost based on distance and driver's rate
+  const calculateTotalCost = (driver, distanceKm) => {
+    if (!driver || !distanceKm) return 0;
+    
+    // Use driver's rate per km if available, otherwise use a default rate
+    const ratePerKm = driver.ratePerKm || driver.rate || 50; // Default 50 LKR per km
+    const baseFare = 200; // Base fare in LKR
+    
+    return baseFare + (distanceKm * ratePerKm);
+  };
+
   // Transportation related functions
   const handleBookTransport = () => {
+    // Check if both locations are selected
+    if (!startLocation.name || !endLocation.name) {
+      showError('Please select both pickup and drop-off locations');
+      return;
+    }
+
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
     setSelectedDate(tomorrow.toISOString().split('T')[0]);
@@ -343,6 +361,7 @@ const Reservations = () => {
   const handleDriverSelect = async (driverId, driverSummary) => {
     try {
       const driverDetails = await transportationService.getDriverDetails(driverId);
+      console.log(driverDetails)
       setSelectedDriver(driverDetails);
       setBookingDriverId(driverId);
       setShowDriverSelection(false);
@@ -1394,9 +1413,43 @@ const Reservations = () => {
                         setEndLocation(location);
                       }
                     }}
+                    onRouteChange={(routeData) => {
+                      setRouteInfo(routeData);
+                    }}
                     title="Select Pick-up and Drop-off Locations"
                     height="400px"
                   />
+
+                  {/* Route Information Display */}
+                  {/* {routeInfo && startLocation.name && endLocation.name && (
+                    <div className="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                      <h4 className="text-sm font-medium text-blue-900 mb-2">Route Information</h4>
+                      <div className="flex items-center gap-4 text-sm">
+                        <div className="flex items-center gap-1">
+                          <span className="text-blue-600">📏</span>
+                          <span className="font-medium">Distance:</span>
+                          <span className="text-blue-600 font-semibold">{routeInfo.distance} km</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <span className="text-orange-600">⏱️</span>
+                          <span className="font-medium">Est. Time:</span>
+                          <span className="text-orange-600 font-semibold">
+                            {routeInfo.duration < 60 
+                              ? `${routeInfo.duration} min` 
+                              : `${Math.floor(routeInfo.duration / 60)}h ${routeInfo.duration % 60}m`
+                            }
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <span className="text-green-600">💰</span>
+                          <span className="font-medium">Est. Cost:</span>
+                          <span className="text-green-600 font-semibold">
+                            Rs.{(200 + (routeInfo.distance * 50)).toFixed(2)}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  )} */}
 
                   <div className="text-center mt-6">
                     <button
@@ -1445,6 +1498,8 @@ const Reservations = () => {
         {selectedDriver && (
           <ConfirmDriverSelection
             driver={selectedDriver}
+            totalCost={calculateTotalCost(selectedDriver, routeInfo?.distance || 0)}
+            distanceKm={routeInfo?.distance || 0}
             onConfirm={handleConfirmDriverBooking}
             onCancel={() => {
               setShowDriverConfirmation(false);
