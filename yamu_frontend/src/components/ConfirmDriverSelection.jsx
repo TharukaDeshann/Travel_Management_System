@@ -31,8 +31,8 @@ const ConfirmDriverSelection = ({
             <span>| {driver.vehicleType}</span>
           </div>
           <div>
-            <span>Distance: {distanceKm} km </span>
-            <span>| Total Cost: Rs.{totalCost.toFixed(2)}</span>
+            <span>Distance: {distanceKm || 0} km </span>
+            <span>| Total Cost: Rs.{totalCost ? totalCost.toFixed(2) : '0.00'}</span>
           </div>
         </div>
         <div className="flex gap-4 mt-4 w-full">
