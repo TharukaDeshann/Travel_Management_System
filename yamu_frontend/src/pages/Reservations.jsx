@@ -693,7 +693,7 @@ const Reservations = () => {
                       <div className="text-gray-500 text-lg">🧭 No guide reservations found</div>
                       <p className="text-sm text-gray-400 mt-2">Book your first guide to get started!</p>
                       <button
-                        onClick={() => navigate('/guides-page')}
+                        onClick={() => navigate('/guides-page', { state: { currentUser: loggedUser } })}
                         className="mt-4 bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700"
                       >
                         Find Guides

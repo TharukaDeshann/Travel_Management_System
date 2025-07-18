@@ -118,7 +118,21 @@ const GuideModal = ({ guide, onClose, currentUser }) => {
   };
 
   const handleSubmit = async () => {
-    if (!currentUser || !currentUser.id) {
+    let userToUse = currentUser || user;
+    
+    // If we don't have user from props or context, try to fetch it
+    if (!userToUse) {
+      try {
+        userToUse = await fetchLoggedInUser();
+      } catch (error) {
+        console.error('Error fetching logged-in user:', error);
+        setError('Please login to make a reservation');
+        navigate('/login');
+        return;
+      }
+    }
+
+    if (!userToUse || !userToUse.id) {
       setError('Please login to make a reservation');
       navigate('/login');
       return;
@@ -137,7 +151,7 @@ const GuideModal = ({ guide, onClose, currentUser }) => {
 
     try {
       const reservationData = {
-        travelerId: currentUser.id,
+        travelerId: userToUse.id,
         guideId: guide.id,
         dayDetails: reservationDetails.map((detail, index) => ({
           dayNumber: index + 1,

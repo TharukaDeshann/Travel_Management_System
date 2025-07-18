@@ -11,6 +11,7 @@ import apiClient from "../services/axiosInstance";
 import GuideModal from "../components/GuideModal";
 import { useUser } from "../context/UserContext";
 import { Layout } from "../components/Layout";
+import { fetchLoggedInUser } from "../services/authService";
 
 const currencies = [
   { code: 'USD', symbol: '$' },
@@ -19,7 +20,7 @@ const currencies = [
   { code: 'CHF', symbol: 'Fr.' }
 ];
 
-export default function TravelerDashboard({ currentUser }) {
+export default function TravelerDashboard({ currentUser: propCurrentUser }) {
   const navigate = useNavigate();
   const location = useLocation();
   const [selectedCurrency, setSelectedCurrency] = useState('LKR');
@@ -28,9 +29,26 @@ export default function TravelerDashboard({ currentUser }) {
   const [guides, setGuides] = useState([]);
   const [showLeftButton, setShowLeftButton] = useState({});
   const [selectedGuide, setSelectedGuide] = useState(null);
+  const [currentUser, setCurrentUser] = useState(propCurrentUser);
   
-  const loggedUser = useUser().user;
+  const loggedUser = useUser().user || currentUser;
   const unreadCount = 0;
+
+  // Fetch logged-in user if not available from props or context
+  useEffect(() => {
+    const loadCurrentUser = async () => {
+      if (!currentUser && !loggedUser) {
+        try {
+          const fetchedUser = await fetchLoggedInUser();
+          setCurrentUser(fetchedUser);
+        } catch (error) {
+          console.error('Error fetching logged-in user:', error);
+        }
+      }
+    };
+
+    loadCurrentUser();
+  }, [currentUser, loggedUser]);
 
   useEffect(() => {
     const fetchGuides = async () => {
@@ -137,12 +155,13 @@ export default function TravelerDashboard({ currentUser }) {
   };
 
   const handleNavigateToGuides = () => {
-    navigate('/guides-page', { state: { currentUser } });
+    const userToPass = loggedUser || currentUser;
+    navigate('/guides-page', { state: { currentUser: userToPass } });
   };
 
   return (
     <Layout 
-      user={loggedUser}
+      user={loggedUser || currentUser}
       unreadCount={unreadCount}
       onCurrencyChange={setSelectedCurrency}
       selectedCurrency={selectedCurrency}
@@ -178,7 +197,7 @@ export default function TravelerDashboard({ currentUser }) {
               <h2 className="text-lg font-bold">{section.title}</h2>
               <button 
                 className="text-blue-500"
-                onClick={() => section.title === "Discover Tour Guides" ? navigate('/guides-page') : null}
+                onClick={() => section.title === "Discover Tour Guides" ? handleNavigateToGuides() : null}
               >
                 See more →
               </button>
