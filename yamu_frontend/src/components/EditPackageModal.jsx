@@ -40,20 +40,28 @@ const EditPackageModal = ({ package: packageToEdit, onClose, onSuccess }) => {
   // Modal states
   const [isHotelModalOpen, setIsHotelModalOpen] = useState(false);
   const [isDriverModalOpen, setIsDriverModalOpen] = useState(false);
-
+  console.log("Edit Package Modal opened for package:", packageToEdit);
   // Initialize form data from package
   useEffect(() => {
     if (packageToEdit) {
+      // Parse day plans to convert JSON strings to arrays
+      const parsedDayPlans = packageToEdit.dayPlans ? packageToEdit.dayPlans.map(day => ({
+        dayNumber: day.dayNumber,
+        plannedLocations: day.plannedLocations ? JSON.parse(day.plannedLocations) : [''],
+        plannedActivities: day.activities ? JSON.parse(day.activities) : [''],
+        estimatedCostPerPerson: day.estimatedCostPerPerson || 0
+      })) : [];
+
       setFormData({
         packageName: packageToEdit.packageName || '',
         description: packageToEdit.description || '',
         durationDays: packageToEdit.durationDays || 1,
         status: packageToEdit.status || 'DRAFT',
-        selectedHotelId: packageToEdit.selectedHotelId || '',
-        selectedDriverId: packageToEdit.selectedDriverId || '',
+        selectedHotelId: packageToEdit.selectedHotel?.id || '',
+        selectedDriverId: packageToEdit.selectedDriver?.id || '',
         budgetPerPerson: packageToEdit.budgetPerPerson || 0,
         currency: packageToEdit.currency || 'LKR',
-        dayPlans: packageToEdit.dayPlans || []
+        dayPlans: parsedDayPlans
       });
     }
   }, [packageToEdit]);
@@ -248,7 +256,7 @@ const EditPackageModal = ({ package: packageToEdit, onClose, onSuccess }) => {
         dayPlans: cleanedDayPlans
       };
 
-      await packageService.updatePackage(packageToEdit.packageId, packageData);
+      await packageService.updatePackage(packageToEdit.id, packageData);
       onSuccess();
     } catch (err) {
       setError(err.message);
@@ -279,10 +287,20 @@ const EditPackageModal = ({ package: packageToEdit, onClose, onSuccess }) => {
   };
 
   const getSelectedHotel = () => {
+    // First check if hotel data is available in packageToEdit
+    if (packageToEdit?.selectedHotel && packageToEdit.selectedHotel.id == formData.selectedHotelId) {
+      return packageToEdit.selectedHotel;
+    }
+    // Fall back to available resources
     return availableResources.hotels.find(hotel => hotel.id == formData.selectedHotelId);
   };
 
   const getSelectedDriver = () => {
+    // First check if driver data is available in packageToEdit
+    if (packageToEdit?.selectedDriver && packageToEdit.selectedDriver.id == formData.selectedDriverId) {
+      return packageToEdit.selectedDriver;
+    }
+    // Fall back to available resources
     return availableResources.drivers.find(driver => driver.id == formData.selectedDriverId);
   };
 
@@ -476,9 +494,12 @@ const EditPackageModal = ({ package: packageToEdit, onClose, onSuccess }) => {
                         </button>
                       </div>
                       <p className="text-sm text-gray-600">⭐ {getSelectedDriver().rating}/5</p>
-                      <p className="text-sm text-gray-600">
-                        {getSelectedDriver().vehicleType} - {getSelectedDriver().brand} {getSelectedDriver().model}
-                      </p>
+                      {(getSelectedDriver().vehicleType || getSelectedDriver().brand || getSelectedDriver().model) && (
+                        <p className="text-sm text-gray-600">
+                          {[getSelectedDriver().vehicleType, getSelectedDriver().brand, getSelectedDriver().model]
+                            .filter(Boolean).join(' - ')}
+                        </p>
+                      )}
                       <p className="text-sm font-medium text-blue-600">
                         {formatCurrency(getSelectedDriver().ratePerLng)}/km
                       </p>
@@ -516,7 +537,7 @@ const EditPackageModal = ({ package: packageToEdit, onClose, onSuccess }) => {
                     <MapPin className="inline w-4 h-4 mr-1" />
                     Planned Locations
                   </label>
-                  {day.plannedLocations && day.plannedLocations.map((location, locIndex) => (
+                  {Array.isArray(day.plannedLocations) && day.plannedLocations.map((location, locIndex) => (
                     <div key={locIndex} className="flex items-center space-x-2 mb-2">
                       <input
                         type="text"
@@ -525,7 +546,7 @@ const EditPackageModal = ({ package: packageToEdit, onClose, onSuccess }) => {
                         placeholder="Enter location"
                         className="flex-1 border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                       />
-                      {day.plannedLocations.length > 1 && (
+                      {Array.isArray(day.plannedLocations) && day.plannedLocations.length > 1 && (
                         <button
                           type="button"
                           onClick={() => removeLocationFromDayPlan(dayIndex, locIndex)}
@@ -552,7 +573,7 @@ const EditPackageModal = ({ package: packageToEdit, onClose, onSuccess }) => {
                     <Clock className="inline w-4 h-4 mr-1" />
                     Planned Activities
                   </label>
-                  {day.plannedActivities && day.plannedActivities.map((activity, actIndex) => (
+                  {Array.isArray(day.plannedActivities) && day.plannedActivities.map((activity, actIndex) => (
                     <div key={actIndex} className="flex items-center space-x-2 mb-2">
                       <input
                         type="text"
@@ -561,7 +582,7 @@ const EditPackageModal = ({ package: packageToEdit, onClose, onSuccess }) => {
                         placeholder="Enter activity"
                         className="flex-1 border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                       />
-                      {day.plannedActivities.length > 1 && (
+                      {Array.isArray(day.plannedActivities) && day.plannedActivities.length > 1 && (
                         <button
                           type="button"
                           onClick={() => removeActivityFromDayPlan(dayIndex, actIndex)}
