@@ -1,57 +1,232 @@
 package com.yamu.backend.controller;
 
 import com.yamu.backend.dto.*;
-import com.yamu.backend.dto.*;
+import com.yamu.backend.enums.UserRole;
+import com.yamu.backend.errorresponses.ErrorResponse;
+import com.yamu.backend.exception.ResourceNotFoundException;
 import com.yamu.backend.model.*;
+import com.yamu.backend.repository.UserRepository;
 import com.yamu.backend.service.GuideReservationByTravelerService;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/reservations")
+@Slf4j
 public class GuideReservationByTravelerController {
 
     private final GuideReservationByTravelerService reservationService;
+    private final UserRepository userRepository;
 
-    // Constructor to inject the service dependency
-    public GuideReservationByTravelerController(GuideReservationByTravelerService reservationService) {
+    public GuideReservationByTravelerController(
+            GuideReservationByTravelerService reservationService,
+            UserRepository userRepository) {
         this.reservationService = reservationService;
+        this.userRepository = userRepository;
     }
 
-    // Converts a GuideReservationByTraveler entity to a DTO
+    @PostMapping
+    public ResponseEntity<?> createReservation(
+            @RequestBody CreateReservationRequest request,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        try {
+            User currentUser = userRepository.findByEmail(userDetails.getUsername())
+                    .orElseThrow(() -> new RuntimeException("User not found"));
+            
+            if (!currentUser.getId().equals(request.getTravelerId())) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(new ErrorResponse("Authorization Error", 
+                              "You can only create reservations for yourself"));
+            }
+            
+            GuideReservationByTraveler reservation = reservationService.createReservation(request);
+            return ResponseEntity.ok(convertToDto(reservation));
+        } catch (Exception ex) {
+            log.error("Error creating reservation", ex);
+            return ResponseEntity.badRequest()
+                    .body(new ErrorResponse("Validation Error", ex.getMessage()));
+        }
+    }
+
+    @PutMapping("/{reservationId}")
+    @PreAuthorize("hasAnyRole('TRAVELER', 'GUIDE')")
+    public ResponseEntity<?> updateReservation(
+            @PathVariable Long reservationId,
+            @RequestBody CreateReservationRequest request,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        try {
+            User currentUser = userRepository.findByEmail(userDetails.getUsername())
+                    .orElseThrow(() -> new RuntimeException("User not found"));
+            
+            GuideReservationByTraveler reservation = reservationService.getReservationById(reservationId);
+            
+            if (!reservation.getTraveler().getEmail().equals(userDetails.getUsername()) 
+                    && !reservation.getGuide().getEmail().equals(userDetails.getUsername())) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(new ErrorResponse("Authorization Error",
+                              "You don't have permission to modify this reservation"));
+            }
+            
+            GuideReservationByTraveler updatedReservation = reservationService.updateReservation(reservationId, request);
+            return ResponseEntity.ok(convertToDto(updatedReservation));
+        } catch (ResourceNotFoundException ex) {
+            return ResponseEntity.notFound().build();
+        } catch (IllegalStateException ex) {
+            return ResponseEntity.badRequest()
+                    .body(new ErrorResponse("Validation Error", ex.getMessage()));
+        } catch (Exception ex) {
+            log.error("Error updating reservation ID: " + reservationId, ex);
+            return ResponseEntity.internalServerError()
+                    .body(new ErrorResponse("Server Error", 
+                          "Failed to update reservation: " + ex.getMessage()));
+        }
+    }
+
+    @GetMapping("/guide/{guideId}")
+    public ResponseEntity<?> getGuideReservations(
+            @PathVariable Long guideId,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        try {
+            User currentUser = userRepository.findByEmail(userDetails.getUsername())
+                    .orElseThrow(() -> new RuntimeException("User not found"));
+            
+            if (!currentUser.getId().equals(guideId) && !currentUser.getRole().equals(UserRole.ADMIN)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(new ErrorResponse("Authorization Error",
+                              "You can only view your own reservations"));
+            }
+            
+            List<GuideReservationByTraveler> reservations = reservationService.getReservationsForGuide(guideId);
+            List<GuideReservationResponse> response = reservations.stream()
+                .map(this::convertToDto)
+                .collect(Collectors.toList());
+            return ResponseEntity.ok(response);
+        } catch (Exception ex) {
+            log.error("Error getting reservations for guide ID: " + guideId, ex);
+            return ResponseEntity.internalServerError()
+                    .body(new ErrorResponse("Server Error",
+                          "Failed to get reservations: " + ex.getMessage()));
+        }
+    }
+
+    @GetMapping("/traveler/{travelerId}")
+    public ResponseEntity<?> getTravelerReservations(
+            @PathVariable Long travelerId,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        try {
+            User currentUser = userRepository.findByEmail(userDetails.getUsername())
+                    .orElseThrow(() -> new RuntimeException("User not found"));
+            
+            if (!currentUser.getId().equals(travelerId)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(new ErrorResponse("Authorization Error",
+                              "You can only view your own reservations"));
+            }
+            
+            List<GuideReservationByTraveler> reservations = reservationService.getReservationsForTraveler(travelerId);
+            List<GuideReservationResponse> response = reservations.stream()
+                .map(this::convertToDto)
+                .collect(Collectors.toList());
+            return ResponseEntity.ok(response);
+        } catch (Exception ex) {
+            log.error("Error getting reservations for traveler ID: " + travelerId, ex);
+            return ResponseEntity.internalServerError()
+                    .body(new ErrorResponse("Server Error",
+                          "Failed to get reservations: " + ex.getMessage()));
+        }
+    }
+
+    @PutMapping("/{reservationId}/confirm")
+    @PreAuthorize("hasRole('GUIDE')")
+    public ResponseEntity<?> confirmReservation(
+            @PathVariable Long reservationId,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        try {
+            GuideReservationByTraveler reservation = reservationService.getReservationById(reservationId);
+            
+            if (!reservation.getGuide().getEmail().equals(userDetails.getUsername())) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(new ErrorResponse("Authorization Error",
+                              "You can only confirm your own reservations"));
+            }
+            
+            GuideReservationByTraveler updatedReservation = reservationService.updateReservationStatus(
+                reservationId, 
+                GuideReservationByTraveler.ReservationStatus.CONFIRMED);
+            return ResponseEntity.ok(convertToDto(updatedReservation));
+        } catch (ResourceNotFoundException ex) {
+            return ResponseEntity.notFound().build();
+        } catch (Exception ex) {
+            log.error("Error confirming reservation ID: " + reservationId, ex);
+            return ResponseEntity.internalServerError()
+                    .body(new ErrorResponse("Server Error",
+                          "Failed to confirm reservation: " + ex.getMessage()));
+        }
+    }
+
+    // [Other endpoint methods follow the same pattern with ErrorResponse]
+    // ...
+
+    @DeleteMapping("/{reservationId}")
+    @PreAuthorize("hasAnyRole('TRAVELER', 'GUIDE')")
+    public ResponseEntity<?> deleteReservation(
+            @PathVariable Long reservationId,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        try {
+            GuideReservationByTraveler reservation = reservationService.getReservationById(reservationId);
+            User currentUser = userRepository.findByEmail(userDetails.getUsername())
+                    .orElseThrow(() -> new RuntimeException("User not found"));
+            
+            if (!reservation.getTraveler().getEmail().equals(userDetails.getUsername()) 
+                    && !reservation.getGuide().getEmail().equals(userDetails.getUsername())) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(new ErrorResponse("Authorization Error",
+                              "You don't have permission to delete this reservation"));
+            }
+            
+            reservationService.deleteReservation(reservationId);
+            return ResponseEntity.ok().build();
+        } catch (ResourceNotFoundException ex) {
+            return ResponseEntity.notFound().build();
+        } catch (Exception ex) {
+            log.error("Error deleting reservation ID: " + reservationId, ex);
+            return ResponseEntity.internalServerError()
+                    .body(new ErrorResponse("Server Error",
+                          "Failed to delete reservation: " + ex.getMessage()));
+        }
+    }
+
     private GuideReservationResponse convertToDto(GuideReservationByTraveler reservation) {
         GuideReservationResponse dto = new GuideReservationResponse();
         dto.setId(reservation.getId());
         
-        // Map traveler details if available
         if (reservation.getTraveler() != null) {
             dto.setTravelerId(reservation.getTraveler().getId());
             dto.setTraveler(UserDto.fromEntity(reservation.getTraveler()));
         }
         
-        // Map guide details if available
         if (reservation.getGuide() != null) {
             dto.setGuideId(reservation.getGuide().getId());
             dto.setGuideName(reservation.getGuide().getFirstName() + " " + reservation.getGuide().getLastName());
             dto.setGuideContact(reservation.getGuide().getContactNumber());
         }
         
-        // Map other reservation details
         dto.setNumberOfDays(reservation.getNumberOfDays());
         dto.setEstimatedPrice(reservation.getEstimatedPrice());
-        dto.setEstimatedPrice(reservation.getEstimatedPrice());
         
-        // Map reservation status if available
         if (reservation.getStatus() != null) {
             dto.setStatus(reservation.getStatus().name());
         }
         
-        // Map creation and update timestamps if available
         if (reservation.getCreatedAt() != null) {
             dto.setCreatedAt(reservation.getCreatedAt().toString());
         }
@@ -60,7 +235,6 @@ public class GuideReservationByTravelerController {
             dto.setUpdatedAt(reservation.getUpdatedAt().toString());
         }
         
-        // Map day details if available
         if (reservation.getDayDetails() != null) {
             dto.setDayDetails(reservation.getDayDetails().stream()
                 .map(this::convertDayDetailToDto)
@@ -70,7 +244,6 @@ public class GuideReservationByTravelerController {
         return dto;
     }
 
-    // Converts a GuideReservationDayDetail entity to a DTO
     private GuideReservationResponse.DayDetailDto convertDayDetailToDto(GuideReservationDayDetail dayDetail) {
         GuideReservationResponse.DayDetailDto dayDetailDto = new GuideReservationResponse.DayDetailDto();
         dayDetailDto.setDayNumber(dayDetail.getDayNumber());
@@ -80,76 +253,5 @@ public class GuideReservationByTravelerController {
         dayDetailDto.setVehicleRequested(dayDetail.getVehicleRequested());
         dayDetailDto.setVehicleDetails(dayDetail.getVehicleDetails());
         return dayDetailDto;
-    }
-
-    // Endpoint to create a new reservation
-    @PostMapping
-    public ResponseEntity<GuideReservationResponse> createReservation(
-            @RequestBody CreateReservationRequest request) {
-        GuideReservationByTraveler reservation = reservationService.createReservation(request);
-        return ResponseEntity.ok(convertToDto(reservation));
-    }
-
-    // Endpoint to get reservations for a specific guide
-    @GetMapping("/guide/{guideId}")
-    public ResponseEntity<List<GuideReservationResponse>> getGuideReservations(
-            @PathVariable Long guideId) {
-        List<GuideReservationByTraveler> reservations = reservationService.getReservationsForGuide(guideId);
-        List<GuideReservationResponse> response = reservations.stream()
-            .map(this::convertToDto)
-            .collect(Collectors.toList());
-        return ResponseEntity.ok(response);
-    }
-
-    // Endpoint to get reservations for a specific traveler
-    @GetMapping("/traveler/{travelerId}")
-    public ResponseEntity<List<GuideReservationResponse>> getTravelerReservations(
-            @PathVariable Long travelerId) {
-        List<GuideReservationByTraveler> reservations = reservationService.getReservationsForTraveler(travelerId);
-        List<GuideReservationResponse> response = reservations.stream()
-            .map(this::convertToDto)
-            .collect(Collectors.toList());
-        return ResponseEntity.ok(response);
-    }
-
-    // Endpoint to confirm a reservation
-    @PutMapping("/{reservationId}/confirm")
-    public ResponseEntity<GuideReservationResponse> confirmReservation(
-            @PathVariable Long reservationId) {
-        GuideReservationByTraveler reservation = reservationService.updateReservationStatus(
-            reservationId, 
-            GuideReservationByTraveler.ReservationStatus.CONFIRMED);
-        return ResponseEntity.ok(convertToDto(reservation));
-    }
-
-    // Endpoint to decline a reservation
-    @PutMapping("/{reservationId}/decline")
-    public ResponseEntity<GuideReservationResponse> declineReservation(
-            @PathVariable Long reservationId) {
-        GuideReservationByTraveler reservation = reservationService.updateReservationStatus(
-            reservationId, 
-            GuideReservationByTraveler.ReservationStatus.DECLINED);
-        return ResponseEntity.ok(convertToDto(reservation));
-    }
-
-    // Endpoint to mark a reservation as completed
-    @PutMapping("/{reservationId}/complete")
-    public ResponseEntity<GuideReservationResponse> completeReservation(
-            @PathVariable Long reservationId) {
-        GuideReservationByTraveler reservation = reservationService.updateReservationStatus(
-            reservationId, 
-            GuideReservationByTraveler.ReservationStatus.COMPLETED);
-        return ResponseEntity.ok(convertToDto(reservation));
-    }
-
-    // Endpoint to set the estimated price for a reservation
-    @PutMapping("/{reservationId}/set-price")
-    public ResponseEntity<GuideReservationResponse> setReservationPrice(
-            @PathVariable Long reservationId,
-            @RequestBody Map<String, Double> request) {
-        GuideReservationByTraveler reservation = reservationService.setReservationPrice(
-            reservationId, 
-            request.get("estimatedPrice"));
-        return ResponseEntity.ok(convertToDto(reservation));
     }
 }

@@ -64,7 +64,7 @@ const Header = ({
     <div className="relative">
       <button
         onClick={() => setIsCurrencyOpen(!isCurrencyOpen)}
-        className="flex items-center gap-2 px-3 py-2.5 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all duration-200 group min-w-[90px] justify-center"
+        className="flex items-center gap-2 px-3 py-2.5 text-gray-700 hover:text-[#D59C29] hover:bg-[#F5E8D0] rounded-xl transition-all duration-200 group min-w-[90px] justify-center"
         title="Change Currency"
       >
         <Globe className="w-5 h-5" />
@@ -86,8 +86,8 @@ const Header = ({
                 onCurrencyChange?.(currency.code);
                 setIsCurrencyOpen(false);
               }}
-              className={`w-full px-4 py-3 text-left hover:bg-blue-50 flex items-center justify-between transition-colors ${
-                selectedCurrency === currency.code ? 'bg-blue-50 text-blue-600' : 'text-gray-700'
+              className={`w-full px-4 py-3 text-left hover:bg-[#F5E8D0] flex items-center justify-between transition-colors ${
+                selectedCurrency === currency.code ? 'bg-[#F5E8D0] text-[#5B1B15]' : 'text-gray-700'
               }`}
             >
               <div className="flex items-center gap-3">
@@ -98,7 +98,7 @@ const Header = ({
                 </div>
               </div>
               {selectedCurrency === currency.code && (
-                <div className="w-2.5 h-2.5 bg-blue-600 rounded-full"></div>
+                <div className="w-2.5 h-2.5 bg-[#5B1B15] rounded-full"></div>
               )}
             </button>
           ))}
@@ -111,12 +111,12 @@ const Header = ({
     <div className="relative">
       <button
         onClick={() => setIsNotificationOpen(!isNotificationOpen)}
-        className="relative p-2.5 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all duration-200 group"
+        className="relative p-2.5 text-gray-700 hover:text-[#D59C29] hover:bg-[#F5E8D0] rounded-xl transition-all duration-200 group"
         title="Notifications"
       >
         <Bell className="w-6 h-6" />
         {notifications.filter(n => n.unread).length > 0 && (
-          <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center animate-pulse font-medium">
+          <span className="absolute -top-1 -right-1 bg-[#5B1B15] text-white text-xs rounded-full w-5 h-5 flex items-center justify-center animate-pulse font-medium">
             {notifications.filter(n => n.unread).length}
           </span>
         )}
@@ -126,7 +126,7 @@ const Header = ({
         <div className="absolute right-0 mt-2 w-84 bg-white border border-gray-200 rounded-xl shadow-xl z-50">
           <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
             <h3 className="font-semibold text-lg text-gray-900">Notifications</h3>
-            <button className="text-sm text-blue-600 hover:text-blue-700 font-semibold">
+            <button className="text-sm text-[#5B1B15] hover:text-[#7A2B1D] font-semibold">
               Mark all read
             </button>
           </div>
@@ -135,12 +135,12 @@ const Header = ({
               <div
                 key={notification.id}
                 className={`px-5 py-4 border-b border-gray-50 hover:bg-gray-50 transition-colors ${
-                  notification.unread ? 'bg-blue-50' : ''
+                  notification.unread ? 'bg-[#F5E8D0]' : ''
                 }`}
               >
                 <div className="flex items-start gap-3">
                   <div className={`w-2.5 h-2.5 rounded-full mt-2 ${
-                    notification.unread ? 'bg-blue-600' : 'bg-gray-300'
+                    notification.unread ? 'bg-[#5B1B15]' : 'bg-gray-300'
                   }`}></div>
                   <div className="flex-1">
                     <p className="text-base text-gray-900">{notification.message}</p>
@@ -151,7 +151,7 @@ const Header = ({
             ))}
           </div>
           <div className="px-5 py-4 border-t border-gray-100">
-            <button className="w-full text-center text-base text-blue-600 hover:text-blue-700 font-semibold">
+            <button className="w-full text-center text-base text-[#5B1B15] hover:text-[#7A2B1D] font-semibold">
               View all notifications
             </button>
           </div>
@@ -163,114 +163,104 @@ const Header = ({
   const MessagesIcon = () => (
     <button
       onClick={() => navigate('/inbox')}
-      className="relative p-2.5 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all duration-200 group"
+      className="relative p-2.5 text-gray-700 hover:text-[#D59C29] hover:bg-[#F5E8D0] rounded-xl transition-all duration-200 group"
       title="Messages"
     >
       <Mail className="w-6 h-6" />
       {unreadCount > 0 && (
-        <span className="absolute -top-1 -right-1 bg-green-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-medium">
+        <span className="absolute -top-1 -right-1 bg-[#5B1B15] text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-medium">
           {unreadCount > 9 ? '9+' : unreadCount}
         </span>
       )}
     </button>
   );
 
-const ProfileDropdown = () => (
+  const ProfileDropdown = () => (
     <div className="relative">
-        <button
-            onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-            className="flex items-center gap-3 p-2 rounded-xl hover:bg-blue-50 transition-all duration-200 group"
-        >
-            <div className="relative">
-                <img
-                    src={user?.profileImageUrl || '/default-profile.png'}
-                    alt="Profile"
-                    className="w-10 h-10 rounded-full object-cover ring-2 ring-transparent group-hover:ring-blue-200 transition-all duration-200"
-                />
-                <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
-            </div>
-            <div className="hidden sm:block text-left">
-                <p className="font-semibold text-base text-gray-900 truncate max-w-[120px]">
-                    {user?.firstName} {user?.lastName}
-                </p>
-                <p className="text-sm text-gray-500">
-                    {user?.role === 'ADMIN'
-                        ? 'Admin'
-                        : user?.role === 'GUIDE'
-                        ? 'Guide'
-                        : 'Traveler'}
-                </p>
-            </div>
-            <ChevronDown className={`w-4 h-4 text-gray-600 transition-transform duration-200 ${isDropdownOpen ? 'rotate-180' : ''}`} />
-        </button>
+      <button
+        onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+        className="flex items-center gap-3 p-2 rounded-xl hover:bg-[#F5E8D0] transition-all duration-200 group"
+      >
+        <div className="relative">
+          <img
+            src={user?.profileImageUrl || '/default-profile.png'}
+            alt="Profile"
+            className="w-10 h-10 rounded-full object-cover ring-2 ring-transparent group-hover:ring-[#E8D5B5] transition-all duration-200"
+          />
+          <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-[#D59C29] rounded-full border-2 border-white"></div>
+        </div>
+        <div className="hidden sm:block text-left">
+          <p className="font-semibold text-base text-gray-900 truncate max-w-[120px]">
+            {user?.firstName} {user?.lastName}
+          </p>
+          <p className="text-sm text-gray-500">
+            {user?.role === 'ADMIN'
+              ? 'Admin'
+              : user?.role === 'GUIDE'
+              ? 'Guide'
+              : 'Traveler'}
+          </p>
+        </div>
+        <ChevronDown className={`w-4 h-4 text-gray-600 transition-transform duration-200 ${isDropdownOpen ? 'rotate-180' : ''}`} />
+      </button>
 
-        {isDropdownOpen && (
-            <div className="absolute right-0 mt-2 w-72 bg-white border border-gray-200 rounded-xl shadow-xl z-50">
-                <div className="px-5 py-4 border-b border-gray-100">
-                    <div className="flex items-center gap-3">
-                        <img
-                            src={user?.profileImageUrl || '/default-profile.png'}
-                            alt="Profile"
-                            className="w-12 h-12 rounded-full object-cover"
-                        />
-                        <div>
-                            <p className="font-semibold text-lg text-gray-900">
-                                {user?.firstName} {user?.lastName}
-                            </p>
-                            <p className="text-base text-gray-600">{user?.email}</p>
-                            <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold mt-1 ${
-                                user?.role === 'ADMIN'
-                                    ? 'bg-red-100 text-red-800'
-                                    : user?.role === 'GUIDE'
-                                    ? 'bg-green-100 text-green-800'
-                                    : 'bg-blue-100 text-blue-800'
-                            }`}>
-                                {user?.role === 'ADMIN'
-                                    ? 'Admin'
-                                    : user?.role === 'GUIDE'
-                                    ? 'Tour Guide'
-                                    : 'Traveler'}
-                            </span>
-                        </div>
-                    </div>
-                </div>
-                <div className="py-2">
-                    <button
-                        onClick={() => {
-                            navigate('/profile');
-                            setIsDropdownOpen(false);
-                        }}
-                        className="w-full px-5 py-3 text-left text-base text-gray-700 hover:bg-gray-50 flex items-center gap-3 font-medium"
-                    >
-                        <User className="w-5 h-5" />
-                        Profile Settings
-                    </button>
-                    {/* <button
-                        onClick={() => {
-                            navigate('/settings');
-                            setIsDropdownOpen(false);
-                        }}
-                        className="w-full px-5 py-3 text-left text-base text-gray-700 hover:bg-gray-50 flex items-center gap-3 font-medium"
-                    >
-                        <Settings className="w-5 h-5" />
-                        Account Settings
-                    </button> */}
-                    <hr className="my-2 border-gray-100" />
-                    <button
-                        onClick={() => {
-                            localStorage.removeItem('user');
-                            navigate('/login');
-                            setIsDropdownOpen(false);
-                        }}
-                        className="w-full px-5 py-3 text-left text-base text-red-600 hover:bg-red-50 flex items-center gap-3 font-medium"
-                    >
-                        <span>Sign Out</span>
-                    </button>
-                </div>
+      {isDropdownOpen && (
+        <div className="absolute right-0 mt-2 w-72 bg-white border border-gray-200 rounded-xl shadow-xl z-50">
+          <div className="px-5 py-4 border-b border-gray-100">
+            <div className="flex items-center gap-3">
+              <img
+                src={user?.profileImageUrl || '/default-profile.png'}
+                alt="Profile"
+                className="w-12 h-12 rounded-full object-cover"
+              />
+              <div>
+                <p className="font-semibold text-lg text-gray-900">
+                  {user?.firstName} {user?.lastName}
+                </p>
+                <p className="text-base text-gray-600">{user?.email}</p>
+                <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold mt-1 ${
+                  user?.role === 'ADMIN'
+                    ? 'bg-red-100 text-red-800'
+                    : user?.role === 'GUIDE'
+                    ? 'bg-[#F5E8D0] text-[#5B1B15]'
+                    : 'bg-[#F5E8D0] text-[#5B1B15]'
+                }`}>
+                  {user?.role === 'ADMIN'
+                    ? 'Admin'
+                    : user?.role === 'GUIDE'
+                    ? 'Tour Guide'
+                    : 'Traveler'}
+                </span>
+              </div>
             </div>
-        )}
+          </div>
+          <div className="py-2">
+            <button
+              onClick={() => {
+                navigate('/profile');
+                setIsDropdownOpen(false);
+              }}
+              className="w-full px-5 py-3 text-left text-base text-gray-700 hover:bg-[#F5E8D0] flex items-center gap-3 font-medium"
+            >
+              <User className="w-5 h-5" />
+              Profile Settings
+            </button>
+            <hr className="my-2 border-gray-100" />
+            <button
+              onClick={() => {
+                localStorage.removeItem('user');
+                navigate('/login');
+                setIsDropdownOpen(false);
+              }}
+              className="w-full px-5 py-3 text-left text-base text-red-600 hover:bg-red-50 flex items-center gap-3 font-medium"
+            >
+              <span>Sign Out</span>
+            </button>
+          </div>
+        </div>
+      )}
     </div>
-);
+  );
 
   return (
     <header className="bg-white shadow-sm sticky top-0 z-40 border-b border-gray-200">
@@ -281,10 +271,17 @@ const ProfileDropdown = () => (
             className="flex items-center gap-3 cursor-pointer"
             onClick={() => navigate('/')}
           >
-            <div className="w-12 h-12 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
-              <span className="text-white font-bold text-2xl">Y</span>
+            <div className="relative h-12 w-12">
+              <img 
+                src="/logo.png" 
+                alt="YAMU Logo" 
+                className="h-full w-full object-contain"
+                style={{
+                  filter: "drop-shadow(0 0 2px white) drop-shadow(0 0 2px white)"
+                }}
+              />
             </div>
-            <span className="text-3xl font-bold text-gray-900">YAMU</span>
+            <span className="text-3xl font-bold text-[#5B1B15]">YAMU</span>
           </div>
 
           {/* Desktop Navigation */}
@@ -295,8 +292,8 @@ const ProfileDropdown = () => (
                 onClick={() => handleNavigation(item.path)}
                 className={`px-5 py-2.5 rounded-xl text-base font-semibold transition-all duration-200 ${
                   isActivePath(item.path)
-                    ? 'bg-blue-100 text-blue-700'
-                    : 'text-gray-700 hover:text-blue-600 hover:bg-blue-50'
+                    ? 'bg-[#F5E8D0] text-[#5B1B15]'
+                    : 'text-gray-700 hover:text-[#5B1B15] hover:bg-[#F5E8D0]'
                 }`}
               >
                 {item.name}
@@ -307,13 +304,13 @@ const ProfileDropdown = () => (
           {/* Right side actions */}
           <div className="flex items-center gap-2">
             {/* Action buttons group */}
-            <div className="flex items-center bg-gray-50 rounded-2xl p-2 gap-1">
+            <div className="flex items-center bg-[#F5E8D0] rounded-2xl p-2 gap-1">
               {/* Currency Selector (only for travelers) */}
               {user?.role !== 'GUIDE' && <CurrencySelector />}
               
               {/* Divider */}
               {user?.role !== 'GUIDE' && (
-                <div className="w-px h-8 bg-gray-300 mx-1"></div>
+                <div className="w-px h-8 bg-[#D59C29] mx-1"></div>
               )}
               
               {/* Messages */}
@@ -331,7 +328,7 @@ const ProfileDropdown = () => (
             {/* Mobile menu button */}
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="md:hidden ml-3 p-2.5 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-colors"
+              className="md:hidden ml-3 p-2.5 text-gray-700 hover:text-[#5B1B15] hover:bg-[#F5E8D0] rounded-xl transition-colors"
             >
               {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
             </button>
@@ -349,8 +346,8 @@ const ProfileDropdown = () => (
                 onClick={() => handleNavigation(item.path)}
                 className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left font-semibold text-base transition-colors ${
                   isActivePath(item.path)
-                    ? 'bg-blue-100 text-blue-700'
-                    : 'text-gray-700 hover:text-blue-600 hover:bg-blue-50'
+                    ? 'bg-[#F5E8D0] text-[#5B1B15]'
+                    : 'text-gray-700 hover:text-[#5B1B15] hover:bg-[#F5E8D0]'
                 }`}
               >
                 {item.name}
@@ -405,25 +402,32 @@ const Footer = ({ navigate }) => {
   ];
 
   return (
-    <footer className="bg-gray-900 text-white">
+    <footer className="bg-[#5B1B15] text-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Main Footer Content */}
         <div className="py-12 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8">
           {/* Brand Section */}
           <div className="lg:col-span-2">
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-xl">Y</span>
+              <div className="relative h-10 w-10">
+                <img 
+                  src="/logo.png" 
+                  alt="YAMU Logo" 
+                  className="h-full w-full object-contain"
+                  style={{
+                    filter: "drop-shadow(0 0 100px white) drop-shadow(0 0 2px white)"
+                  }}
+                />
               </div>
-              <span className="text-2xl font-bold">YAMU</span>
+              <span className="text-2xl font-bold text-[#D59C29]">YAMU</span>
             </div>
-            <p className="text-gray-400 mb-6 max-w-md">
+            <p className="text-[#E8D5B5] mb-6 max-w-md">
               Your trusted travel companion in Sri Lanka. Discover amazing destinations, 
               connect with local guides, and create unforgettable memories.
             </p>
             
             {/* Contact Info */}
-            <div className="space-y-2 text-sm text-gray-400">
+            <div className="space-y-2 text-sm text-[#E8D5B5]">
               <div className="flex items-center gap-2">
                 <MapPin className="w-4 h-4" />
                 <span>Colombo, Sri Lanka</span>
@@ -442,13 +446,13 @@ const Footer = ({ navigate }) => {
           {/* Footer Links */}
           {footerSections.map((section) => (
             <div key={section.title}>
-              <h3 className="text-lg font-semibold mb-4">{section.title}</h3>
+              <h3 className="text-lg font-semibold mb-4 text-[#D59C29]">{section.title}</h3>
               <ul className="space-y-2">
                 {section.links.map((link) => (
                   <li key={link.name}>
                     <button
                       onClick={() => navigate(link.path)}
-                      className="text-gray-400 hover:text-white transition-colors text-sm"
+                      className="text-[#E8D5B5] hover:text-white transition-colors text-sm"
                     >
                       {link.name}
                     </button>
@@ -460,21 +464,21 @@ const Footer = ({ navigate }) => {
         </div>
 
         {/* Bottom Section */}
-        <div className="py-6 border-t border-gray-800">
+        <div className="py-6 border-t border-[#7A2B1D]">
           <div className="flex flex-col md:flex-row justify-between items-center">
-            <p className="text-gray-400 text-sm">
+            <p className="text-[#E8D5B5] text-sm">
               © 2025 YAMU Travel Management System. All rights reserved.
             </p>
             
             {/* Social Media Links */}
             <div className="flex items-center gap-4 mt-4 md:mt-0">
-              <a href="#" className="text-gray-400 hover:text-white transition-colors">
+              <a href="#" className="text-[#E8D5B5] hover:text-[#D59C29] transition-colors">
                 <Facebook className="w-5 h-5" />
               </a>
-              <a href="#" className="text-gray-400 hover:text-white transition-colors">
+              <a href="#" className="text-[#E8D5B5] hover:text-[#D59C29] transition-colors">
                 <Instagram className="w-5 h-5" />
               </a>
-              <a href="#" className="text-gray-400 hover:text-white transition-colors">
+              <a href="#" className="text-[#E8D5B5] hover:text-[#D59C29] transition-colors">
                 <Twitter className="w-5 h-5" />
               </a>
             </div>
@@ -486,7 +490,7 @@ const Footer = ({ navigate }) => {
 };
 
 // Main Layout Component
-const Layout = ({ children, user, unreadCount, onCurrencyChange, selectedCurrency}) => {
+const Layout = ({ children, user, unreadCount, onCurrencyChange, selectedCurrency }) => {
   const navigate = useNavigate();
   const location = useLocation();
   
@@ -510,4 +514,4 @@ const Layout = ({ children, user, unreadCount, onCurrencyChange, selectedCurrenc
   );
 };
 
-export {Layout, Header, Footer };
+export { Layout, Header, Footer };

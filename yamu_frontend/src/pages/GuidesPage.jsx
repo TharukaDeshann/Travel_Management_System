@@ -4,19 +4,12 @@ import { Search, MapPin, Languages, Car, Star, Users, Shield } from 'lucide-reac
 import GuideModal from '../components/GuideModal';
 import apiClient from '../services/axiosInstance';
 import { fetchUsersByRole } from '../services/userService';
-
-import VehicleManagement from '../components/VehicleManagement';
 import { useUser } from '../context/UserContext';
-
-
-
-import { Layout } from '../components/Layout'; // Added import
-
+import { Layout } from '../components/Layout';
 
 const GuidesPage = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const currentUser = location.state?.currentUser;
   const [guides, setGuides] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedGuide, setSelectedGuide] = useState(null);
@@ -25,17 +18,30 @@ const GuidesPage = () => {
   const [filterVerified, setFilterVerified] = useState(false);
   const [filterVehicle, setFilterVehicle] = useState(false);
   const [guideRatings, setGuideRatings] = useState({});
-  // Layout-related state
   const [selectedCurrency, setSelectedCurrency] = useState('LKR');
   const [unreadCount, setUnreadCount] = useState(0);
-  const loggedUser = currentUser; // or use context if available
+  const { user: loggedUser } = useUser();
+  const [editReservationData, setEditReservationData] = useState(null);
+
+  useEffect(() => {
+    // Check if we're coming from an edit action
+    if (location.state?.editReservation) {
+      const { guideId, reservationData } = location.state;
+      setEditReservationData(reservationData);
+      
+      // Find and select the guide
+      const guideToSelect = guides.find(g => g.id === guideId);
+      if (guideToSelect) {
+        setSelectedGuide(guideToSelect);
+      }
+    }
+  }, [location.state, guides]);
 
   useEffect(() => {
     const fetchGuides = async () => {
       try {
         setLoading(true);
         const response = await fetchUsersByRole('GUIDE');
-
         setGuides(response);
 
         // Fetch ratings for all guides
@@ -115,7 +121,6 @@ const GuidesPage = () => {
           <p className="text-lg text-gray-600">Loading Guides...</p>
         </div>
       </div>
-
     );
   }
 
@@ -126,7 +131,6 @@ const GuidesPage = () => {
       onCurrencyChange={setSelectedCurrency}
       selectedCurrency={selectedCurrency}
       navigate={navigate}
-      location={location}
     >
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
         {/* Header Section */}
@@ -202,7 +206,6 @@ const GuidesPage = () => {
               <p className="text-gray-600">
                 {filteredAndSortedGuides.length} guides found
               </p>
-
             </div>
           </div>
         </div>
@@ -305,8 +308,12 @@ const GuidesPage = () => {
         {selectedGuide && (
           <GuideModal
             guide={selectedGuide}
-            onClose={() => setSelectedGuide(null)}
-            currentUser={currentUser}
+            onClose={() => {
+              setSelectedGuide(null);
+              setEditReservationData(null);
+            }}
+            currentUser={loggedUser}
+            editReservationData={editReservationData}
           />
         )}
       </div>
