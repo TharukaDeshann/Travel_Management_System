@@ -83,8 +83,9 @@ const PackageManagement = () => {
   const indexOfFirstPackage = indexOfLastPackage - packagesPerPage;
   const currentPackages = filteredPackages.slice(indexOfFirstPackage, indexOfLastPackage);
   const totalPages = Math.ceil(filteredPackages.length / packagesPerPage);
-
+  console.log("Current Packages:", currentPackages);
   const handleDeletePackage = async (packageId) => {
+    console.log("Deleting package with ID:", packageId);
     try {
       await packageService.deletePackage(packageId);
       await loadPackages();
@@ -357,6 +358,7 @@ const PackageManagement = () => {
                           <div className="flex items-center justify-end space-x-2">
                             <button
                               onClick={() => {
+                                
                                 setSelectedPackage(pkg);
                                 setShowEditModal(true);
                               }}
@@ -466,6 +468,7 @@ const PackageManagement = () => {
         )}
 
         {showEditModal && selectedPackage && (
+          
           <EditPackageModal
             package={selectedPackage}
             onClose={() => {
@@ -478,12 +481,13 @@ const PackageManagement = () => {
               setSelectedPackage(null);
             }}
           />
+          
         )}
 
         {showDeleteModal && selectedPackage && (
           <DeleteConfirmationModal
             package={selectedPackage}
-            onConfirm={() => handleDeletePackage(selectedPackage.packageId)}
+            onConfirm={() => handleDeletePackage(selectedPackage.id)}
             onCancel={() => {
               setShowDeleteModal(false);
               setSelectedPackage(null);
