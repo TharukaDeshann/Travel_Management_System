@@ -72,7 +72,9 @@ public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Excepti
                             "/api/auth/me", 
                             "/api/locations/**", 
                             "/api/auth/verify-email", 
-                            "/api/auth/resend-verification"
+                            "/api/auth/resend-verification",
+                            "/api/facebook-events",
+                            "/api/itineraries"
                     ).permitAll()
                     .requestMatchers(HttpMethod.PUT, "/api/users/{id}").authenticated()
                     .requestMatchers(HttpMethod.PUT, "/api/users/{id}/update-email").authenticated()
