@@ -40,7 +40,7 @@ public class FacebookEventsController {
     public void init() {
         try {
             // Set the initial access token
-            facebookTokenService.setInitialAccessToken("EAATqJ86HavgBPMViWD6tufw6jQ1K7etfNJpl1xBk1JhbwT1pegQQePN1oNKCZBd7Hi6oGPe0ZCuE4fTZAnyMqZC6u0gq6ZBIvcVu0tzRtaZAjj8yvbzPUlIfRDisu9ZA8s7CziPGEtcxRCrRc8fwGnMoN5Pr0PwOY4q7tJ9t1Lxdlw2fyzp8BTiVN8JtU7llYvEyhwSFg28q1D6EqZCLiSY9cjDNZBEc8cL9jG5ne4gZDZD");
+            facebookTokenService.setInitialAccessToken("EAATqJ86HavgBPITthSGX43aeSj2THy2U4rnGIRlkqzCZAImA176ZBv33tEicq10MILJBJwIScyDor4qTceQEb5xRVEiSC0fz5Qy9RZC9nDK9PZBZAH64WBopvP9ofZCAYewsWxRZBOmcHMkQwNPqz6o3zQF9HQv8FKyKqywrWi5eFyM4MjAXqlsUiyR8li8n5vsESpZBaFWXdqodrxNeCFiSWsAyyGRbefTlyVZAvjCUZD");
         } catch (Exception e) {
             logger.log(Level.WARNING, "Failed to set initial Facebook access token", e);
         }

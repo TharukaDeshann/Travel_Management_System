@@ -31,7 +31,7 @@ import UserProfile from "./pages/profile/UserProfile.jsx";
 import UpdateUserProfile from "./pages/profile/components/UpdateUserProfile.jsx";
 import ProfileView from "./pages/ProfileView.jsx";
 import UsersSocialPage from "./pages/UsersSocialPage.jsx";
-
+import PackageManagement from "./pages/admin_dashboard/PackageManagenent.jsx";
 
 {/* admin dashboard */}
 // import Overview from "./pages/admin_dashboard/Overview.jsx";
@@ -76,7 +76,7 @@ const App = () => {
             <Route path="/admin-user-management" element={<UserManagement />} />
             <Route path="/admin-guide-management" element={<GuideManagement />} />
             <Route path="/admin-traveler-management" element={<TravelerManagement />} />
-            
+            <Route path="/admin-package-management" element={<PackageManagement />} />
             {/* Traveler Management Routes */}
 
             <Route path="/inbox" element={<Inbox />} />
