@@ -8,9 +8,12 @@ import {
   Calendar, 
   Clock,
   Hotel,
-  User
+  User,
+  ChevronDown
 } from 'lucide-react';
 import packageService from '../services/packageService';
+import HotelSelectorModal from './HotelSelectorModal';
+import DriverSelectorModal from './DriverSelectorModal';
 
 const EditPackageModal = ({ package: packageToEdit, onClose, onSuccess }) => {
   const [formData, setFormData] = useState({
@@ -20,6 +23,8 @@ const EditPackageModal = ({ package: packageToEdit, onClose, onSuccess }) => {
     status: 'DRAFT',
     selectedHotelId: '',
     selectedDriverId: '',
+    budgetPerPerson: 0,
+    currency: 'LKR',
     dayPlans: []
   });
 
@@ -31,7 +36,10 @@ const EditPackageModal = ({ package: packageToEdit, onClose, onSuccess }) => {
   const [loading, setLoading] = useState(false);
   const [resourcesLoading, setResourcesLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [budgetCalculation, setBudgetCalculation] = useState(null);
+  
+  // Modal states
+  const [isHotelModalOpen, setIsHotelModalOpen] = useState(false);
+  const [isDriverModalOpen, setIsDriverModalOpen] = useState(false);
 
   // Initialize form data from package
   useEffect(() => {
@@ -43,6 +51,8 @@ const EditPackageModal = ({ package: packageToEdit, onClose, onSuccess }) => {
         status: packageToEdit.status || 'DRAFT',
         selectedHotelId: packageToEdit.selectedHotelId || '',
         selectedDriverId: packageToEdit.selectedDriverId || '',
+        budgetPerPerson: packageToEdit.budgetPerPerson || 0,
+        currency: packageToEdit.currency || 'LKR',
         dayPlans: packageToEdit.dayPlans || []
       });
     }
@@ -52,11 +62,6 @@ const EditPackageModal = ({ package: packageToEdit, onClose, onSuccess }) => {
   useEffect(() => {
     loadAvailableResources();
   }, []);
-
-  // Calculate budget when form data changes
-  useEffect(() => {
-    calculateBudget();
-  }, [formData]);
 
   const loadAvailableResources = async () => {
     try {
@@ -72,22 +77,6 @@ const EditPackageModal = ({ package: packageToEdit, onClose, onSuccess }) => {
       setError('Failed to load available resources');
     } finally {
       setResourcesLoading(false);
-    }
-  };
-
-  const calculateBudget = async () => {
-    try {
-      if (formData.selectedHotelId && formData.selectedDriverId) {
-        const budget = await packageService.calculatePackageBudget({
-          durationDays: formData.durationDays,
-          selectedHotelId: formData.selectedHotelId,
-          selectedDriverId: formData.selectedDriverId,
-          dayPlans: formData.dayPlans
-        });
-        setBudgetCalculation(budget);
-      }
-    } catch (err) {
-      console.error('Error calculating budget:', err);
     }
   };
 
@@ -220,6 +209,19 @@ const EditPackageModal = ({ package: packageToEdit, onClose, onSuccess }) => {
     setError(null);
 
     try {
+      // Check if hotel and driver are selected
+      if (!formData.selectedHotelId) {
+        setError('Please select a hotel');
+        setLoading(false);
+        return;
+      }
+
+      if (!formData.selectedDriverId) {
+        setError('Please select a driver');
+        setLoading(false);
+        return;
+      }
+
       // Validate form data
       const validation = packageService.validatePackageData(formData);
       if (!validation.isValid) {
@@ -242,7 +244,7 @@ const EditPackageModal = ({ package: packageToEdit, onClose, onSuccess }) => {
 
       const packageData = {
         ...formData,
-        budgetPerPerson: budgetCalculation?.totalBudget || packageToEdit.budgetPerPerson || 0,
+        budgetPerPerson: parseFloat(formData.budgetPerPerson) || 0,
         dayPlans: cleanedDayPlans
       };
 
@@ -260,6 +262,28 @@ const EditPackageModal = ({ package: packageToEdit, onClose, onSuccess }) => {
       style: 'currency',
       currency: 'LKR'
     }).format(amount || 0);
+  };
+
+  const handleHotelSelect = (hotel) => {
+    setFormData(prev => ({
+      ...prev,
+      selectedHotelId: hotel.id
+    }));
+  };
+
+  const handleDriverSelect = (driver) => {
+    setFormData(prev => ({
+      ...prev,
+      selectedDriverId: driver.id
+    }));
+  };
+
+  const getSelectedHotel = () => {
+    return availableResources.hotels.find(hotel => hotel.id == formData.selectedHotelId);
+  };
+
+  const getSelectedDriver = () => {
+    return availableResources.drivers.find(driver => driver.id == formData.selectedDriverId);
   };
 
   // Ensure day plans have proper structure
@@ -338,6 +362,37 @@ const EditPackageModal = ({ package: packageToEdit, onClose, onSuccess }) => {
               </div>
             </div>
 
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Budget per Person (LKR)</label>
+                <input
+                  type="number"
+                  name="budgetPerPerson"
+                  min="0"
+                  step="0.01"
+                  value={formData.budgetPerPerson}
+                  onChange={handleInputChange}
+                  className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  placeholder="Enter budget per person"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Status</label>
+                <select
+                  name="status"
+                  value={formData.status}
+                  onChange={handleInputChange}
+                  className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                >
+                  <option value="DRAFT">Draft</option>
+                  <option value="ACTIVE">Active</option>
+                  <option value="INACTIVE">Inactive</option>
+                </select>
+              </div>
+            </div>
+
             <div>
               <label className="block text-sm font-medium text-gray-700">Description</label>
               <textarea
@@ -349,20 +404,6 @@ const EditPackageModal = ({ package: packageToEdit, onClose, onSuccess }) => {
                 placeholder="Describe your package..."
                 required
               />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Status</label>
-              <select
-                name="status"
-                value={formData.status}
-                onChange={handleInputChange}
-                className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-              >
-                <option value="DRAFT">Draft</option>
-                <option value="ACTIVE">Active</option>
-                <option value="INACTIVE">Inactive</option>
-              </select>
             </div>
           </div>
 
@@ -377,96 +418,84 @@ const EditPackageModal = ({ package: packageToEdit, onClose, onSuccess }) => {
               <h4 className="text-md font-medium text-gray-900">Select Resources</h4>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Hotel Selection */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
                     <Hotel className="inline w-4 h-4 mr-1" />
                     Hotel
                   </label>
-                  <select
-                    name="selectedHotelId"
-                    value={formData.selectedHotelId}
-                    onChange={handleInputChange}
-                    className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                    required
-                  >
-                    <option value="">Select a hotel</option>
-                    {availableResources.hotels.map(hotel => (
-                      <option key={hotel.id} value={hotel.id}>
-                        {hotel.name} - {hotel.address} - {hotel.rating}
-                      </option>
-                    ))}
-                  </select>
+                  
+                  {getSelectedHotel() ? (
+                    <div className="border border-blue-200 bg-blue-50 rounded-lg p-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <h5 className="font-medium text-gray-900">{getSelectedHotel().name}</h5>
+                        <button
+                          type="button"
+                          onClick={() => setIsHotelModalOpen(true)}
+                          className="text-blue-600 hover:text-blue-800 text-sm"
+                        >
+                          Change
+                        </button>
+                      </div>
+                      <p className="text-sm text-gray-600 flex items-center">
+                        <MapPin className="w-3 h-3 mr-1" />
+                        {getSelectedHotel().address}
+                      </p>
+                      <p className="text-sm text-gray-600">Rating: ⭐ {getSelectedHotel().rating}/5</p>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => setIsHotelModalOpen(true)}
+                      className="w-full border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-400 hover:bg-blue-50 transition-colors"
+                    >
+                      <Hotel className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                      <p className="text-gray-600">Click to select a hotel</p>
+                      <p className="text-sm text-gray-400">Browse available hotels with filters</p>
+                    </button>
+                  )}
                 </div>
 
+                {/* Driver Selection */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
                     <User className="inline w-4 h-4 mr-1" />
                     Driver & Vehicle
                   </label>
-                  <select
-                    name="selectedDriverId"
-                    value={formData.selectedDriverId}
-                    onChange={handleInputChange}
-                    className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                    required
-                  >
-                    <option value="">Select a driver with vehicle</option>
-                    {availableResources.drivers.map(driver => (
-                      <option key={driver.id} value={driver.id}>
-                        {driver.name} - {driver.vehicleType} {driver.brand} {driver.model} ({driver.vehicleNumber}) - {formatCurrency(driver.ratePerLng)}/day
-                      </option>
-                    ))}
-                  </select>
-                  {formData.selectedDriverId && (
-                    <div className="mt-2 p-3 bg-gray-50 rounded-md">
-                      {(() => {
-                        const selectedDriver = availableResources.drivers.find(d => d.id == formData.selectedDriverId);
-                        return selectedDriver ? (
-                          <div className="text-sm space-y-1">
-                            <p><span className="font-medium">Driver:</span> {selectedDriver.name}</p>
-                            <p><span className="font-medium">Rating:</span> ⭐ {selectedDriver.rating}/5</p>
-                            <p><span className="font-medium">Vehicle:</span> {selectedDriver.vehicleType} - {selectedDriver.brand} {selectedDriver.model}</p>
-                            <p><span className="font-medium">License:</span> {selectedDriver.vehicleNumber}</p>
-                            <p><span className="font-medium">Color:</span> {selectedDriver.color}</p>
-                            <p><span className="font-medium">Rate:</span> {formatCurrency(selectedDriver.ratePerLng)}/day</p>
-                          </div>
-                        ) : null;
-                      })()}
+                  
+                  {getSelectedDriver() ? (
+                    <div className="border border-blue-200 bg-blue-50 rounded-lg p-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <h5 className="font-medium text-gray-900">{getSelectedDriver().name}</h5>
+                        <button
+                          type="button"
+                          onClick={() => setIsDriverModalOpen(true)}
+                          className="text-blue-600 hover:text-blue-800 text-sm"
+                        >
+                          Change
+                        </button>
+                      </div>
+                      <p className="text-sm text-gray-600">⭐ {getSelectedDriver().rating}/5</p>
+                      <p className="text-sm text-gray-600">
+                        {getSelectedDriver().vehicleType} - {getSelectedDriver().brand} {getSelectedDriver().model}
+                      </p>
+                      <p className="text-sm font-medium text-blue-600">
+                        {formatCurrency(getSelectedDriver().ratePerLng)}/km
+                      </p>
                     </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => setIsDriverModalOpen(true)}
+                      className="w-full border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-400 hover:bg-blue-50 transition-colors"
+                    >
+                      <User className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                      <p className="text-gray-600">Click to select a driver</p>
+                      <p className="text-sm text-gray-400">Browse drivers with vehicle details</p>
+                    </button>
                   )}
                 </div>
               </div>
-            </div>
-          )}
-
-          {/* Budget Calculation */}
-          {budgetCalculation && (
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <h4 className="text-md font-medium text-blue-900 flex items-center">
-                <DollarSign className="w-4 h-4 mr-1" />
-                Updated Budget per Person
-              </h4>
-              <div className="mt-2 space-y-1 text-sm text-blue-800">
-                <p>Hotel Cost: {formatCurrency(budgetCalculation.hotelCost)}</p>
-                <p>Transport Cost: {formatCurrency(budgetCalculation.transportCost)}</p>
-                <p>Activity Cost: {formatCurrency(budgetCalculation.activityCost)}</p>
-                <p>Miscellaneous (10%): {formatCurrency(budgetCalculation.miscellaneousCost)}</p>
-                <hr className="border-blue-300" />
-                <p className="font-medium text-lg">Total: {formatCurrency(budgetCalculation.totalBudget)}</p>
-              </div>
-            </div>
-          )}
-
-          {/* Current Budget Display */}
-          {packageToEdit && !budgetCalculation && (
-            <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-              <h4 className="text-md font-medium text-gray-900 flex items-center">
-                <DollarSign className="w-4 h-4 mr-1" />
-                Current Budget per Person
-              </h4>
-              <p className="mt-2 text-lg font-medium text-gray-700">
-                {formatCurrency(packageToEdit.budgetPerPerson)}
-              </p>
             </div>
           )}
 
@@ -597,6 +626,26 @@ const EditPackageModal = ({ package: packageToEdit, onClose, onSuccess }) => {
             </button>
           </div>
         </form>
+
+        {/* Hotel Selector Modal */}
+        <HotelSelectorModal
+          isOpen={isHotelModalOpen}
+          onClose={() => setIsHotelModalOpen(false)}
+          onSelect={handleHotelSelect}
+          hotels={availableResources.hotels}
+          selectedHotelId={formData.selectedHotelId}
+          loading={resourcesLoading}
+        />
+
+        {/* Driver Selector Modal */}
+        <DriverSelectorModal
+          isOpen={isDriverModalOpen}
+          onClose={() => setIsDriverModalOpen(false)}
+          onSelect={handleDriverSelect}
+          drivers={availableResources.drivers}
+          selectedDriverId={formData.selectedDriverId}
+          loading={resourcesLoading}
+        />
       </div>
     </div>
   );

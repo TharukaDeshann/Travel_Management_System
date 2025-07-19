@@ -34,6 +34,9 @@ public class PackageCreateRequestDTO {
     @Size(min = 3, max = 3, message = "Currency must be a 3-letter code")
     private String currency;
     
+    // Package status (DRAFT, ACTIVE, INACTIVE)
+    private String status;
+    
     // Hotel selection
     private Long selectedHotelId;
     
@@ -58,18 +61,18 @@ public class PackageCreateRequestDTO {
         @Min(value = 1, message = "Day number must be at least 1")
         private Integer dayNumber;
         
-        @NotBlank(message = "Day title is required")
+        // Optional day title
         @Size(max = 200, message = "Day title cannot exceed 200 characters")
         private String dayTitle;
         
         @Size(max = 1000, message = "Description cannot exceed 1000 characters")
         private String description;
         
-        @NotBlank(message = "Planned locations are required")
-        private String plannedLocations; // JSON string of locations
+        // Accept planned locations as list of strings from frontend
+        private List<String> plannedLocations;
         
-        @NotBlank(message = "Activities are required")
-        private String activities;
+        // Accept planned activities as list of strings from frontend
+        private List<String> plannedActivities;
         
         @DecimalMin(value = "0.00", message = "Estimated cost cannot be negative")
         private BigDecimal estimatedCostPerPerson;

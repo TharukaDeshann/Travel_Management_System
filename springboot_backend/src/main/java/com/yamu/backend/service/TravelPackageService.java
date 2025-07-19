@@ -1,5 +1,7 @@
 package com.yamu.backend.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yamu.backend.dto.*;
 import com.yamu.backend.exception.ResourceNotFoundException;
 import com.yamu.backend.model.*;
@@ -11,7 +13,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -28,6 +29,7 @@ public class TravelPackageService {
     private final DriverRepository driverRepository;
     private final TravelerRepository travelerRepository;
     private final ModelMapper modelMapper;
+    private final ObjectMapper objectMapper;
     
     /**
      * Create a new travel package (Admin only)
@@ -64,11 +66,21 @@ public class TravelPackageService {
         travelPackage.setSelectedHotel(selectedHotel);
         travelPackage.setSelectedVehicle(selectedVehicle);
         travelPackage.setSelectedDriver(selectedDriver);
-        travelPackage.setStatus(TravelPackage.PackageStatus.ACTIVE);
         
-        // Calculate budget automatically
-        BigDecimal calculatedBudget = calculatePackageBudget(request, selectedHotel, selectedVehicle, selectedDriver);
-        travelPackage.setBudgetPerPerson(calculatedBudget);
+        // Set status from request or default to DRAFT
+        TravelPackage.PackageStatus status = TravelPackage.PackageStatus.DRAFT;
+        if (request.getStatus() != null) {
+            try {
+                status = TravelPackage.PackageStatus.valueOf(request.getStatus().toUpperCase());
+            } catch (IllegalArgumentException e) {
+                // If invalid status provided, default to DRAFT
+                log.warn("Invalid status provided: {}, defaulting to DRAFT", request.getStatus());
+            }
+        }
+        travelPackage.setStatus(status);
+        
+        // Use the budget provided by admin
+        travelPackage.setBudgetPerPerson(request.getBudgetPerPerson());
         
         // Save package first to get ID
         travelPackage = travelPackageRepository.save(travelPackage);
@@ -78,10 +90,34 @@ public class TravelPackageService {
             PackageDayPlan dayPlan = new PackageDayPlan();
             dayPlan.setTravelPackage(travelPackage);
             dayPlan.setDayNumber(dayPlanDto.getDayNumber());
-            dayPlan.setDayTitle(dayPlanDto.getDayTitle());
+            
+            // Use dayTitle if provided, otherwise generate default
+            String dayTitle = dayPlanDto.getDayTitle();
+            if (dayTitle == null || dayTitle.trim().isEmpty()) {
+                dayTitle = "Day " + dayPlanDto.getDayNumber();
+            }
+            dayPlan.setDayTitle(dayTitle);
+            
             dayPlan.setDescription(dayPlanDto.getDescription());
-            dayPlan.setPlannedLocations(dayPlanDto.getPlannedLocations());
-            dayPlan.setActivities(dayPlanDto.getActivities());
+            
+            // Convert List<String> to JSON string for plannedLocations
+            try {
+                String locationsJson = objectMapper.writeValueAsString(dayPlanDto.getPlannedLocations());
+                dayPlan.setPlannedLocations(locationsJson);
+            } catch (JsonProcessingException e) {
+                log.error("Error converting planned locations to JSON", e);
+                dayPlan.setPlannedLocations("[]");
+            }
+            
+            // Convert List<String> to JSON string for activities
+            try {
+                String activitiesJson = objectMapper.writeValueAsString(dayPlanDto.getPlannedActivities());
+                dayPlan.setActivities(activitiesJson);
+            } catch (JsonProcessingException e) {
+                log.error("Error converting planned activities to JSON", e);
+                dayPlan.setActivities("[]");
+            }
+            
             dayPlan.setEstimatedCostPerPerson(dayPlanDto.getEstimatedCostPerPerson());
             dayPlan.setTransportationDetails(dayPlanDto.getTransportationDetails());
             dayPlan.setMealPlans(dayPlanDto.getMealPlans());
@@ -160,9 +196,18 @@ public class TravelPackageService {
         existingPackage.setSelectedVehicle(selectedVehicle);
         existingPackage.setSelectedDriver(selectedDriver);
         
-        // Recalculate budget
-        BigDecimal calculatedBudget = calculatePackageBudget(request, selectedHotel, selectedVehicle, selectedDriver);
-        existingPackage.setBudgetPerPerson(calculatedBudget);
+        // Update status if provided
+        if (request.getStatus() != null) {
+            try {
+                TravelPackage.PackageStatus status = TravelPackage.PackageStatus.valueOf(request.getStatus().toUpperCase());
+                existingPackage.setStatus(status);
+            } catch (IllegalArgumentException e) {
+                log.warn("Invalid status provided during update: {}, keeping existing status", request.getStatus());
+            }
+        }
+        
+        // Use the budget provided by admin
+        existingPackage.setBudgetPerPerson(request.getBudgetPerPerson());
         
         // Update day plans - remove existing and create new ones
         packageDayPlanRepository.deleteAll(existingPackage.getDayPlans());
@@ -172,10 +217,34 @@ public class TravelPackageService {
             PackageDayPlan dayPlan = new PackageDayPlan();
             dayPlan.setTravelPackage(existingPackage);
             dayPlan.setDayNumber(dayPlanDto.getDayNumber());
-            dayPlan.setDayTitle(dayPlanDto.getDayTitle());
+            
+            // Use dayTitle if provided, otherwise generate default
+            String dayTitle = dayPlanDto.getDayTitle();
+            if (dayTitle == null || dayTitle.trim().isEmpty()) {
+                dayTitle = "Day " + dayPlanDto.getDayNumber();
+            }
+            dayPlan.setDayTitle(dayTitle);
+            
             dayPlan.setDescription(dayPlanDto.getDescription());
-            dayPlan.setPlannedLocations(dayPlanDto.getPlannedLocations());
-            dayPlan.setActivities(dayPlanDto.getActivities());
+            
+            // Convert List<String> to JSON string for plannedLocations
+            try {
+                String locationsJson = objectMapper.writeValueAsString(dayPlanDto.getPlannedLocations());
+                dayPlan.setPlannedLocations(locationsJson);
+            } catch (JsonProcessingException e) {
+                log.error("Error converting planned locations to JSON", e);
+                dayPlan.setPlannedLocations("[]");
+            }
+            
+            // Convert List<String> to JSON string for activities
+            try {
+                String activitiesJson = objectMapper.writeValueAsString(dayPlanDto.getPlannedActivities());
+                dayPlan.setActivities(activitiesJson);
+            } catch (JsonProcessingException e) {
+                log.error("Error converting planned activities to JSON", e);
+                dayPlan.setActivities("[]");
+            }
+            
             dayPlan.setEstimatedCostPerPerson(dayPlanDto.getEstimatedCostPerPerson());
             dayPlan.setTransportationDetails(dayPlanDto.getTransportationDetails());
             dayPlan.setMealPlans(dayPlanDto.getMealPlans());
@@ -260,98 +329,6 @@ public class TravelPackageService {
                 .stream()
                 .map(this::convertToApplicationResponseDTO)
                 .collect(Collectors.toList());
-    }
-    
-    /**
-     * Calculate package budget automatically
-     */
-    private BigDecimal calculatePackageBudget(PackageCreateRequestDTO request, Hotel hotel, Vehicle vehicle, Driver driver) {
-        BigDecimal totalBudget = BigDecimal.ZERO;
-        
-        // Hotel cost calculation (per night)
-        if (hotel != null) {
-            // Use mock pricing based on hotel template or fixed rates
-            BigDecimal hotelCostPerNight = getHotelCostPerNight(hotel);
-            BigDecimal totalHotelCost = hotelCostPerNight.multiply(BigDecimal.valueOf(request.getDurationDays()));
-            totalBudget = totalBudget.add(totalHotelCost);
-        }
-        
-        // Transportation cost calculation
-        if (vehicle != null || driver != null) {
-            BigDecimal transportCost = getTransportationCost(vehicle, driver, request.getDurationDays());
-            totalBudget = totalBudget.add(transportCost);
-        }
-        
-        // Activities and meals cost from day plans
-        BigDecimal activitiesCost = request.getDayPlans().stream()
-                .map(PackageCreateRequestDTO.PackageDayPlanDTO::getEstimatedCostPerPerson)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-        totalBudget = totalBudget.add(activitiesCost);
-        
-        // Add 10% markup for miscellaneous expenses
-        BigDecimal markup = totalBudget.multiply(BigDecimal.valueOf(0.1));
-        totalBudget = totalBudget.add(markup);
-        
-        return totalBudget.setScale(2, RoundingMode.HALF_UP);
-    }
-    
-    private BigDecimal getHotelCostPerNight(Hotel hotel) {
-        // Mock pricing based on hotel rating and template
-        if (hotel.getMockDataTemplate() != null) {
-            switch (hotel.getMockDataTemplate()) {
-                case LUXURY_RESORT:
-                    return BigDecimal.valueOf(350.00);
-                case BUSINESS_HOTEL:
-                    return BigDecimal.valueOf(220.00);
-                case BOUTIQUE_HOTEL:
-                    return BigDecimal.valueOf(280.00);
-                case BUDGET_INN:
-                    return BigDecimal.valueOf(100.00);
-                case CITY_CENTER_HOTEL:
-                    return BigDecimal.valueOf(250.00);
-                default:
-                    return BigDecimal.valueOf(200.00);
-            }
-        }
-        
-        // Fallback based on rating
-        if (hotel.getRating() >= 4.5) {
-            return BigDecimal.valueOf(300.00);
-        } else if (hotel.getRating() >= 4.0) {
-            return BigDecimal.valueOf(200.00);
-        } else if (hotel.getRating() >= 3.0) {
-            return BigDecimal.valueOf(150.00);
-        } else {
-            return BigDecimal.valueOf(100.00);
-        }
-    }
-    
-    private BigDecimal getTransportationCost(Vehicle vehicle, Driver driver, Integer days) {
-        BigDecimal costPerDay = BigDecimal.valueOf(50.00); // Base cost
-        
-        if (driver != null && driver.getRatePerLng() != null) {
-            costPerDay = BigDecimal.valueOf(driver.getRatePerLng()).multiply(BigDecimal.valueOf(100)); // Assuming 100km per day
-        } else if (vehicle != null) {
-            // Cost based on vehicle type and capacity
-            switch (vehicle.getType().toLowerCase()) {
-                case "car":
-                    costPerDay = BigDecimal.valueOf(50.00);
-                    break;
-                case "van":
-                    costPerDay = BigDecimal.valueOf(80.00);
-                    break;
-                case "bus":
-                    costPerDay = BigDecimal.valueOf(120.00);
-                    break;
-                case "suv":
-                    costPerDay = BigDecimal.valueOf(70.00);
-                    break;
-                default:
-                    costPerDay = BigDecimal.valueOf(60.00);
-            }
-        }
-        
-        return costPerDay.multiply(BigDecimal.valueOf(days));
     }
     
     /**

@@ -8,7 +8,7 @@ export const packageService = {
   getAllPackages: async () => {
     try {
       console.log('📦 Fetching all packages for admin...');
-      const response = await apiClient.get('/api/packages/admin/all');
+      const response = await apiClient.get('/api/packages');
       console.log('✅ Packages fetched successfully:', response.data);
       return response.data;
     } catch (error) {
@@ -210,19 +210,6 @@ export const packageService = {
     }
   },
 
-  // Calculate package budget
-  calculatePackageBudget: async (packageData) => {
-    try {
-      console.log('💰 Calculating package budget:', packageData);
-      const response = await apiClient.post('/api/packages/calculate-budget', packageData);
-      console.log('✅ Budget calculated successfully:', response.data);
-      return response.data;
-    } catch (error) {
-      console.error('❌ Error calculating budget:', error);
-      throw new Error(error.response?.data?.message || 'Failed to calculate budget');
-    }
-  },
-
   // Utility functions
 
   // Format package data for display
@@ -253,6 +240,10 @@ export const packageService = {
     
     if (!packageData.durationDays || packageData.durationDays < 1) {
       errors.push('Duration must be at least 1 day');
+    }
+    
+    if (!packageData.budgetPerPerson || packageData.budgetPerPerson <= 0) {
+      errors.push('Budget per person must be greater than 0');
     }
     
     if (!packageData.dayPlans || packageData.dayPlans.length === 0) {

@@ -203,50 +203,6 @@ public class TravelPackageController {
     }
     
     /**
-     * Calculate budget for custom group size and dates
-     */
-    @PostMapping("/{packageId}/calculate-budget")
-    public ResponseEntity<?> calculateBudget(
-            @PathVariable Long packageId,
-            @RequestParam Integer groupSize,
-            @RequestParam(required = false, defaultValue = "1") Integer extraDays) {
-        try {
-            PackageResponseDTO packageDto = travelPackageService.getPackageById(packageId);
-            
-            // Calculate total budget for the group
-            PackageResponseDTO.PackageBudgetBreakdownDTO breakdown = packageDto.getBudgetBreakdown();
-            java.math.BigDecimal totalForGroup = breakdown.calculateTotalForGroup(groupSize);
-            
-            // Add extra days if needed
-            if (extraDays > 0) {
-                java.math.BigDecimal extraCost = breakdown.getHotelCostPerPerson()
-                        .add(breakdown.getMealsCostPerPerson())
-                        .multiply(java.math.BigDecimal.valueOf(groupSize))
-                        .multiply(java.math.BigDecimal.valueOf(extraDays));
-                totalForGroup = totalForGroup.add(extraCost);
-            }
-            
-            Map<String, Object> result = Map.of(
-                    "packageId", packageId,
-                    "groupSize", groupSize,
-                    "extraDays", extraDays,
-                    "budgetPerPerson", packageDto.getBudgetPerPerson(),
-                    "totalBudgetForGroup", totalForGroup,
-                    "breakdown", breakdown,
-                    "currency", packageDto.getCurrency()
-            );
-            
-            return ResponseEntity.ok(result);
-        } catch (RuntimeException e) {
-            log.error("Package not found: {}", packageId, e);
-            return ResponseEntity.notFound().build();
-        } catch (Exception e) {
-            log.error("Error calculating budget: ", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-        }
-    }
-    
-    /**
      * Helper method to extract user ID from Principal
      * This assumes the Principal.getName() returns the user's email
      * and you have a way to get user ID from email
