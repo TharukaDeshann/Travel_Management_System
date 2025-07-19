@@ -5,10 +5,8 @@ import java.util.stream.Collectors;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.server.ResponseStatusException;
+
 
 import com.yamu.backend.dto.DriverBookingResponseDTO;
 import com.yamu.backend.dto.GuideReservationResponse;
@@ -19,7 +17,6 @@ import com.yamu.backend.enums.UserRole;
 import com.yamu.backend.model.DriverBooking;
 import com.yamu.backend.model.GuideReservationByTraveler;
 import com.yamu.backend.model.GuideReservationDayDetail;
-import com.yamu.backend.model.User;
 import com.yamu.backend.repository.DriverBookingRepository;
 import com.yamu.backend.service.GuideReservationByTravelerService;
 import com.yamu.backend.service.HotelService;

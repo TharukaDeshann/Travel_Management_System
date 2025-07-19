@@ -11,6 +11,7 @@ import {
   EnvironmentOutlined,
   LoadingOutlined,
 } from "@ant-design/icons";
+// import useNotification from "../hooks/useNotification";
 
 // Import dropdown data services
 import { fetchCountries, fetchLanguages, fetchRegions } from "../services/dropdownService";
@@ -24,7 +25,7 @@ const Register = () => {
   const [userType, setUserType] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  
+  //const { showSuccess, showError } = useNotification();
   // Store form data from step 1
   const [formData, setFormData] = useState({
     firstName: "",
@@ -256,7 +257,8 @@ const Register = () => {
           style={{ marginBottom: 16 }}
           onClose={() => setError("")}
         />
-      )}
+        
+      ) }
 
       <Steps
         current={step}

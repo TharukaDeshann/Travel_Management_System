@@ -30,6 +30,7 @@ export default function TravelerDashboard({ currentUser }) {
   const [selectedGuide, setSelectedGuide] = useState(null);
   
   const loggedUser = useUser().user;
+  console.log("Logged User Role:", loggedUser.role);
   const unreadCount = 0;
 
   useEffect(() => {
