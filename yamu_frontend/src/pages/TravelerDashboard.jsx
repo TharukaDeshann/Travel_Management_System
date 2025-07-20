@@ -9,6 +9,7 @@ import profileIcon from '../images/profile.png';
 import botImage from '../images/bot-image.png';
 import apiClient from "../services/axiosInstance";
 import GuideModal from "../components/GuideModal";
+import EventModal from "../components/EventModal";
 import { useUser } from "../context/UserContext";
 import { Layout } from "../components/Layout";
 import { fetchLoggedInUser } from "../services/authService";
@@ -30,6 +31,8 @@ export default function TravelerDashboard({ currentUser: propCurrentUser }) {
   const [showLeftButton, setShowLeftButton] = useState({});
   const [selectedGuide, setSelectedGuide] = useState(null);
   const [currentUser, setCurrentUser] = useState(propCurrentUser);
+  const [events, setEvents] = useState([]);
+  const [selectedEvent, setSelectedEvent] = useState(null);
   
   const loggedUser = useUser().user || currentUser;
   const unreadCount = 0;
@@ -60,7 +63,17 @@ export default function TravelerDashboard({ currentUser: propCurrentUser }) {
       }
     };
 
+    const fetchEvents = async () => {
+      try {
+        const response = await apiClient.get("/api/facebook-events");
+        setEvents(response.data);
+      } catch (error) {
+        console.error("Error fetching events:", error);
+      }
+    };
+
     fetchGuides();
+    fetchEvents();
   }, []);
 
   const sections = [
@@ -94,13 +107,14 @@ export default function TravelerDashboard({ currentUser: propCurrentUser }) {
     },
     {
       title: "Event & Festival Highlights",
-      items: [
-        { name: "Esala Perahera", image: "/src/images/asala_perahera.webp" },
-        { name: "Nallur Kovil Festival", image: "/src/images/nallur_festival.jpg" },
-        { name: "Sinhala Tamil New Year", image: "/src/images/new_year.jpeg" },
-        { name: "Kuweni The Musical", image: "/src/images/kuweni.jpg" },
-        { name: "Whale Watching Season", image: "/src/images/whale_watching.jpg" }
-      ]
+      items: events.slice(0, 5).map(event => ({
+        name: event.name,
+        image: event.image_url,
+        description: event.description,
+        startDate: event.formatted_date,
+        startTime: event.formatted_time,
+        event: event
+      }))
     }
   ];
 
@@ -221,14 +235,28 @@ export default function TravelerDashboard({ currentUser: propCurrentUser }) {
                 {section.items.map((item) => (
                   <div 
                     key={item.name} 
-                    className="card-container"
-                    onClick={() => section.title === "Discover Tour Guides" && setSelectedGuide(item.guide)}
+                    className="card-container hover:cursor-pointer"
+                    onClick={() => {
+                      if (section.title === "Discover Tour Guides") {
+                        setSelectedGuide(item.guide);
+                      } else if (section.title === "Event & Festival Highlights" && item.event) {
+                        setSelectedEvent(item.event);
+                      }
+                    }}
                   >
                     <img src={item.image} alt={item.name} className="card-image" />
                     <div className="card-overlay">
                       <h3 className="card-title">{item.name}</h3>
                       {section.title === "Discover Tour Guides" && (
                         <p style={{ color: 'white', fontSize: '14px' }}>{item.guide.expertiseCityRegion}</p>
+                      )}
+                      {section.title === "Event & Festival Highlights" && item.event && (
+                        <>
+                          <p style={{ color: 'white', fontSize: '14px', marginTop: '4px' }}>
+                            {item.startDate} at {item.startTime}
+                          </p>
+                          
+                        </>
                       )}
                     </div>
                   </div>
@@ -282,6 +310,13 @@ export default function TravelerDashboard({ currentUser: propCurrentUser }) {
           guide={selectedGuide} 
           onClose={() => setSelectedGuide(null)}
           currentUser={currentUser}
+        />
+      )}
+
+      {selectedEvent && (
+        <EventModal 
+          event={selectedEvent} 
+          onClose={() => setSelectedEvent(null)}
         />
       )}
     </Layout>
