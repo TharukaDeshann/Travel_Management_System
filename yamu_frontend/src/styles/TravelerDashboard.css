@@ -258,8 +258,9 @@
     bottom: 0;
     background: rgba(0, 0, 0, 0.5);  /* Dark overlay */
     display: flex;
-    align-items: flex-end;  /* Changed from center to flex-end */
-    justify-content: flex-start;  /* Changed from center to flex-start */
+    flex-direction: column;  /* Stack content vertically */
+    align-items: flex-start;  /* Align to left */
+    justify-content: flex-end;  /* Align to bottom */
     padding: 1.5rem;  /* Added padding for spacing */
 }
 
@@ -268,6 +269,7 @@
     font-size: 1.25rem;
     font-weight: 700;  /* Bold text */
     text-align: left;  /* Changed from center to left */
+    margin: 0;  /* Remove default margin */
 }
 
 /* Add padding to the main content to prevent it from going under the fixed nav */
