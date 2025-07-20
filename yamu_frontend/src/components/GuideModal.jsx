@@ -30,6 +30,7 @@ const GuideModal = ({ guide, onClose, currentUser }) => {
   const { user } = useUser();
   const loggedUser = currentUser || user;
 
+
   // Fetch reviews when guide is selected
   useEffect(() => {
     fetchReviews();
@@ -118,6 +119,7 @@ const GuideModal = ({ guide, onClose, currentUser }) => {
   };
 
   const handleSubmit = async () => {
+   
     if (!currentUser || !currentUser.id) {
       setError('Please login to make a reservation');
       navigate('/login');

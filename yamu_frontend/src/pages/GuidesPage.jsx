@@ -16,7 +16,7 @@ import { Layout } from '../components/Layout'; // Added import
 const GuidesPage = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const currentUser = location.state?.currentUser;
+  const currentUser = useUser()?.user || {}; 
   const [guides, setGuides] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedGuide, setSelectedGuide] = useState(null);
@@ -307,7 +307,9 @@ const GuidesPage = () => {
             guide={selectedGuide}
             onClose={() => setSelectedGuide(null)}
             currentUser={currentUser}
+            
           />
+
         )}
       </div>
     </Layout>
