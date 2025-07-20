@@ -15,6 +15,7 @@ import packageService from '../services/packageService';
 import HotelSelectorModal from './HotelSelectorModal';
 import DriverSelectorModal from './DriverSelectorModal';
 import GuideSelectorModal from './GuideSelectorModal';
+import PackageDayPlanLocationSelector from './PackageDayPlanLocationSelector';
 
 const EditPackageModal = ({ package: packageToEdit, onClose, onSuccess }) => {
   const [formData, setFormData] = useState({
@@ -57,7 +58,9 @@ const EditPackageModal = ({ package: packageToEdit, onClose, onSuccess }) => {
         dayNumber: day.dayNumber,
         plannedLocations: day.plannedLocations ? JSON.parse(day.plannedLocations) : [''],
         plannedActivities: day.activities ? JSON.parse(day.activities) : [''],
-        estimatedCostPerPerson: day.estimatedCostPerPerson || 0
+        estimatedCostPerPerson: day.estimatedCostPerPerson || 0,
+        packageLocations: day.packageLocations || [],
+        packageRoute: day.packageRoute || null
       })) : [];
 
       setFormData({
@@ -243,6 +246,29 @@ const EditPackageModal = ({ package: packageToEdit, onClose, onSuccess }) => {
     }));
   };
 
+  // New handlers for package locations and routes
+  const updatePackageLocationsInDayPlan = (dayIndex, locations) => {
+    setFormData(prev => ({
+      ...prev,
+      dayPlans: prev.dayPlans.map((day, index) => 
+        index === dayIndex 
+          ? { ...day, packageLocations: locations }
+          : day
+      )
+    }));
+  };
+
+  const updatePackageRouteInDayPlan = (dayIndex, route) => {
+    setFormData(prev => ({
+      ...prev,
+      dayPlans: prev.dayPlans.map((day, index) => 
+        index === dayIndex 
+          ? { ...day, packageRoute: route }
+          : day
+      )
+    }));
+  };
+
   const updateActivityInDayPlan = (dayIndex, activityIndex, value) => {
     setFormData(prev => ({
       ...prev,
@@ -295,14 +321,23 @@ const EditPackageModal = ({ package: packageToEdit, onClose, onSuccess }) => {
       // Clean up day plans data
       const cleanedDayPlans = formData.dayPlans.map(day => ({
         dayNumber: day.dayNumber,
+        dayTitle: day.dayTitle || `Day ${day.dayNumber}`,
+        description: day.description || '',
         plannedLocations: Array.isArray(day.plannedLocations) 
           ? day.plannedLocations.filter(loc => loc.trim() !== '')
           : [],
         plannedActivities: Array.isArray(day.plannedActivities)
           ? day.plannedActivities.filter(activity => activity.trim() !== '')
           : [],
-        estimatedCostPerPerson: parseFloat(day.estimatedCostPerPerson) || 0
+        estimatedCostPerPerson: parseFloat(day.estimatedCostPerPerson) || 0,
+        transportationDetails: day.transportationDetails || '',
+        mealPlans: day.mealPlans || '',
+        notes: day.notes || '',
+        packageLocations: day.packageLocations || [],
+        packageRoute: day.packageRoute || null
       }));
+
+      console.log('EditModal - Sending day plans with locations and routes:', cleanedDayPlans);
 
       const packageData = {
         ...formData,
@@ -669,11 +704,26 @@ const EditPackageModal = ({ package: packageToEdit, onClose, onSuccess }) => {
                   Day {day.dayNumber}
                 </h5>
 
-                {/* Planned Locations */}
+                {/* Package Locations and Route */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     <MapPin className="inline w-4 h-4 mr-1" />
-                    Planned Locations
+                    Locations & Route Planning
+                  </label>
+                  <PackageDayPlanLocationSelector
+                    selectedLocations={day.packageLocations || []}
+                    onLocationsChange={(locations) => updatePackageLocationsInDayPlan(dayIndex, locations)}
+                    onRouteChange={(route) => updatePackageRouteInDayPlan(dayIndex, route)}
+                    dayNumber={day.dayNumber}
+                    travelMode="driving-car"
+                  />
+                </div>
+
+                {/* Legacy Planned Locations (for backward compatibility) */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <MapPin className="inline w-4 h-4 mr-1" />
+                    Additional Locations (Text)
                   </label>
                   {Array.isArray(day.plannedLocations) && day.plannedLocations.map((location, locIndex) => (
                     <div key={locIndex} className="flex items-center space-x-2 mb-2">
@@ -681,7 +731,7 @@ const EditPackageModal = ({ package: packageToEdit, onClose, onSuccess }) => {
                         type="text"
                         value={location}
                         onChange={(e) => updateLocationInDayPlan(dayIndex, locIndex, e.target.value)}
-                        placeholder="Enter location"
+                        placeholder="Enter additional location notes"
                         className="flex-1 border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                       />
                       {Array.isArray(day.plannedLocations) && day.plannedLocations.length > 1 && (
@@ -701,7 +751,7 @@ const EditPackageModal = ({ package: packageToEdit, onClose, onSuccess }) => {
                     className="text-blue-600 hover:text-blue-800 text-sm flex items-center"
                   >
                     <Plus className="w-4 h-4 mr-1" />
-                    Add Location
+                    Add Text Location
                   </button>
                 </div>
 

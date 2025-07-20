@@ -85,5 +85,10 @@ public class PackageCreateRequestDTO {
         private String mealPlans;
         
         private String notes;
+        
+        // New route and location fields for Map.jsx-style functionality
+        private PackageRouteCreateRequest packageRoute;
+        
+        private List<PackageLocationCreateRequest> packageLocations;
     }
 }

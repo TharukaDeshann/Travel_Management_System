@@ -55,6 +55,10 @@ public class PackageResponseDTO {
         private String transportationDetails;
         private String mealPlans;
         private String notes;
+        
+        // New route and location response fields
+        private PackageRouteResponseDTO packageRoute;
+        private List<PackageLocationResponseDTO> packageLocations;
     }
     
     @Data

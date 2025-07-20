@@ -131,7 +131,45 @@ public class TravelPackageService {
             dayPlan.setMealPlans(dayPlanDto.getMealPlans());
             dayPlan.setNotes(dayPlanDto.getNotes());
             
-            packageDayPlanRepository.save(dayPlan);
+            // Save the day plan first to get the ID
+            PackageDayPlan savedDayPlan = packageDayPlanRepository.save(dayPlan);
+            
+            // Handle package route if provided
+            PackageDayPlanRoute packageRoute = null;
+            if (dayPlanDto.getPackageRoute() != null) {
+                PackageRouteCreateRequest routeRequest = dayPlanDto.getPackageRoute();
+                packageRoute = new PackageDayPlanRoute();
+                packageRoute.setPackageDayPlan(savedDayPlan);
+                packageRoute.setName(routeRequest.getName());
+                packageRoute.setTravelMode(routeRequest.getTravelMode());
+                packageRoute.setTotalDistance(routeRequest.getTotalDistance());
+                packageRoute.setEstimatedTime(routeRequest.getEstimatedTime());
+                
+                savedDayPlan.setPackageRoute(packageRoute);
+                log.info("Created route for day plan {}: {}", savedDayPlan.getId(), packageRoute.getName());
+            }
+            
+            // Handle package locations if provided
+            if (dayPlanDto.getPackageLocations() != null && !dayPlanDto.getPackageLocations().isEmpty()) {
+                log.info("Processing {} locations for day plan {}", dayPlanDto.getPackageLocations().size(), savedDayPlan.getId());
+                for (PackageLocationCreateRequest locationRequest : dayPlanDto.getPackageLocations()) {
+                    PackageDayPlanLocation packageLocation = new PackageDayPlanLocation();
+                    packageLocation.setPackageDayPlan(savedDayPlan);
+                    packageLocation.setPackageDayPlanRoute(packageRoute); // Link to route if exists
+                    packageLocation.setName(locationRequest.getName());
+                    packageLocation.setAddress(locationRequest.getAddress());
+                    packageLocation.setLatitude(locationRequest.getLatitude());
+                    packageLocation.setLongitude(locationRequest.getLongitude());
+                    packageLocation.setPositionIndex(locationRequest.getPositionIndex());
+                    packageLocation.setPlaceId(locationRequest.getPlaceId());
+                    packageLocation.setNotes(locationRequest.getNotes());
+                    
+                    savedDayPlan.getPackageLocations().add(packageLocation);
+                    log.info("Added location: {} at position {}", packageLocation.getName(), packageLocation.getPositionIndex());
+                }
+            } else {
+                log.info("No package locations provided for day plan {}", savedDayPlan.getId());
+            }
         }
         
         log.info("Travel package created successfully with ID: {}", travelPackage.getId());
@@ -265,7 +303,44 @@ public class TravelPackageService {
             dayPlan.setMealPlans(dayPlanDto.getMealPlans());
             dayPlan.setNotes(dayPlanDto.getNotes());
             
-            existingPackage.getDayPlans().add(dayPlan);
+            // Save the day plan first to get the ID
+            PackageDayPlan savedDayPlan = packageDayPlanRepository.save(dayPlan);
+            
+            // Handle package route if provided
+            PackageDayPlanRoute packageRoute = null;
+            if (dayPlanDto.getPackageRoute() != null) {
+                PackageRouteCreateRequest routeRequest = dayPlanDto.getPackageRoute();
+                packageRoute = new PackageDayPlanRoute();
+                packageRoute.setPackageDayPlan(savedDayPlan);
+                packageRoute.setName(routeRequest.getName());
+                packageRoute.setTravelMode(routeRequest.getTravelMode());
+                packageRoute.setTotalDistance(routeRequest.getTotalDistance());
+                packageRoute.setEstimatedTime(routeRequest.getEstimatedTime());
+                
+                savedDayPlan.setPackageRoute(packageRoute);
+                log.info("Updated route for day plan {}: {}", savedDayPlan.getId(), packageRoute.getName());
+            }
+            
+            // Handle package locations if provided
+            if (dayPlanDto.getPackageLocations() != null && !dayPlanDto.getPackageLocations().isEmpty()) {
+                log.info("Processing {} locations for day plan update {}", dayPlanDto.getPackageLocations().size(), savedDayPlan.getId());
+                for (PackageLocationCreateRequest locationRequest : dayPlanDto.getPackageLocations()) {
+                    PackageDayPlanLocation packageLocation = new PackageDayPlanLocation();
+                    packageLocation.setPackageDayPlan(savedDayPlan);
+                    packageLocation.setPackageDayPlanRoute(packageRoute); // Link to route if exists
+                    packageLocation.setName(locationRequest.getName());
+                    packageLocation.setAddress(locationRequest.getAddress());
+                    packageLocation.setLatitude(locationRequest.getLatitude());
+                    packageLocation.setLongitude(locationRequest.getLongitude());
+                    packageLocation.setPositionIndex(locationRequest.getPositionIndex());
+                    packageLocation.setPlaceId(locationRequest.getPlaceId());
+                    packageLocation.setNotes(locationRequest.getNotes());
+                    
+                    savedDayPlan.getPackageLocations().add(packageLocation);
+                }
+            }
+            
+            existingPackage.getDayPlans().add(savedDayPlan);
         }
         
         TravelPackage updatedPackage = travelPackageRepository.save(existingPackage);
@@ -357,9 +432,53 @@ public class TravelPackageService {
             dto.setSelectedGuide(GuideDetailsDTO.fromGuide(travelPackage.getSelectedGuide()));
         }
         
-        // Map day plans
+        // Map day plans with route and location details
         List<PackageResponseDTO.PackageDayPlanResponseDTO> dayPlanDtos = travelPackage.getDayPlans().stream()
-                .map(dayPlan -> modelMapper.map(dayPlan, PackageResponseDTO.PackageDayPlanResponseDTO.class))
+                .map(dayPlan -> {
+                    PackageResponseDTO.PackageDayPlanResponseDTO dayPlanDto = modelMapper.map(dayPlan, PackageResponseDTO.PackageDayPlanResponseDTO.class);
+                    
+                    // Map package route if exists
+                    if (dayPlan.getPackageRoute() != null) {
+                        PackageDayPlanRoute route = dayPlan.getPackageRoute();
+                        PackageRouteResponseDTO routeDto = new PackageRouteResponseDTO();
+                        routeDto.setId(route.getId());
+                        routeDto.setName(route.getName());
+                        routeDto.setTravelMode(route.getTravelMode());
+                        routeDto.setTotalDistance(route.getTotalDistance());
+                        routeDto.setEstimatedTime(route.getEstimatedTime());
+                        routeDto.setCreatedAt(route.getCreatedAt());
+                        routeDto.setUpdatedAt(route.getUpdatedAt());
+                        
+                        dayPlanDto.setPackageRoute(routeDto);
+                    }
+                    
+                    // Map package locations if exist
+                    if (dayPlan.getPackageLocations() != null && !dayPlan.getPackageLocations().isEmpty()) {
+                        List<PackageLocationResponseDTO> locationDtos = dayPlan.getPackageLocations().stream()
+                                .map(location -> {
+                                    PackageLocationResponseDTO locationDto = new PackageLocationResponseDTO();
+                                    locationDto.setId(location.getId());
+                                    locationDto.setName(location.getName());
+                                    locationDto.setAddress(location.getAddress());
+                                    locationDto.setLatitude(location.getLatitude());
+                                    locationDto.setLongitude(location.getLongitude());
+                                    locationDto.setPositionIndex(location.getPositionIndex());
+                                    locationDto.setPlaceId(location.getPlaceId());
+                                    locationDto.setNotes(location.getNotes());
+                                    return locationDto;
+                                })
+                                .collect(Collectors.toList());
+                        
+                        dayPlanDto.setPackageLocations(locationDtos);
+                        
+                        // Also set locations in route if route exists
+                        if (dayPlanDto.getPackageRoute() != null) {
+                            dayPlanDto.getPackageRoute().setLocations(locationDtos);
+                        }
+                    }
+                    
+                    return dayPlanDto;
+                })
                 .collect(Collectors.toList());
         dto.setDayPlans(dayPlanDtos);
         

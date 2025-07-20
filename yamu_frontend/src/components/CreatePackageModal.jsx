@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import packageService from '../services/packageService';
 import HotelSelectorModal from './HotelSelectorModal';
+import PackageDayPlanLocationSelector from './PackageDayPlanLocationSelector';
 import DriverSelectorModal from './DriverSelectorModal';
 import GuideSelectorModal from './GuideSelectorModal';
 
@@ -32,7 +33,9 @@ const CreatePackageModal = ({ onClose, onSuccess }) => {
         dayNumber: 1,
         plannedLocations: [''],
         plannedActivities: [''],
-        estimatedCostPerPerson: 0
+        estimatedCostPerPerson: 0,
+        packageLocations: [],
+        packageRoute: null
       }
     ]
   });
@@ -121,7 +124,9 @@ const CreatePackageModal = ({ onClose, onSuccess }) => {
           dayNumber: i,
           plannedLocations: [''],
           plannedActivities: [''],
-          estimatedCostPerPerson: 0
+          estimatedCostPerPerson: 0,
+          packageLocations: [],
+          packageRoute: null
         });
       }
     }
@@ -224,6 +229,40 @@ const CreatePackageModal = ({ onClose, onSuccess }) => {
     }));
   };
 
+  // New handlers for package locations and routes
+  const updatePackageLocationsInDayPlan = (dayIndex, locations) => {
+    console.log(`CreatePackageModal - Updating locations for day ${dayIndex}:`, locations);
+    console.log(`CreatePackageModal - Current formData.dayPlans:`, formData.dayPlans);
+    setFormData(prev => {
+      const updated = {
+        ...prev,
+        dayPlans: prev.dayPlans.map((day, index) => 
+          index === dayIndex 
+            ? { ...day, packageLocations: locations }
+            : day
+        )
+      };
+      console.log(`CreatePackageModal - Updated formData.dayPlans:`, updated.dayPlans);
+      return updated;
+    });
+  };
+
+  const updatePackageRouteInDayPlan = (dayIndex, route) => {
+    console.log(`CreatePackageModal - Updating route for day ${dayIndex}:`, route);
+    setFormData(prev => {
+      const updated = {
+        ...prev,
+        dayPlans: prev.dayPlans.map((day, index) => 
+          index === dayIndex 
+            ? { ...day, packageRoute: route }
+            : day
+        )
+      };
+      console.log(`CreatePackageModal - Updated formData after route update:`, updated.dayPlans);
+      return updated;
+    });
+  };
+
   const updateActivityInDayPlan = (dayIndex, activityIndex, value) => {
     setFormData(prev => ({
       ...prev,
@@ -276,10 +315,19 @@ const CreatePackageModal = ({ onClose, onSuccess }) => {
       // Clean up day plans data
       const cleanedDayPlans = formData.dayPlans.map(day => ({
         dayNumber: day.dayNumber,
+        dayTitle: day.dayTitle || `Day ${day.dayNumber}`,
+        description: day.description || '',
         plannedLocations: day.plannedLocations.filter(loc => loc.trim() !== ''),
         plannedActivities: day.plannedActivities.filter(activity => activity.trim() !== ''),
-        estimatedCostPerPerson: parseFloat(day.estimatedCostPerPerson) || 0
+        estimatedCostPerPerson: parseFloat(day.estimatedCostPerPerson) || 0,
+        transportationDetails: day.transportationDetails || '',
+        mealPlans: day.mealPlans || '',
+        notes: day.notes || '',
+        packageLocations: day.packageLocations || [],
+        packageRoute: day.packageRoute || null
       }));
+
+      console.log('Sending day plans with locations and routes:', cleanedDayPlans);
 
       const packageData = {
         ...formData,
@@ -600,11 +648,26 @@ const CreatePackageModal = ({ onClose, onSuccess }) => {
                   Day {day.dayNumber}
                 </h5>
 
-                {/* Planned Locations */}
+                {/* Package Locations and Route */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     <MapPin className="inline w-4 h-4 mr-1" />
-                    Planned Locations
+                    Locations & Route Planning
+                  </label>
+                  <PackageDayPlanLocationSelector
+                    selectedLocations={day.packageLocations || []}
+                    onLocationsChange={(locations) => updatePackageLocationsInDayPlan(dayIndex, locations)}
+                    onRouteChange={(route) => updatePackageRouteInDayPlan(dayIndex, route)}
+                    dayNumber={day.dayNumber}
+                    travelMode="driving-car"
+                  />
+                </div>
+
+                {/* Legacy Planned Locations (for backward compatibility) */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <MapPin className="inline w-4 h-4 mr-1" />
+                    Additional Locations (Text)
                   </label>
                   {day.plannedLocations.map((location, locIndex) => (
                     <div key={locIndex} className="flex items-center space-x-2 mb-2">
@@ -612,7 +675,7 @@ const CreatePackageModal = ({ onClose, onSuccess }) => {
                         type="text"
                         value={location}
                         onChange={(e) => updateLocationInDayPlan(dayIndex, locIndex, e.target.value)}
-                        placeholder="Enter location"
+                        placeholder="Enter additional location notes"
                         className="flex-1 border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                       />
                       {day.plannedLocations.length > 1 && (
@@ -632,7 +695,7 @@ const CreatePackageModal = ({ onClose, onSuccess }) => {
                     className="text-blue-600 hover:text-blue-800 text-sm flex items-center"
                   >
                     <Plus className="w-4 h-4 mr-1" />
-                    Add Location
+                    Add Text Location
                   </button>
                 </div>
 

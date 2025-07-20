@@ -6,6 +6,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "package_day_plans")
@@ -32,7 +34,7 @@ public class PackageDayPlan {
     private String description;
     
     @Column(nullable = false, columnDefinition = "TEXT")
-    private String plannedLocations; // JSON string of locations for the day
+    private String plannedLocations; // JSON string of locations for the day (for backward compatibility)
     
     @Column(nullable = false, columnDefinition = "TEXT")
     private String activities; // Activities planned for the day
@@ -48,4 +50,12 @@ public class PackageDayPlan {
     
     @Column(columnDefinition = "TEXT")
     private String notes; // Additional notes for the day
+    
+    // New relationships for package-specific location and route functionality
+    @OneToOne(mappedBy = "packageDayPlan", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    private PackageDayPlanRoute packageRoute; // Route for this specific day
+    
+    @OneToMany(mappedBy = "packageDayPlan", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @OrderBy("positionIndex ASC")
+    private List<PackageDayPlanLocation> packageLocations = new ArrayList<>(); // Locations for this specific day
 }
