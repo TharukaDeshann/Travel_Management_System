@@ -44,7 +44,11 @@ const CreatePackageModal = ({ onClose, onSuccess }) => {
   });
 
   const [loading, setLoading] = useState(false);
-  const [resourcesLoading, setResourcesLoading] = useState(true);
+  const [resourcesLoading, setResourcesLoading] = useState({
+    hotels: false,
+    drivers: false,
+    guides: false
+  });
   const [error, setError] = useState(null);
   
   // Modal states
@@ -52,26 +56,48 @@ const CreatePackageModal = ({ onClose, onSuccess }) => {
   const [isDriverModalOpen, setIsDriverModalOpen] = useState(false);
   const [isGuideModalOpen, setIsGuideModalOpen] = useState(false);
 
-  // Load available resources on component mount
-  useEffect(() => {
-    loadAvailableResources();
-  }, []);
-
-  const loadAvailableResources = async () => {
+  const loadHotels = async () => {
+    if (availableResources.hotels.length > 0) return; // Already loaded
+    
     try {
-      setResourcesLoading(true);
-      const [hotels, drivers, guides] = await Promise.all([
-        packageService.getAvailableHotels(),
-        packageService.getAvailableDrivers(),
-        packageService.getAvailableGuides()
-      ]);
-      
-      setAvailableResources({ hotels, drivers, guides });
+      setResourcesLoading(prev => ({ ...prev, hotels: true }));
+      const hotels = await packageService.getAvailableHotels();
+      setAvailableResources(prev => ({ ...prev, hotels }));
     } catch (err) {
-      console.error('Error loading resources:', err);
-      setError('Failed to load available resources');
+      console.error('Error loading hotels:', err);
+      setError('Failed to load available hotels');
     } finally {
-      setResourcesLoading(false);
+      setResourcesLoading(prev => ({ ...prev, hotels: false }));
+    }
+  };
+
+  const loadDrivers = async () => {
+    if (availableResources.drivers.length > 0) return; // Already loaded
+    
+    try {
+      setResourcesLoading(prev => ({ ...prev, drivers: true }));
+      const drivers = await packageService.getAvailableDrivers();
+      setAvailableResources(prev => ({ ...prev, drivers }));
+    } catch (err) {
+      console.error('Error loading drivers:', err);
+      setError('Failed to load available drivers');
+    } finally {
+      setResourcesLoading(prev => ({ ...prev, drivers: false }));
+    }
+  };
+
+  const loadGuides = async () => {
+    if (availableResources.guides.length > 0) return; // Already loaded
+    
+    try {
+      setResourcesLoading(prev => ({ ...prev, guides: true }));
+      const guides = await packageService.getAvailableGuides();
+      setAvailableResources(prev => ({ ...prev, guides }));
+    } catch (err) {
+      console.error('Error loading guides:', err);
+      setError('Failed to load available guides');
+    } finally {
+      setResourcesLoading(prev => ({ ...prev, guides: false }));
     }
   };
 
@@ -282,6 +308,21 @@ const CreatePackageModal = ({ onClose, onSuccess }) => {
     }));
   };
 
+  const handleHotelModalOpen = async () => {
+    await loadHotels();
+    setIsHotelModalOpen(true);
+  };
+
+  const handleDriverModalOpen = async () => {
+    await loadDrivers();
+    setIsDriverModalOpen(true);
+  };
+
+  const handleGuideModalOpen = async () => {
+    await loadGuides();
+    setIsGuideModalOpen(true);
+  };
+
   const getSelectedHotel = () => {
     return availableResources.hotels.find(hotel => hotel.id == formData.selectedHotelId);
   };
@@ -388,139 +429,144 @@ const CreatePackageModal = ({ onClose, onSuccess }) => {
           </div>
 
           {/* Resource Selection */}
-          {resourcesLoading ? (
-            <div className="text-center py-4">
-              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto"></div>
-              <p className="mt-2 text-sm text-gray-500">Loading resources...</p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              <h4 className="text-md font-medium text-gray-900">Select Resources</h4>
-              
-              <div className="grid grid-cols-1 lg:grid-cols-3 md:grid-cols-2 gap-6">
-                {/* Hotel Selection */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    <Hotel className="inline w-4 h-4 mr-1" />
-                    Hotel
-                  </label>
-                  
-                  {getSelectedHotel() ? (
-                    <div className="border border-blue-200 bg-blue-50 rounded-lg p-4">
-                      <div className="flex items-center justify-between mb-2">
-                        <h5 className="font-medium text-gray-900">{getSelectedHotel().name}</h5>
-                        <button
-                          type="button"
-                          onClick={() => setIsHotelModalOpen(true)}
-                          className="text-blue-600 hover:text-blue-800 text-sm"
-                        >
-                          Change
-                        </button>
-                      </div>
-                      <p className="text-sm text-gray-600 flex items-center">
-                        <MapPin className="w-3 h-3 mr-1" />
-                        {getSelectedHotel().address}
-                      </p>
-                      <p className="text-sm text-gray-600">Rating: ⭐ {getSelectedHotel().rating}/5</p>
+          <div className="space-y-4">
+            <h4 className="text-md font-medium text-gray-900">Select Resources</h4>
+            
+            <div className="grid grid-cols-1 lg:grid-cols-3 md:grid-cols-2 gap-6">
+              {/* Hotel Selection */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <Hotel className="inline w-4 h-4 mr-1" />
+                  Hotel
+                </label>
+                
+                {getSelectedHotel() ? (
+                  <div className="border border-blue-200 bg-blue-50 rounded-lg p-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <h5 className="font-medium text-gray-900">{getSelectedHotel().name}</h5>
+                      <button
+                        type="button"
+                        onClick={handleHotelModalOpen}
+                        className="text-blue-600 hover:text-blue-800 text-sm"
+                        disabled={resourcesLoading.hotels}
+                      >
+                        {resourcesLoading.hotels ? 'Loading...' : 'Change'}
+                      </button>
                     </div>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => setIsHotelModalOpen(true)}
-                      className="w-full border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-400 hover:bg-blue-50 transition-colors"
-                    >
-                      <Hotel className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                      <p className="text-gray-600">Click to select a hotel</p>
-                      <p className="text-sm text-gray-400">Browse available hotels with filters</p>
-                    </button>
-                  )}
-                </div>
+                    <p className="text-sm text-gray-600 flex items-center">
+                      <MapPin className="w-3 h-3 mr-1" />
+                      {getSelectedHotel().address}
+                    </p>
+                    <p className="text-sm text-gray-600">Rating: ⭐ {getSelectedHotel().rating}/5</p>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleHotelModalOpen}
+                    disabled={resourcesLoading.hotels}
+                    className="w-full border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-400 hover:bg-blue-50 transition-colors disabled:opacity-50"
+                  >
+                    <Hotel className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                    <p className="text-gray-600">
+                      {resourcesLoading.hotels ? 'Loading hotels...' : 'Click to select a hotel'}
+                    </p>
+                    <p className="text-sm text-gray-400">Browse available hotels with filters</p>
+                  </button>
+                )}
+              </div>
 
-                {/* Driver Selection */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    <User className="inline w-4 h-4 mr-1" />
-                    Driver & Vehicle
-                  </label>
-                  
-                  {getSelectedDriver() ? (
-                    <div className="border border-blue-200 bg-blue-50 rounded-lg p-4">
-                      <div className="flex items-center justify-between mb-2">
-                        <h5 className="font-medium text-gray-900">{getSelectedDriver().name}</h5>
-                        <button
-                          type="button"
-                          onClick={() => setIsDriverModalOpen(true)}
-                          className="text-blue-600 hover:text-blue-800 text-sm"
-                        >
-                          Change
-                        </button>
-                      </div>
-                      <p className="text-sm text-gray-600">⭐ {getSelectedDriver().rating}/5</p>
-                      <p className="text-sm text-gray-600">
-                        {getSelectedDriver().vehicleType} - {getSelectedDriver().brand} {getSelectedDriver().model}
-                      </p>
-                      <p className="text-sm font-medium text-blue-600">
-                        {formatCurrency(getSelectedDriver().ratePerLng)}/km
-                      </p>
+              {/* Driver Selection */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <User className="inline w-4 h-4 mr-1" />
+                  Driver & Vehicle
+                </label>
+                
+                {getSelectedDriver() ? (
+                  <div className="border border-blue-200 bg-blue-50 rounded-lg p-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <h5 className="font-medium text-gray-900">{getSelectedDriver().name}</h5>
+                      <button
+                        type="button"
+                        onClick={handleDriverModalOpen}
+                        className="text-blue-600 hover:text-blue-800 text-sm"
+                        disabled={resourcesLoading.drivers}
+                      >
+                        {resourcesLoading.drivers ? 'Loading...' : 'Change'}
+                      </button>
                     </div>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => setIsDriverModalOpen(true)}
-                      className="w-full border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-400 hover:bg-blue-50 transition-colors"
-                    >
-                      <User className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                      <p className="text-gray-600">Click to select a driver</p>
-                      <p className="text-sm text-gray-400">Browse drivers with vehicle details</p>
-                    </button>
-                  )}
-                </div>
+                    <p className="text-sm text-gray-600">⭐ {getSelectedDriver().rating}/5</p>
+                    <p className="text-sm text-gray-600">
+                      {getSelectedDriver().vehicleType} - {getSelectedDriver().brand} {getSelectedDriver().model}
+                    </p>
+                    <p className="text-sm font-medium text-blue-600">
+                      {formatCurrency(getSelectedDriver().ratePerLng)}/km
+                    </p>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleDriverModalOpen}
+                    disabled={resourcesLoading.drivers}
+                    className="w-full border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-400 hover:bg-blue-50 transition-colors disabled:opacity-50"
+                  >
+                    <User className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                    <p className="text-gray-600">
+                      {resourcesLoading.drivers ? 'Loading drivers...' : 'Click to select a driver'}
+                    </p>
+                    <p className="text-sm text-gray-400">Browse drivers with vehicle details</p>
+                  </button>
+                )}
+              </div>
 
-                {/* Guide Selection */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    <User className="inline w-4 h-4 mr-1" />
-                    Guide
-                  </label>
-                  
-                  {getSelectedGuide() ? (
-                    <div className="border border-blue-200 bg-blue-50 rounded-lg p-4">
-                      <div className="flex items-center justify-between mb-2">
-                        <h5 className="font-medium text-gray-900">{getSelectedGuide().firstName} {getSelectedGuide().lastName}</h5>
-                        <button
-                          type="button"
-                          onClick={() => setIsGuideModalOpen(true)}
-                          className="text-blue-600 hover:text-blue-800 text-sm"
-                        >
-                          Change
-                        </button>
-                      </div>
-                      <p className="text-sm text-gray-600 flex items-center">
-                        <MapPin className="w-3 h-3 mr-1" />
-                        {getSelectedGuide().expertiseCityRegion}
-                      </p>
-                      <p className="text-sm text-gray-600">🗣️ {getSelectedGuide().language}</p>
-                      {getSelectedGuide().vehicleAvailability && (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800 mt-1">
-                          Vehicle Available
-                        </span>
-                      )}
+              {/* Guide Selection */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <User className="inline w-4 h-4 mr-1" />
+                  Guide
+                </label>
+                
+                {getSelectedGuide() ? (
+                  <div className="border border-blue-200 bg-blue-50 rounded-lg p-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <h5 className="font-medium text-gray-900">{getSelectedGuide().firstName} {getSelectedGuide().lastName}</h5>
+                      <button
+                        type="button"
+                        onClick={handleGuideModalOpen}
+                        className="text-blue-600 hover:text-blue-800 text-sm"
+                        disabled={resourcesLoading.guides}
+                      >
+                        {resourcesLoading.guides ? 'Loading...' : 'Change'}
+                      </button>
                     </div>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => setIsGuideModalOpen(true)}
-                      className="w-full border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-400 hover:bg-blue-50 transition-colors"
-                    >
-                      <User className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                      <p className="text-gray-600">Click to select a guide</p>
-                      <p className="text-sm text-gray-400">Browse guides with expertise details</p>
-                    </button>
-                  )}
-                </div>
+                    <p className="text-sm text-gray-600 flex items-center">
+                      <MapPin className="w-3 h-3 mr-1" />
+                      {getSelectedGuide().expertiseCityRegion}
+                    </p>
+                    <p className="text-sm text-gray-600">🗣️ {getSelectedGuide().language}</p>
+                    {getSelectedGuide().vehicleAvailability && (
+                      <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800 mt-1">
+                        Vehicle Available
+                      </span>
+                    )}
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleGuideModalOpen}
+                    disabled={resourcesLoading.guides}
+                    className="w-full border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-400 hover:bg-blue-50 transition-colors disabled:opacity-50"
+                  >
+                    <User className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                    <p className="text-gray-600">
+                      {resourcesLoading.guides ? 'Loading guides...' : 'Click to select a guide'}
+                    </p>
+                    <p className="text-sm text-gray-400">Browse guides with expertise details</p>
+                  </button>
+                )}
               </div>
             </div>
-          )}
+          </div>
 
           {/* Day Plans */}
           <div className="space-y-4">
@@ -657,7 +703,7 @@ const CreatePackageModal = ({ onClose, onSuccess }) => {
           onSelect={handleHotelSelect}
           hotels={availableResources.hotels}
           selectedHotelId={formData.selectedHotelId}
-          loading={resourcesLoading}
+          loading={resourcesLoading.hotels}
         />
 
         {/* Driver Selector Modal */}
@@ -667,7 +713,7 @@ const CreatePackageModal = ({ onClose, onSuccess }) => {
           onSelect={handleDriverSelect}
           drivers={availableResources.drivers}
           selectedDriverId={formData.selectedDriverId}
-          loading={resourcesLoading}
+          loading={resourcesLoading.drivers}
         />
 
         {/* Guide Selector Modal */}
@@ -677,7 +723,7 @@ const CreatePackageModal = ({ onClose, onSuccess }) => {
           onSelect={handleGuideSelect}
           guides={availableResources.guides}
           selectedGuideId={formData.selectedGuideId}
-          loading={resourcesLoading}
+          loading={resourcesLoading.guides}
         />
       </div>
     </div>
