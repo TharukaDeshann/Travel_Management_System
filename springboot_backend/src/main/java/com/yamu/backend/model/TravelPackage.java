@@ -55,6 +55,10 @@ public class TravelPackage {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "vehicle_id")
     private Vehicle selectedVehicle;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "guide_id")
+    private Guide selectedGuide;
     
     // Selected driver for the package (if different from vehicle's default)
     @ManyToOne(fetch = FetchType.LAZY)
