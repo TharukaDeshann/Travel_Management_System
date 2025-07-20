@@ -161,6 +161,22 @@ const EditPackageModal = ({ package: packageToEdit, onClose, onSuccess }) => {
     }));
   };
 
+  // Calculate total budget per person from day plans
+  const calculateBudgetPerPerson = () => {
+    return formData.dayPlans.reduce((total, day) => {
+      return total + (parseFloat(day.estimatedCostPerPerson) || 0);
+    }, 0);
+  };
+
+  // Update budget per person whenever day plans change
+  useEffect(() => {
+    const calculatedBudget = calculateBudgetPerPerson();
+    setFormData(prev => ({
+      ...prev,
+      budgetPerPerson: calculatedBudget
+    }));
+  }, [formData.dayPlans]);
+
   const addLocationToDayPlan = (dayIndex) => {
     setFormData(prev => ({
       ...prev,
@@ -451,18 +467,13 @@ const EditPackageModal = ({ package: packageToEdit, onClose, onSuccess }) => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700">Budget per Person (LKR)</label>
-                <input
-                  type="number"
-                  name="budgetPerPerson"
-                  min="0"
-                  step="0.01"
-                  value={formData.budgetPerPerson}
-                  onChange={handleInputChange}
-                  className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  placeholder="Enter budget per person"
-                  required
-                />
+                <label className="block text-sm font-medium text-gray-700">Total Budget per Person (LKR)</label>
+                <div className="mt-1 block w-full border-gray-300 rounded-md shadow-sm bg-gray-50 px-3 py-2 text-sm text-gray-900">
+                  {formatCurrency(calculateBudgetPerPerson())}
+                </div>
+                <p className="mt-1 text-xs text-gray-500">
+                  Automatically calculated from day-by-day costs
+                </p>
               </div>
 
               <div>
@@ -639,7 +650,17 @@ const EditPackageModal = ({ package: packageToEdit, onClose, onSuccess }) => {
 
           {/* Day Plans */}
           <div className="space-y-4">
-            <h4 className="text-md font-medium text-gray-900">Day-by-Day Planning</h4>
+            <div className="flex items-center justify-between">
+              <h4 className="text-md font-medium text-gray-900">Day-by-Day Planning</h4>
+              <div className="bg-blue-50 border border-blue-200 rounded-lg px-4 py-2">
+                <div className="text-sm text-blue-800 font-medium">
+                  Total Budget: {formatCurrency(calculateBudgetPerPerson())}
+                </div>
+                <div className="text-xs text-blue-600">
+                  Per person for {formData.durationDays} day{formData.durationDays !== 1 ? 's' : ''}
+                </div>
+              </div>
+            </div>
             
             {formData.dayPlans.map((day, dayIndex) => (
               <div key={dayIndex} className="border border-gray-200 rounded-lg p-4 space-y-4">
@@ -723,7 +744,8 @@ const EditPackageModal = ({ package: packageToEdit, onClose, onSuccess }) => {
                 {/* Estimated Cost */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700">
-                    Estimated Additional Cost per Person (LKR)
+                    <DollarSign className="inline w-4 h-4 mr-1" />
+                    Estimated Cost per Person (LKR)
                   </label>
                   <input
                     type="number"
@@ -734,6 +756,9 @@ const EditPackageModal = ({ package: packageToEdit, onClose, onSuccess }) => {
                     className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                     placeholder="0.00"
                   />
+                  <p className="mt-1 text-xs text-gray-500">
+                    Cost per person for activities, meals, entrance fees, etc.
+                  </p>
                 </div>
               </div>
             ))}
