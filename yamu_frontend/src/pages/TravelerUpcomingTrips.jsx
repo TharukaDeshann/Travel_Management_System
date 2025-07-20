@@ -17,9 +17,6 @@ const TravelerUpcomingTrips = ({ currentUser }) => {
   const [showCancelConfirm, setShowCancelConfirm] = useState(null);
   const [showRemoveConfirm, setShowRemoveConfirm] = useState(null);
   const [processing, setProcessing] = useState(false);
-  const [showCancelConfirm, setShowCancelConfirm] = useState(null);
-  const [showRemoveConfirm, setShowRemoveConfirm] = useState(null);
-  const [processing, setProcessing] = useState(false);
   const navigate = useNavigate();
   const { user: loggedUser } = useUser();
 
@@ -96,73 +93,7 @@ const TravelerUpcomingTrips = ({ currentUser }) => {
     navigate(`/inbox?select=${guideId}`);
   };
 
-  const handleEditReservation = (reservation) => {
-    navigate('/guides-page', {
-      state: {
-        editReservation: true,
-        reservationData: reservation,
-        guideId: reservation.guideId
-      }
-    });
-  };
-
-  const handleCancelReservation = async (reservationId) => {
-    try {
-      setProcessing(true);
-      await apiClient.put(`/api/reservations/${reservationId}/cancel`);
-      await refreshData();
-      setShowCancelConfirm(null);
-      toast.success("Reservation cancelled successfully");
-    } catch (err) {
-      console.error("Cancellation failed:", err);
-      let errorMsg = "Failed to cancel reservation";
-      
-      if (err.response) {
-        if (err.response.status === 401) {
-          errorMsg = "Please login to perform this action";
-        } else if (err.response.status === 403) {
-          errorMsg = "You don't have permission to cancel this reservation";
-        } else if (err.response.data?.message) {
-          errorMsg = err.response.data.message;
-        }
-      }
-      
-      setError(errorMsg);
-      toast.error(errorMsg);
-    } finally {
-      setProcessing(false);
-    }
-  };
-
-  const handleRemoveReservation = async (reservationId) => {
-    try {
-      setProcessing(true);
-      await apiClient.delete(`/api/reservations/${reservationId}`);
-      await refreshData();
-      setShowRemoveConfirm(null);
-      toast.success("Reservation removed successfully");
-    } catch (err) {
-      console.error("Removal failed:", err);
-      let errorMsg = "Failed to remove reservation";
-      
-      if (err.response) {
-        if (err.response.status === 401) {
-          errorMsg = "Please login to perform this action";
-        } else if (err.response.status === 403) {
-          errorMsg = "You don't have permission to remove this reservation";
-        } else if (err.response.status === 404) {
-          errorMsg = "Reservation not found";
-        } else if (err.response.data?.message) {
-          errorMsg = err.response.data.message;
-        }
-      }
-      
-      setError(errorMsg);
-      toast.error(errorMsg);
-    } finally {
-      setProcessing(false);
-    }
-  };
+  
   const handleEditReservation = (reservation) => {
     navigate('/guides-page', {
       state: {
@@ -237,7 +168,7 @@ const TravelerUpcomingTrips = ({ currentUser }) => {
     'DECLINED': '#F44336',
     'COMPLETED': '#2196F3',
     'CANCELLED': '#F44336'
-    'CANCELLED': '#F44336'
+   
   };
 
   const upcomingReservations = reservations.filter(res => res.status !== 'COMPLETED');
@@ -368,7 +299,6 @@ const TravelerUpcomingTrips = ({ currentUser }) => {
                 color: "#2196F3",
                 fontWeight: "bold"
               }}>
-                <strong>Estimated Price:</strong> {selectedCurrency} {reservation.estimatedPrice.toLocaleString()}
                 <strong>Estimated Price:</strong> {selectedCurrency} {reservation.estimatedPrice.toLocaleString()}
               </p>
             )}
@@ -577,22 +507,6 @@ const TravelerUpcomingTrips = ({ currentUser }) => {
           )}
           
           {reservation.guideId && (
-            <button
-              onClick={() => handleMessageClick(reservation.guideId)}
-              style={{
-                padding: "8px 16px",
-                backgroundColor: "#f0f0f0",
-                border: "none",
-                borderRadius: "4px",
-                cursor: "pointer",
-                display: "flex",
-                alignItems: "center",
-                gap: "6px"
-              }}
-            >
-              <Mail size={16} />
-              Message
-            </button>
             <button
               onClick={() => handleMessageClick(reservation.guideId)}
               style={{

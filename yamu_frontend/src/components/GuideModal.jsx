@@ -6,7 +6,6 @@ import { useNotification } from '../hooks/useNotification';
 import { useNotification } from '../hooks/useNotification';
 
 const GuideModal = ({ guide, onClose, currentUser, editReservationData }) => {
-const GuideModal = ({ guide, onClose, currentUser, editReservationData }) => {
   const [activeTab, setActiveTab] = useState('details');
   const [numberOfDays, setNumberOfDays] = useState(1);
   const [reservationDetails, setReservationDetails] = useState(
@@ -30,10 +29,10 @@ const GuideModal = ({ guide, onClose, currentUser, editReservationData }) => {
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
   const [reviewSuccess, setReviewSuccess] = useState(null);
   const [isEditMode, setIsEditMode] = useState(false);
-  const [isEditMode, setIsEditMode] = useState(false);
+  
   const { user } = useUser();
   const { showSuccess, showError } = useNotification();
-  const { showSuccess, showError } = useNotification();
+
   const loggedUser = currentUser || user;
 
   useEffect(() => {
@@ -96,24 +95,7 @@ const GuideModal = ({ guide, onClose, currentUser, editReservationData }) => {
 
     fetchReviews();
   }, [guide.id, editReservationData, onClose, showError]);
-    const fetchReviews = async () => {
-      try {
-        setIsLoadingReviews(true);
-        const response = await apiClient.get(`/api/reviews/guide/${guide.id}`);
-        setReviews(response.data || []);
-        
-        const ratingResponse = await apiClient.get(`/api/reviews/guide/${guide.id}/average-rating`);
-        setAverageRating(ratingResponse.data);
-      } catch (error) {
-        console.error("Error fetching reviews:", error);
-        showError("Failed to load reviews");
-      } finally {
-        setIsLoadingReviews(false);
-      }
-    };
-
-    fetchReviews();
-  }, [guide.id, editReservationData, onClose, showError]);
+    
 
   const handleDayChange = (e) => {
     const days = parseInt(e.target.value);
@@ -183,7 +165,6 @@ const GuideModal = ({ guide, onClose, currentUser, editReservationData }) => {
     if (!loggedUser || !loggedUser.id) {
       setError('Please login to make a reservation');
       showError('Please login to make a reservation');
-      showError('Please login to make a reservation');
       return;
     }
   
@@ -221,9 +202,6 @@ const GuideModal = ({ guide, onClose, currentUser, editReservationData }) => {
         const errorMsg = `Invalid date for Day ${i + 1}`;
         setError(errorMsg);
         showError(errorMsg);
-        const errorMsg = `Invalid date for Day ${i + 1}`;
-        setError(errorMsg);
-        showError(errorMsg);
         return;
       }
   
@@ -232,17 +210,11 @@ const GuideModal = ({ guide, onClose, currentUser, editReservationData }) => {
         const errorMsg = `Date for Day ${i + 1} cannot be in the past`;
         setError(errorMsg);
         showError(errorMsg);
-        const errorMsg = `Date for Day ${i + 1} cannot be in the past`;
-        setError(errorMsg);
-        showError(errorMsg);
         return;
       }
   
   
       if (selectedDate > maxAllowedDate) {
-        const errorMsg = `Date for Day ${i + 1} must be within 365 days from today`;
-        setError(errorMsg);
-        showError(errorMsg);
         const errorMsg = `Date for Day ${i + 1} must be within 365 days from today`;
         setError(errorMsg);
         showError(errorMsg);
@@ -256,9 +228,6 @@ const GuideModal = ({ guide, onClose, currentUser, editReservationData }) => {
         nextValidDate.setDate(nextValidDate.getDate() + 1);
         
         if (selectedDate < nextValidDate) {
-          const errorMsg = `Date for Day ${i + 1} must be after Day ${i}`;
-          setError(errorMsg);
-          showError(errorMsg);
           const errorMsg = `Date for Day ${i + 1} must be after Day ${i}`;
           setError(errorMsg);
           showError(errorMsg);
@@ -300,7 +269,6 @@ const GuideModal = ({ guide, onClose, currentUser, editReservationData }) => {
       showSuccess(isEditMode ? "Reservation updated successfully!" : "Reservation request sent successfully!");
       setTimeout(() => {
         onClose();
-      }, 1500);
       }, 1500);
     } catch (err) {
       console.error('Reservation failed:', err);
@@ -374,18 +342,6 @@ const GuideModal = ({ guide, onClose, currentUser, editReservationData }) => {
   };
 
   const renderStars = (rating) => {
-    const stars = [];
-    for (let i = 1; i <= 5; i++) {
-      stars.push(
-        <Star
-          key={i}
-          size={16}
-          fill={rating >= i ? '#FFD700' : 'none'}
-          color={rating >= i ? '#FFD700' : '#ddd'}
-        />
-      );
-    }
-    return <div className="flex items-center gap-1">{stars}</div>;
     const stars = [];
     for (let i = 1; i <= 5; i++) {
       stars.push(

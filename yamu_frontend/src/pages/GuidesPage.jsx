@@ -334,12 +334,6 @@ const GuidesPage = () => {
             }}
             currentUser={loggedUser}
             editReservationData={editReservationData}
-            onClose={() => {
-              setSelectedGuide(null);
-              setEditReservationData(null);
-            }}
-            currentUser={loggedUser}
-            editReservationData={editReservationData}
           />
         )}
       </div>

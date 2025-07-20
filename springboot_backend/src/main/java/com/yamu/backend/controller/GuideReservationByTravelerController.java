@@ -30,16 +30,13 @@ import java.util.stream.Collectors;
 @RestController
 @RequestMapping("/api/reservations")
 @Slf4j
-@Slf4j
+
 public class GuideReservationByTravelerController {
 
     private final GuideReservationByTravelerService reservationService;
     private final UserRepository userRepository;
-    private final UserRepository userRepository;
-
-    public GuideReservationByTravelerController(
-            GuideReservationByTravelerService reservationService,
-            UserRepository userRepository) {
+    
+    
     public GuideReservationByTravelerController(
             GuideReservationByTravelerService reservationService,
             UserRepository userRepository) {

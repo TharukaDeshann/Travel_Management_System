@@ -23,7 +23,7 @@ public class GuideReservationByTravelerService {
 
     private final GuideReservationByTravelerRepository reservationRepository;
     private final GuideReservationDayDetailRepository dayDetailRepository;
-    private final GuideReservationDayDetailRepository dayDetailRepository;
+   
     private final UserRepository userRepository;
     private final VehicleRepository vehicleRepository;
 
@@ -33,7 +33,6 @@ public class GuideReservationByTravelerService {
             UserRepository userRepository,
             VehicleRepository vehicleRepository) {
         this.reservationRepository = reservationRepository;
-        this.dayDetailRepository = dayDetailRepository;
         this.dayDetailRepository = dayDetailRepository;
         this.userRepository = userRepository;
         this.vehicleRepository = vehicleRepository;
@@ -165,18 +164,7 @@ public class GuideReservationByTravelerService {
         return reservationRepository.save(reservation);
     }
 
-    public GuideReservationByTraveler getReservationById(Long reservationId) {
-        return reservationRepository.findById(reservationId)
-                .orElseThrow(() -> new ResourceNotFoundException("Reservation not found"));
-    }
-
-    @Transactional
-    public void deleteReservation(Long reservationId) {
-        if (!reservationRepository.existsById(reservationId)) {
-            throw new ResourceNotFoundException("Reservation not found");
-        }
-        reservationRepository.deleteById(reservationId);
-    }
+   
 
     public GuideReservationByTraveler getReservationById(Long reservationId) {
         return reservationRepository.findById(reservationId)
