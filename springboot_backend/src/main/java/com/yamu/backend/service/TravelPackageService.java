@@ -29,6 +29,16 @@ public class TravelPackageService {
     private final DriverRepository driverRepository;
     private final GuideRepository guideRepository;
     private final TravelerRepository travelerRepository;
+    
+    // New repositories for traveler itinerary creation
+    private final ItineraryRepository itineraryRepository;
+    private final DayPlanRepository dayPlanRepository;
+    private final LocationRepository locationRepository;
+    private final RouteRepository routeRepository;
+    private final HotelBookingRepository hotelBookingRepository;
+    private final DriverBookingRepository driverBookingRepository;
+    private final GuideReservationRepository guideReservationRepository;
+    
     private final ModelMapper modelMapper;
     private final ObjectMapper objectMapper;
     
@@ -407,7 +417,232 @@ public class TravelPackageService {
         application = packageApplicationRepository.save(application);
         log.info("Package application created successfully with ID: {}", application.getId());
         
+        // Create itinerary and all associated bookings/reservations
+        createItineraryForApplication(traveler, travelPackage, request);
+        
         return convertToApplicationResponseDTO(application);
+    }
+    
+    /**
+     * Create itinerary and all associated bookings for a package application
+     */
+    private void createItineraryForApplication(Traveler traveler, TravelPackage travelPackage, PackageApplicationRequestDTO request) {
+        log.info("Creating itinerary for traveler {} and package {}", traveler.getId(), travelPackage.getId());
+        
+        // Create Itinerary
+        Itinerary itinerary = new Itinerary();
+        itinerary.setBudget(travelPackage.getBudgetPerPerson().doubleValue() * request.getGroupMemberCount());
+        itinerary.setCurrency(travelPackage.getCurrency());
+        
+        // Convert LocalDate to Date
+        java.util.Date startDate = java.util.Date.from(request.getStartingDate().atStartOfDay(java.time.ZoneId.systemDefault()).toInstant());
+        itinerary.setStartDate(startDate);
+        
+        // Calculate end date
+        java.util.Calendar calendar = java.util.Calendar.getInstance();
+        calendar.setTime(startDate);
+        calendar.add(java.util.Calendar.DAY_OF_MONTH, travelPackage.getDurationDays() - 1);
+        itinerary.setEndDate(calendar.getTime());
+        
+        itinerary.setTripTitle(travelPackage.getPackageName());
+        itinerary.setTraveler(traveler);
+        
+        itinerary = itineraryRepository.save(itinerary);
+        log.info("Created itinerary with ID: {}", itinerary.getId());
+        
+        // Create Hotel Booking (for entire trip duration)
+        if (travelPackage.getSelectedHotel() != null) {
+            createHotelBooking(traveler, travelPackage.getSelectedHotel(), request, itinerary);
+        }
+        
+        // Create Driver Booking (for entire trip)
+        DriverBooking driverBooking = null;
+        if (travelPackage.getSelectedDriver() != null) {
+            driverBooking = createDriverBookingForTrip(traveler, travelPackage, request, itinerary);
+        }
+        
+        // Create Day Plans, Locations, Routes, and Guide Reservations
+        createDayPlansAndReservations(itinerary, travelPackage, request, driverBooking, traveler);
+    }
+    
+    /**
+     * Create hotel booking for the entire trip duration
+     */
+    private void createHotelBooking(Traveler traveler, Hotel hotel, PackageApplicationRequestDTO request, Itinerary itinerary) {
+        HotelBooking hotelBooking = new HotelBooking();
+        hotelBooking.setHotel(hotel);
+        hotelBooking.setTraveler(traveler);
+        hotelBooking.setCheckInDate(request.getStartingDate());
+        hotelBooking.setCheckOutDate(itinerary.getEndDate().toInstant().atZone(java.time.ZoneId.systemDefault()).toLocalDate());
+        hotelBooking.setRoomType(HotelBooking.RoomType.SINGLE);
+        hotelBooking.setNumberOfRooms(request.getGroupMemberCount()); // One room per person
+        hotelBooking.setNumberOfGuests(request.getGroupMemberCount());
+        
+        // Calculate total price: 1000 per room per day
+        long durationDays = java.time.Duration.between(
+            hotelBooking.getCheckInDate().atStartOfDay(),
+            hotelBooking.getCheckOutDate().atStartOfDay()
+        ).toDays();
+        if (durationDays == 0) durationDays = 1; // Minimum 1 day
+        
+        BigDecimal totalPrice = BigDecimal.valueOf(1000)
+                .multiply(BigDecimal.valueOf(request.getGroupMemberCount()))
+                .multiply(BigDecimal.valueOf(durationDays));
+        hotelBooking.setTotalPrice(totalPrice);
+        hotelBooking.setBookingStatus(HotelBooking.BookingStatus.PENDING);
+        
+        hotelBookingRepository.save(hotelBooking);
+        log.info("Created hotel booking for {} rooms, {} days, total price: {}", 
+                request.getGroupMemberCount(), durationDays, totalPrice);
+    }
+    
+    /**
+     * Create driver booking for the entire trip
+     */
+    private DriverBooking createDriverBookingForTrip(Traveler traveler, TravelPackage travelPackage, 
+                                                   PackageApplicationRequestDTO request, Itinerary itinerary) {
+        Driver driver = travelPackage.getSelectedDriver();
+        
+        // For trip-level driver booking, we'll create one entry for the entire trip
+        DriverBooking driverBooking = new DriverBooking();
+        driverBooking.setDriver(driver);
+        driverBooking.setBookingDate(request.getStartingDate());
+        driverBooking.setTravelerId(traveler.getId());
+        driverBooking.setStatus("BOOKED");
+        
+        // Calculate total distance and cost from all day plans
+        double totalDistance = 0.0;
+        for (PackageDayPlan dayPlan : travelPackage.getDayPlans()) {
+            if (dayPlan.getPackageRoute() != null && dayPlan.getPackageRoute().getTotalDistance() != null) {
+                totalDistance += dayPlan.getPackageRoute().getTotalDistance();
+            }
+        }
+        
+        driverBooking.setTravelLength(totalDistance);
+        
+        // Calculate cost using driver's rate per km
+        double totalCost = totalDistance * (driver.getRatePerLng() != null ? driver.getRatePerLng() : 50.0); // Default rate if null
+        driverBooking.setTravelCost(totalCost);
+        
+        driverBooking = driverBookingRepository.save(driverBooking);
+        log.info("Created driver booking for {} km, total cost: {}", totalDistance, totalCost);
+        
+        return driverBooking;
+    }
+    
+    /**
+     * Create day plans, locations, routes, and guide reservations
+     */
+    private void createDayPlansAndReservations(Itinerary itinerary, TravelPackage travelPackage, 
+                                             PackageApplicationRequestDTO request, DriverBooking driverBooking, 
+                                             Traveler traveler) {
+        
+        java.util.Calendar calendar = java.util.Calendar.getInstance();
+        calendar.setTime(itinerary.getStartDate());
+        
+        for (PackageDayPlan packageDayPlan : travelPackage.getDayPlans()) {
+            java.util.Date currentDate = calendar.getTime();
+            
+            // Create DayPlan
+            DayPlan dayPlan = new DayPlan();
+            dayPlan.setItinerary(itinerary);
+            dayPlan.setDate(currentDate);
+            
+            // Copy details from package day plan (simplified for now)
+            dayPlan.setHotelDetails(travelPackage.getSelectedHotel() != null ? 
+                travelPackage.getSelectedHotel().getName() : "No hotel selected");
+            dayPlan.setTransportDetails(travelPackage.getSelectedDriver() != null ? 
+                "Driver: " + travelPackage.getSelectedDriver().getName() : "No driver selected");
+            dayPlan.setGuideDetails(travelPackage.getSelectedGuide() != null ? 
+                "Guide: " + travelPackage.getSelectedGuide().getFirstName() + " " + 
+                travelPackage.getSelectedGuide().getLastName() : "No guide selected");
+            
+            dayPlan = dayPlanRepository.save(dayPlan);
+            log.info("Created day plan for day {}, date: {}", packageDayPlan.getDayNumber(), currentDate);
+            
+            // Create Route if package day plan has a route
+            Route route = null;
+            if (packageDayPlan.getPackageRoute() != null) {
+                route = createRouteFromPackageRoute(dayPlan, packageDayPlan.getPackageRoute());
+            }
+            
+            // Create Locations from package day plan locations
+            if (packageDayPlan.getPackageLocations() != null && !packageDayPlan.getPackageLocations().isEmpty()) {
+                createLocationsFromPackageLocations(dayPlan, route, packageDayPlan.getPackageLocations());
+            }
+            
+            // Create Guide Reservation for this day
+            if (travelPackage.getSelectedGuide() != null) {
+                createGuideReservationForDay(traveler, travelPackage.getSelectedGuide(), currentDate, 
+                                           packageDayPlan, request.getGroupMemberCount());
+            }
+            
+            // Move to next day
+            calendar.add(java.util.Calendar.DAY_OF_MONTH, 1);
+        }
+    }
+    
+    /**
+     * Create route from package day plan route
+     */
+    private Route createRouteFromPackageRoute(DayPlan dayPlan, PackageDayPlanRoute packageRoute) {
+        Route route = new Route();
+        route.setDayPlan(dayPlan);
+        route.setName(packageRoute.getName());
+        route.setTravelMode(packageRoute.getTravelMode());
+        route.setTotalDistance(packageRoute.getTotalDistance());
+        route.setEstimatedTime(packageRoute.getEstimatedTime());
+        
+        route = routeRepository.save(route);
+        log.info("Created route: {} for day plan {}", route.getName(), dayPlan.getId());
+        
+        return route;
+    }
+    
+    /**
+     * Create locations from package day plan locations
+     */
+    private void createLocationsFromPackageLocations(DayPlan dayPlan, Route route, 
+                                                   List<PackageDayPlanLocation> packageLocations) {
+        for (PackageDayPlanLocation packageLocation : packageLocations) {
+            Location location = new Location();
+            location.setDayPlan(dayPlan);
+            location.setRoute(route); // Link to route if exists
+            location.setName(packageLocation.getName());
+            location.setAddress(packageLocation.getAddress());
+            location.setLatitude(packageLocation.getLatitude());
+            location.setLongitude(packageLocation.getLongitude());
+            location.setPositionIndex(packageLocation.getPositionIndex());
+            location.setPlaceId(packageLocation.getPlaceId());
+            location.setNotes(packageLocation.getNotes());
+            
+            locationRepository.save(location);
+            log.info("Created location: {} at position {}", location.getName(), location.getPositionIndex());
+        }
+    }
+    
+    /**
+     * Create guide reservation for a specific day
+     */
+    private void createGuideReservationForDay(Traveler traveler, Guide guide, java.util.Date date, 
+                                             PackageDayPlan packageDayPlan, int groupSize) {
+        GuideReservation guideReservation = new GuideReservation();
+        guideReservation.setUser(traveler); // Traveler extends User
+        guideReservation.setDate(date.toInstant().atZone(java.time.ZoneId.systemDefault()).toLocalDate());
+        guideReservation.setType(GuideReservation.ReservationType.TOUR);
+        guideReservation.setTravelerName(traveler.getFirstName() + " " + traveler.getLastName());
+        
+        // Set place as the first location of the day plan
+        String place = "Tour locations";
+        if (packageDayPlan.getPackageLocations() != null && !packageDayPlan.getPackageLocations().isEmpty()) {
+            place = packageDayPlan.getPackageLocations().get(0).getName();
+        }
+        guideReservation.setPlace(place);
+        guideReservation.setTimePeriod("Full Day Tour");
+        
+        guideReservationRepository.save(guideReservation);
+        log.info("Created guide reservation for {} on date: {}, place: {}", 
+                traveler.getFirstName(), date, place);
     }
     
     /**

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { ChevronRight, Mail } from "lucide-react";
+import { ChevronRight, Mail, Calendar, Users, DollarSign, MapPin, Clock } from "lucide-react";
 import '../styles/TravelerDashboard.css';
 import WeatherCard from "../components/WeatherCard";
 import yamuLogo from '../images/yamu-logo.png';
@@ -33,6 +33,15 @@ export default function TravelerDashboard({ currentUser: propCurrentUser }) {
   const [currentUser, setCurrentUser] = useState(propCurrentUser);
   const [events, setEvents] = useState([]);
   const [selectedEvent, setSelectedEvent] = useState(null);
+  const [packages, setPackages] = useState([]);
+  const [selectedPackage, setSelectedPackage] = useState(null);
+  const [showApplicationModal, setShowApplicationModal] = useState(false);
+  const [applicationForm, setApplicationForm] = useState({
+    groupMemberCount: 1,
+    startingDate: '',
+    specialRequests: ''
+  });
+  const [isSubmittingApplication, setIsSubmittingApplication] = useState(false);
   
   const loggedUser = useUser().user || currentUser;
   const unreadCount = 0;
@@ -72,8 +81,18 @@ export default function TravelerDashboard({ currentUser: propCurrentUser }) {
       }
     };
 
+    const fetchPackages = async () => {
+      try {
+        const response = await apiClient.get("/api/packages/active");
+        setPackages(response.data);
+      } catch (error) {
+        console.error("Error fetching packages:", error);
+      }
+    };
+
     fetchGuides();
     fetchEvents();
+    fetchPackages();
   }, []);
 
   const sections = [
@@ -118,21 +137,13 @@ export default function TravelerDashboard({ currentUser: propCurrentUser }) {
     }
   ];
 
-  const packages = [
-    { name: "Package 1", price: 50000, image: "/src/images/sigiriya.jpg", description: "3 Days Sigiriya Adventure" },
-    { name: "Package 2", price: 60000, image: "/src/images/hiriketiya.jpg", description: "5 Days Beach Getaway" },
-    { name: "Package 3", price: 30000, image: "/src/images/hiriketiya.jpg", description: "2 Days Quick Escape" }
-  ];
-
-  const [convertedPackages, setConvertedPackages] = useState(
-    packages.map(pkg => ({ ...pkg, convertedPrice: pkg.price }))
-  );
+  const [convertedPackages, setConvertedPackages] = useState([]);
 
   const fetchExchangeRates = async () => {
     if (selectedCurrency === 'LKR') {
       setConvertedPackages(packages.map(pkg => ({
         ...pkg,
-        convertedPrice: pkg.price
+        convertedPrice: pkg.budgetPerPerson
       })));
       return;
     }
@@ -145,7 +156,7 @@ export default function TravelerDashboard({ currentUser: propCurrentUser }) {
         const rate = data.conversion_rate;
         const updatedPackages = packages.map(pkg => ({
           ...pkg,
-          convertedPrice: Math.round((pkg.price * rate) * 100) / 100
+          convertedPrice: Math.round((pkg.budgetPerPerson * rate) * 100) / 100
         }));
         setConvertedPackages(updatedPackages);
       }
@@ -158,7 +169,62 @@ export default function TravelerDashboard({ currentUser: propCurrentUser }) {
     fetchExchangeRates();
     const intervalId = setInterval(fetchExchangeRates, 60000);
     return () => clearInterval(intervalId);
-  }, [selectedCurrency]);
+  }, [selectedCurrency, packages]);
+
+  // Handle package application functions
+  const handlePackageClick = (pkg) => {
+    setSelectedPackage(pkg);
+    setShowApplicationModal(true);
+    setApplicationForm({
+      groupMemberCount: 1,
+      startingDate: '',
+      specialRequests: ''
+    });
+  };
+
+  const handleApplicationSubmit = async (e) => {
+    e.preventDefault();
+    
+    if (!applicationForm.startingDate || applicationForm.groupMemberCount < 1) {
+      alert('Please fill in all required fields');
+      return;
+    }
+
+    setIsSubmittingApplication(true);
+    
+    try {
+      const applicationData = {
+        packageId: selectedPackage.id,
+        groupMemberCount: parseInt(applicationForm.groupMemberCount),
+        startingDate: applicationForm.startingDate,
+        specialRequests: applicationForm.specialRequests
+      };
+
+      const response = await apiClient.post(`/api/packages/${selectedPackage.id}/apply/${loggedUser.id}`, applicationData);
+
+      if (response.status === 200) {
+        alert('Package application submitted successfully!');
+        setShowApplicationModal(false);
+        setSelectedPackage(null);
+      }
+    } catch (error) {
+      console.error('Error submitting application:', error);
+      if (error.response?.data?.error) {
+        alert(error.response.data.error);
+      } else {
+        alert('Failed to submit application. Please try again.');
+      }
+    } finally {
+      setIsSubmittingApplication(false);
+    }
+  };
+
+  const handleFormChange = (field, value) => {
+    setApplicationForm(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
 
   const handleScroll = (e, title) => {
     const { scrollLeft } = e.target;
@@ -276,23 +342,82 @@ export default function TravelerDashboard({ currentUser: propCurrentUser }) {
         ))}
 
         <div className="section-container">
-          <h2 className="text-lg font-bold">Discover Packages</h2>
-          <div className="cards-scroll-container">
-            <div className="flex space-x-4">
-              {convertedPackages.map((pkg) => (
-                <div key={pkg.name} className="card-container">
-                  <img src={pkg.image} alt={pkg.name} className="card-image" />
-                  <div className="card-overlay">
-                    <h3 className="card-title">{pkg.name}</h3>
-                    <p className="text-white text-lg">
-                      {selectedCurrency === 'LKR' ? 'Rs. ' : currencies.find(c => c.code === selectedCurrency)?.symbol}
-                      {pkg.convertedPrice?.toLocaleString()}
-                    </p>
-                    <p className="text-white text-sm">{pkg.description}</p>
+          <div className="flex justify-between items-center">
+            <h2 className="text-lg font-bold">Discover Packages</h2>
+            <button 
+              className="text-blue-500"
+              onClick={() => navigate('/packages')}
+            >
+              See more →
+            </button>
+          </div>
+          <div className={`cards-scroll-container ${showLeftButton['Discover Packages'] ? 'scrolled' : ''}`}>
+            {showLeftButton['Discover Packages'] && (
+              <button 
+                className="scroll-button left"
+                onClick={(e) => {
+                  const container = e.target.closest('.cards-scroll-container').querySelector('.flex');
+                  container.scrollBy({ left: -339 - 16, behavior: 'smooth' });
+                }}
+              >
+                ←
+              </button>
+            )}
+            <div 
+              className="flex space-x-4"
+              onScroll={(e) => handleScroll(e, 'Discover Packages')}
+            >
+              {convertedPackages.length > 0 ? (
+                convertedPackages.slice(0, 6).map((pkg) => (
+                  <div 
+                    key={pkg.id} 
+                    className="card-container hover:cursor-pointer"
+                    onClick={() => handlePackageClick(pkg)}
+                  >
+                    <img 
+                      src="/src/images/sigiriya.jpg" 
+                      alt={pkg.packageName} 
+                      className="card-image" 
+                    />
+                    <div className="card-overlay">
+                      <h3 className="card-title">{pkg.packageName}</h3>
+                      <p className="text-white text-lg font-semibold">
+                        {selectedCurrency === 'LKR' ? 'Rs. ' : currencies.find(c => c.code === selectedCurrency)?.symbol}
+                        {pkg.convertedPrice?.toLocaleString()}
+                      </p>
+                      <div className="flex items-center text-white text-sm mt-1">
+                        <Clock className="w-4 h-4 mr-1" />
+                        <span>{pkg.durationDays} days</span>
+                      </div>
+                      <p className="text-white text-sm mt-1">{pkg.description}</p>
+                      <div className="flex items-center text-white text-xs mt-2">
+                        <span className={`px-2 py-1 rounded ${
+                          pkg.status === 'ACTIVE' ? 'bg-green-500' : 
+                          pkg.status === 'DRAFT' ? 'bg-yellow-500' : 'bg-gray-500'
+                        }`}>
+                          {pkg.status}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="card-container">
+                  <div className="card-overlay flex items-center justify-center">
+                    <p className="text-white">Loading packages...</p>
                   </div>
                 </div>
-              ))}
+              )}
             </div>
+            <button 
+              className="scroll-button right"
+              onClick={(e) => {
+                const container = e.target.closest('.cards-scroll-container').querySelector('.flex');
+                container.scrollBy({ left: 339 + 16, behavior: 'smooth' });
+              }}
+            >
+              →
+            </button>
           </div>
         </div>
 
@@ -318,6 +443,130 @@ export default function TravelerDashboard({ currentUser: propCurrentUser }) {
           event={selectedEvent} 
           onClose={() => setSelectedEvent(null)}
         />
+      )}
+
+      {/* Package Application Modal */}
+      {showApplicationModal && selectedPackage && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-2xl font-bold text-gray-800">Apply for Package</h2>
+              <button
+                onClick={() => setShowApplicationModal(false)}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Package Details */}
+            <div className="bg-gray-50 rounded-lg p-4 mb-6">
+              <h3 className="text-xl font-semibold text-gray-800 mb-2">{selectedPackage.packageName}</h3>
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div className="flex items-center">
+                  <Clock className="w-4 h-4 mr-2 text-gray-600" />
+                  <span>{selectedPackage.durationDays} days</span>
+                </div>
+                <div className="flex items-center">
+                  <DollarSign className="w-4 h-4 mr-2 text-gray-600" />
+                  <span>Rs. {selectedPackage.budgetPerPerson?.toLocaleString()} per person</span>
+                </div>
+              </div>
+              <p className="text-gray-600 mt-3">{selectedPackage.description}</p>
+              
+              {/* Package Resources */}
+              <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
+                {selectedPackage.selectedHotel && (
+                  <div className="flex items-center">
+                    <MapPin className="w-4 h-4 mr-2 text-blue-600" />
+                    <span>Hotel: {selectedPackage.selectedHotel.name}</span>
+                  </div>
+                )}
+                {selectedPackage.selectedDriver && (
+                  <div className="flex items-center">
+                    <Users className="w-4 h-4 mr-2 text-green-600" />
+                    <span>Driver: {selectedPackage.selectedDriver.name}</span>
+                  </div>
+                )}
+                {selectedPackage.selectedGuide && (
+                  <div className="flex items-center">
+                    <Users className="w-4 h-4 mr-2 text-purple-600" />
+                    <span>Guide: {selectedPackage.selectedGuide.firstName} {selectedPackage.selectedGuide.lastName}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Application Form */}
+            <form onSubmit={handleApplicationSubmit}>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <Users className="inline w-4 h-4 mr-1" />
+                    Group Size *
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="20"
+                    value={applicationForm.groupMemberCount}
+                    onChange={(e) => handleFormChange('groupMemberCount', e.target.value)}
+                    className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    required
+                  />
+                  <p className="text-sm text-gray-500 mt-1">
+                    Total cost: Rs. {(selectedPackage.budgetPerPerson * applicationForm.groupMemberCount).toLocaleString()}
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <Calendar className="inline w-4 h-4 mr-1" />
+                    Starting Date *
+                  </label>
+                  <input
+                    type="date"
+                    value={applicationForm.startingDate}
+                    onChange={(e) => handleFormChange('startingDate', e.target.value)}
+                    min={new Date().toISOString().split('T')[0]}
+                    className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Special Requests (Optional)
+                  </label>
+                  <textarea
+                    value={applicationForm.specialRequests}
+                    onChange={(e) => handleFormChange('specialRequests', e.target.value)}
+                    placeholder="Any special requirements or requests..."
+                    rows={3}
+                    className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+              </div>
+
+              <div className="flex gap-3 mt-6">
+                <button
+                  type="button"
+                  onClick={() => setShowApplicationModal(false)}
+                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmittingApplication}
+                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
+                >
+                  {isSubmittingApplication ? 'Submitting...' : 'Apply for Package'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
       )}
     </Layout>
   );

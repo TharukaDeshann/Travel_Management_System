@@ -143,15 +143,16 @@ public class TravelPackageController {
     /**
      * Apply for a package (Travelers only)
      */
-    @PostMapping("/{packageId}/apply")
+    @PostMapping("/{packageId}/apply/{travelerId}")
     @PreAuthorize("hasRole('TRAVELER')")
     public ResponseEntity<?> applyForPackage(
             @PathVariable Long packageId,
+            @PathVariable Long travelerId,
             @Valid @RequestBody PackageApplicationRequestDTO request,
             Principal principal) {
         try {
             // Get traveler ID from authenticated user
-            Long travelerId = getUserIdFromPrincipal(principal);
+            
             request.setPackageId(packageId);
             
             log.info("Traveler {} applying for package {}", travelerId, packageId);
@@ -173,11 +174,10 @@ public class TravelPackageController {
     /**
      * Get traveler's package applications
      */
-    @GetMapping("/applications/my")
+    @GetMapping("/applications/my/{travelerId}")
     @PreAuthorize("hasRole('TRAVELER')")
-    public ResponseEntity<List<PackageApplicationResponseDTO>> getMyApplications(Principal principal) {
+    public ResponseEntity<List<PackageApplicationResponseDTO>> getMyApplications(@PathVariable Long travelerId) {
         try {
-            Long travelerId = getUserIdFromPrincipal(principal);
             List<PackageApplicationResponseDTO> applications = travelPackageService.getTravelerApplications(travelerId);
             return ResponseEntity.ok(applications);
         } catch (Exception e) {
