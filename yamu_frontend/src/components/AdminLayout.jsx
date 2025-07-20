@@ -16,7 +16,7 @@ import {
 import { Layout } from './Layout';
 import { useUser } from '../context/UserContext';
 
-const AdminLayout = ({ children, currentPage = 'overview' }) => {
+const AdminLayout = ({ children, currentPage = 'User Management' }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -52,12 +52,6 @@ const AdminLayout = ({ children, currentPage = 'overview' }) => {
 
   // Navigation items with proper route paths
   const navigationItems = [
-    { 
-      id: 'overview', 
-      label: 'Overview', 
-      icon: LayoutDashboard, 
-      path: '/admin-overview' 
-    },
     { 
       id: 'user-management', 
       label: 'User Management', 

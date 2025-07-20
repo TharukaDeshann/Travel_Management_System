@@ -51,37 +51,7 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .authorizeHttpRequests(auth -> auth
-                        // Specific authenticated endpoints
-                        .requestMatchers(HttpMethod.PUT, "/api/users/{id}").authenticated()
-                        .requestMatchers(HttpMethod.PUT, "/api/users/{id}/update-email").authenticated()
-                        .requestMatchers(HttpMethod.PUT, "/api/users/{id}/update-password").authenticated()
-                        .requestMatchers(HttpMethod.POST, "/api/reviews/**").authenticated()
-                        .requestMatchers(HttpMethod.DELETE, "/api/reviews/**").authenticated()
-                        .requestMatchers(HttpMethod.POST, "/api/packages").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.PUT, "/api/packages/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.DELETE, "/api/packages/**").hasRole("ADMIN")
-                        .requestMatchers("/api/packages/{packageId}/apply").hasRole("TRAVELER") // Fixed pattern
-                        .requestMatchers("/api/packages/applications/**").hasAnyRole("ADMIN", "TRAVELER")
-                        .requestMatchers("/api/guide/reservations/**").hasRole("GUIDE")
-                        .requestMatchers("/api/guide/vehicles/**").hasAnyRole("GUIDE", "TRAVELER")
-                        .requestMatchers("/api/guide/**").hasAnyRole("GUIDE", "ADMIN", "TRAVELER")
-                        .requestMatchers("/api/traveler/**").hasRole("TRAVELER")
-                        .requestMatchers("/api/itineraries/**").hasRole("TRAVELER")
-                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
-                        .requestMatchers("/api/admin/travelers/**").hasRole("ADMIN")
-                        .requestMatchers("/api/search/**").hasRole("ADMIN")
-                        .requestMatchers("/api/users/**").hasAnyRole("ADMIN", "GUIDE", "TRAVELER")
-                        // Public endpoints
-                        .requestMatchers("/api/drivers/**").permitAll()
-                        .requestMatchers("/api/weather/**").permitAll()
-                        .requestMatchers("/api/hotels/**").permitAll()
-                        .requestMatchers("/api/hotels/bookings/**").permitAll()
-                        .requestMatchers("/api/packages/active").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/packages/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/reviews/**").permitAll()
-                        .requestMatchers("/h2-console/**").permitAll()
-                        .requestMatchers("/ws/**", "/app/**", "/topic/**", "/queue/**", "/user/**").permitAll()
-                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                        // Public endpoints first
                         .requestMatchers(
                                 "/api/auth/login",
                                 "/api/auth/register",
@@ -94,6 +64,46 @@ public class SecurityConfig {
                                 "/api/facebook-events",
                                 "/error" // Explicitly allow error endpoint
                         ).permitAll()
+                        .requestMatchers("/api/drivers/**").permitAll()
+                        .requestMatchers("/api/weather/**").permitAll()
+                        .requestMatchers("/api/hotels/**").permitAll()
+                        .requestMatchers("/api/hotels/bookings/**").permitAll()
+                        .requestMatchers("/api/packages/active").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/packages/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/reviews/**").permitAll()
+                        .requestMatchers("/h2-console/**").permitAll()
+                        .requestMatchers("/ws/**", "/app/**", "/topic/**", "/queue/**", "/user/**").permitAll()
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                        
+                        // Authenticated endpoints
+                        .requestMatchers(HttpMethod.PUT, "/api/users/{id}").authenticated()
+                        .requestMatchers(HttpMethod.PUT, "/api/users/{id}/update-email").authenticated()
+                        .requestMatchers(HttpMethod.PUT, "/api/users/{id}/update-password").authenticated()
+                        .requestMatchers(HttpMethod.POST, "/api/reviews/**").authenticated()
+                        .requestMatchers(HttpMethod.DELETE, "/api/reviews/**").authenticated()
+                        
+                        // Admin role specific endpoints
+                        .requestMatchers(HttpMethod.POST, "/api/packages").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/packages/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/packages/**").hasRole("ADMIN")
+                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/api/admin/travelers/**").hasRole("ADMIN")
+                        .requestMatchers("/api/search/**").hasRole("ADMIN")
+                        
+                        // Traveler role specific endpoints
+                        .requestMatchers("/api/packages/{packageId}/apply").hasRole("TRAVELER")
+                        .requestMatchers("/api/traveler/**").hasRole("TRAVELER")
+                        .requestMatchers("/api/itineraries/**").hasRole("TRAVELER")
+                        
+                        // Guide role specific endpoints
+                        .requestMatchers("/api/guide/reservations/**").hasRole("GUIDE")
+                        
+                        // Multi-role endpoints
+                        .requestMatchers("/api/packages/applications/**").hasAnyRole("ADMIN", "TRAVELER")
+                        .requestMatchers("/api/guide/vehicles/**").hasAnyRole("GUIDE", "TRAVELER")
+                        .requestMatchers("/api/guide/**").hasAnyRole("GUIDE", "ADMIN", "TRAVELER")
+                        .requestMatchers("/api/users/**").hasAnyRole("ADMIN", "GUIDE", "TRAVELER")
+                        
                         // Catch-all for other requests
                         .anyRequest().authenticated())
                 .exceptionHandling(ex -> ex

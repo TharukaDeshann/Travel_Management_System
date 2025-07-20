@@ -92,7 +92,7 @@ const Login = () => {
         } else if (userData.role === "GUIDE") {
           navigate("/guide-dashboard");
         } else if (userData.role === "ADMIN") {
-          navigate("/admin-overview");
+          navigate("/admin-user-management");
         } else {
           navigate("/dashboard");
         }

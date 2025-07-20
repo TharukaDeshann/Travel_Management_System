@@ -30,6 +30,7 @@ const GuideModal = ({ guide, onClose, currentUser }) => {
   const { user } = useUser();
   const loggedUser = currentUser || user;
 
+
   // Fetch reviews when guide is selected
   useEffect(() => {
     fetchReviews();
@@ -118,6 +119,8 @@ const GuideModal = ({ guide, onClose, currentUser }) => {
   };
 
   const handleSubmit = async () => {
+
+
     let userToUse = currentUser || user;
     
     // If we don't have user from props or context, try to fetch it

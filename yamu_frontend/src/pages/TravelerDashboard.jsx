@@ -43,7 +43,9 @@ export default function TravelerDashboard({ currentUser: propCurrentUser }) {
   });
   const [isSubmittingApplication, setIsSubmittingApplication] = useState(false);
   
+
   const loggedUser = useUser().user || currentUser;
+
   const unreadCount = 0;
 
   // Fetch logged-in user if not available from props or context
