@@ -3,8 +3,10 @@ package com.yamu.backend.service;
 import com.yamu.backend.dto.CreateReservationRequest;
 import com.yamu.backend.enums.UserRole;
 import com.yamu.backend.exception.ResourceNotFoundException;
+import com.yamu.backend.exception.ResourceNotFoundException;
 import com.yamu.backend.model.*;
 import com.yamu.backend.repository.GuideReservationByTravelerRepository;
+import com.yamu.backend.repository.GuideReservationDayDetailRepository;
 import com.yamu.backend.repository.GuideReservationDayDetailRepository;
 import com.yamu.backend.repository.UserRepository;
 import com.yamu.backend.repository.VehicleRepository;
@@ -21,6 +23,7 @@ public class GuideReservationByTravelerService {
 
     private final GuideReservationByTravelerRepository reservationRepository;
     private final GuideReservationDayDetailRepository dayDetailRepository;
+    private final GuideReservationDayDetailRepository dayDetailRepository;
     private final UserRepository userRepository;
     private final VehicleRepository vehicleRepository;
 
@@ -30,6 +33,7 @@ public class GuideReservationByTravelerService {
             UserRepository userRepository,
             VehicleRepository vehicleRepository) {
         this.reservationRepository = reservationRepository;
+        this.dayDetailRepository = dayDetailRepository;
         this.dayDetailRepository = dayDetailRepository;
         this.userRepository = userRepository;
         this.vehicleRepository = vehicleRepository;
@@ -159,6 +163,19 @@ public class GuideReservationByTravelerService {
         reservation.setEstimatedPrice(estimatedPrice);
         reservation.setUpdatedAt(LocalDateTime.now());
         return reservationRepository.save(reservation);
+    }
+
+    public GuideReservationByTraveler getReservationById(Long reservationId) {
+        return reservationRepository.findById(reservationId)
+                .orElseThrow(() -> new ResourceNotFoundException("Reservation not found"));
+    }
+
+    @Transactional
+    public void deleteReservation(Long reservationId) {
+        if (!reservationRepository.existsById(reservationId)) {
+            throw new ResourceNotFoundException("Reservation not found");
+        }
+        reservationRepository.deleteById(reservationId);
     }
 
     public GuideReservationByTraveler getReservationById(Long reservationId) {

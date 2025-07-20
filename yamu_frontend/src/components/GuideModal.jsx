@@ -3,7 +3,9 @@ import { X, Star, MapPin, Languages, Phone, Mail, Car, Shield, Clock, Calendar, 
 import apiClient from '../services/axiosInstance';
 import { useUser } from '../context/UserContext';
 import { useNotification } from '../hooks/useNotification';
+import { useNotification } from '../hooks/useNotification';
 
+const GuideModal = ({ guide, onClose, currentUser, editReservationData }) => {
 const GuideModal = ({ guide, onClose, currentUser, editReservationData }) => {
   const [activeTab, setActiveTab] = useState('details');
   const [numberOfDays, setNumberOfDays] = useState(1);
@@ -28,7 +30,9 @@ const GuideModal = ({ guide, onClose, currentUser, editReservationData }) => {
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
   const [reviewSuccess, setReviewSuccess] = useState(null);
   const [isEditMode, setIsEditMode] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
   const { user } = useUser();
+  const { showSuccess, showError } = useNotification();
   const { showSuccess, showError } = useNotification();
   const loggedUser = currentUser || user;
 
@@ -74,6 +78,24 @@ const GuideModal = ({ guide, onClose, currentUser, editReservationData }) => {
       }
     }
 
+    const fetchReviews = async () => {
+      try {
+        setIsLoadingReviews(true);
+        const response = await apiClient.get(`/api/reviews/guide/${guide.id}`);
+        setReviews(response.data || []);
+        
+        const ratingResponse = await apiClient.get(`/api/reviews/guide/${guide.id}/average-rating`);
+        setAverageRating(ratingResponse.data);
+      } catch (error) {
+        console.error("Error fetching reviews:", error);
+        showError("Failed to load reviews");
+      } finally {
+        setIsLoadingReviews(false);
+      }
+    };
+
+    fetchReviews();
+  }, [guide.id, editReservationData, onClose, showError]);
     const fetchReviews = async () => {
       try {
         setIsLoadingReviews(true);
@@ -161,6 +183,7 @@ const GuideModal = ({ guide, onClose, currentUser, editReservationData }) => {
     if (!loggedUser || !loggedUser.id) {
       setError('Please login to make a reservation');
       showError('Please login to make a reservation');
+      showError('Please login to make a reservation');
       return;
     }
   
@@ -188,30 +211,44 @@ const GuideModal = ({ guide, onClose, currentUser, editReservationData }) => {
     const maxAllowedDate = new Date();
     maxAllowedDate.setDate(maxAllowedDate.getDate() + 365);
   
+  
     for (let i = 0; i < reservationDetails.length; i++) {
       const detail = reservationDetails[i];
       const selectedDate = new Date(detail.date);
   
+  
       if (isNaN(selectedDate.getTime())) {
+        const errorMsg = `Invalid date for Day ${i + 1}`;
+        setError(errorMsg);
+        showError(errorMsg);
         const errorMsg = `Invalid date for Day ${i + 1}`;
         setError(errorMsg);
         showError(errorMsg);
         return;
       }
   
+  
       if (selectedDate < today) {
+        const errorMsg = `Date for Day ${i + 1} cannot be in the past`;
+        setError(errorMsg);
+        showError(errorMsg);
         const errorMsg = `Date for Day ${i + 1} cannot be in the past`;
         setError(errorMsg);
         showError(errorMsg);
         return;
       }
   
+  
       if (selectedDate > maxAllowedDate) {
+        const errorMsg = `Date for Day ${i + 1} must be within 365 days from today`;
+        setError(errorMsg);
+        showError(errorMsg);
         const errorMsg = `Date for Day ${i + 1} must be within 365 days from today`;
         setError(errorMsg);
         showError(errorMsg);
         return;
       }
+  
   
       if (i > 0) {
         const previousDate = new Date(reservationDetails[i - 1].date);
@@ -222,13 +259,18 @@ const GuideModal = ({ guide, onClose, currentUser, editReservationData }) => {
           const errorMsg = `Date for Day ${i + 1} must be after Day ${i}`;
           setError(errorMsg);
           showError(errorMsg);
+          const errorMsg = `Date for Day ${i + 1} must be after Day ${i}`;
+          setError(errorMsg);
+          showError(errorMsg);
           return;
         }
       }
     }
   
+  
     setIsSubmitting(true);
     setError(null);
+  
   
     try {
       const reservationData = {
@@ -258,6 +300,7 @@ const GuideModal = ({ guide, onClose, currentUser, editReservationData }) => {
       showSuccess(isEditMode ? "Reservation updated successfully!" : "Reservation request sent successfully!");
       setTimeout(() => {
         onClose();
+      }, 1500);
       }, 1500);
     } catch (err) {
       console.error('Reservation failed:', err);
@@ -343,11 +386,24 @@ const GuideModal = ({ guide, onClose, currentUser, editReservationData }) => {
       );
     }
     return <div className="flex items-center gap-1">{stars}</div>;
+    const stars = [];
+    for (let i = 1; i <= 5; i++) {
+      stars.push(
+        <Star
+          key={i}
+          size={16}
+          fill={rating >= i ? '#FFD700' : 'none'}
+          color={rating >= i ? '#FFD700' : '#ddd'}
+        />
+      );
+    }
+    return <div className="flex items-center gap-1">{stars}</div>;
   };
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 overflow-y-auto">
       <div className="w-full max-w-5xl bg-white rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
+        {/* Modal Header */}
         {/* Modal Header */}
         <div className="bg-white border-b border-gray-100 sticky top-0 z-10">
           <div className="flex items-center justify-between px-6 pt-5 pb-3">
@@ -368,6 +424,7 @@ const GuideModal = ({ guide, onClose, currentUser, editReservationData }) => {
             </button>
           </div>
           
+          {/* Tabs */}
           {/* Tabs */}
           <div className="flex border-b border-gray-100">
             <button
@@ -408,10 +465,12 @@ const GuideModal = ({ guide, onClose, currentUser, editReservationData }) => {
               }}
             >
               {isEditMode ? 'Edit Reservation' : 'Make Reservation'}
+              {isEditMode ? 'Edit Reservation' : 'Make Reservation'}
             </button>
           </div>
         </div>
         
+        {/* Modal Content */}
         {/* Modal Content */}
         <div className="flex-1 overflow-y-auto">
           {activeTab === 'details' && (

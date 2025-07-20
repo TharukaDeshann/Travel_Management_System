@@ -6,6 +6,7 @@ import apiClient from '../services/axiosInstance';
 import { fetchUsersByRole } from '../services/userService';
 import { useUser } from '../context/UserContext';
 import { Layout } from '../components/Layout';
+import { Layout } from '../components/Layout';
 
 const GuidesPage = () => {
   const location = useLocation();
@@ -327,6 +328,12 @@ const GuidesPage = () => {
         {selectedGuide && (
           <GuideModal
             guide={selectedGuide}
+            onClose={() => {
+              setSelectedGuide(null);
+              setEditReservationData(null);
+            }}
+            currentUser={loggedUser}
+            editReservationData={editReservationData}
             onClose={() => {
               setSelectedGuide(null);
               setEditReservationData(null);

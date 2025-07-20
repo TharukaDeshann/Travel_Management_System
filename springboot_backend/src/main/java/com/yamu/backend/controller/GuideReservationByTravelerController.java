@@ -4,12 +4,21 @@ import com.yamu.backend.dto.*;
 import com.yamu.backend.enums.UserRole;
 import com.yamu.backend.errorresponses.ErrorResponse;
 import com.yamu.backend.exception.ResourceNotFoundException;
+import com.yamu.backend.enums.UserRole;
+import com.yamu.backend.errorresponses.ErrorResponse;
+import com.yamu.backend.exception.ResourceNotFoundException;
 import com.yamu.backend.model.*;
+import com.yamu.backend.repository.UserRepository;
 import com.yamu.backend.repository.UserRepository;
 import com.yamu.backend.service.GuideReservationByTravelerService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -21,11 +30,16 @@ import java.util.stream.Collectors;
 @RestController
 @RequestMapping("/api/reservations")
 @Slf4j
+@Slf4j
 public class GuideReservationByTravelerController {
 
     private final GuideReservationByTravelerService reservationService;
     private final UserRepository userRepository;
+    private final UserRepository userRepository;
 
+    public GuideReservationByTravelerController(
+            GuideReservationByTravelerService reservationService,
+            UserRepository userRepository) {
     public GuideReservationByTravelerController(
             GuideReservationByTravelerService reservationService,
             UserRepository userRepository) {

@@ -25,6 +25,9 @@ const GuideDashboard = () => {
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const [showRemoveConfirm, setShowRemoveConfirm] = useState(false);
   const [processing, setProcessing] = useState(false);
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+  const [showRemoveConfirm, setShowRemoveConfirm] = useState(false);
+  const [processing, setProcessing] = useState(false);
   const [selectedCurrency, setSelectedCurrency] = useState('LKR');
   const { user: loggedUser } = useUser();
 
@@ -121,9 +124,11 @@ const GuideDashboard = () => {
       localStorage.setItem(RESERVATIONS_STORAGE_KEY, JSON.stringify(updatedReservations));
       setShowPricePrompt(false);
       toast.success("Reservation confirmed successfully");
+      toast.success("Reservation confirmed successfully");
     } catch (err) {
       console.error("Status change failed:", err);
       setError("Failed to update status. Please try again.");
+      toast.error("Failed to confirm reservation");
       toast.error("Failed to confirm reservation");
       setShowPricePrompt(false);
     }
@@ -142,6 +147,7 @@ const GuideDashboard = () => {
     if (hasFutureDays) {
       setError("Cannot complete reservation with future dates");
       toast.error("Cannot complete reservation with future dates");
+      toast.error("Cannot complete reservation with future dates");
       return;
     }
 
@@ -159,11 +165,51 @@ const GuideDashboard = () => {
       localStorage.setItem(RESERVATIONS_STORAGE_KEY, JSON.stringify(updatedReservations));
       setShowCompletionConfirm(false);
       toast.success("Reservation marked as completed");
+      toast.success("Reservation marked as completed");
     } catch (err) {
       console.error("Status change failed:", err);
       setError("Failed to update status. Please try again.");
       toast.error("Failed to complete reservation");
+      toast.error("Failed to complete reservation");
       setShowCompletionConfirm(false);
+    }
+  };
+
+  const handleCancelReservation = async () => {
+    try {
+      setProcessing(true);
+      const response = await apiClient.put(`/api/reservations/${currentReservationId}/cancel`);
+      const updatedReservations = reservations.map(res =>
+        res.id === currentReservationId ? response.data : res
+      );
+      setReservations(updatedReservations);
+      localStorage.setItem(RESERVATIONS_STORAGE_KEY, JSON.stringify(updatedReservations));
+      setShowCancelConfirm(false);
+      toast.success("Reservation cancelled successfully");
+    } catch (err) {
+      console.error("Cancellation failed:", err);
+      setError("Failed to cancel reservation. Please try again.");
+      toast.error("Failed to cancel reservation");
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  const handleRemoveReservation = async () => {
+    try {
+      setProcessing(true);
+      await apiClient.delete(`/api/reservations/${currentReservationId}`);
+      const updatedReservations = reservations.filter(r => r.id !== currentReservationId);
+      setReservations(updatedReservations);
+      localStorage.setItem(RESERVATIONS_STORAGE_KEY, JSON.stringify(updatedReservations));
+      setShowRemoveConfirm(false);
+      toast.success("Reservation removed successfully");
+    } catch (err) {
+      console.error("Removal failed:", err);
+      setError("Failed to remove reservation. Please try again.");
+      toast.error("Failed to remove reservation");
+    } finally {
+      setProcessing(false);
     }
   };
 
@@ -256,6 +302,8 @@ const GuideDashboard = () => {
       'DECLINED': '#F44336',
       'COMPLETED': '#2196F3',
       'CANCELLED': '#F44336'
+      'COMPLETED': '#2196F3',
+      'CANCELLED': '#F44336'
     };
 
     const handleMessageClick = () => {
@@ -304,7 +352,35 @@ const GuideDashboard = () => {
         }}>
           {reservation.status}
         </div>
+        <div style={{
+          position: "absolute",
+          top: "20px",
+          right: "20px",
+          padding: "4px 8px",
+          borderRadius: "4px",
+          color: "white",
+          fontSize: "12px",
+          fontWeight: "600",
+          backgroundColor: statusColors[reservation.status] || '#9E9E9E'
+        }}>
+          {reservation.status}
+        </div>
 
+        <div style={{ marginBottom: "15px" }}>
+          <h4 style={{
+            margin: "0 0 5px 0",
+            fontSize: "18px",
+            fontWeight: "600",
+            color: "#532321"
+          }}>Reservation #{reservation.id}</h4>
+          <p style={{
+            margin: 0,
+            color: "#666",
+            fontSize: "14px"
+          }}>
+            Created: {new Date(reservation.createdAt).toLocaleString()}
+          </p>
+        </div>
         <div style={{ marginBottom: "15px" }}>
           <h4 style={{
             margin: "0 0 5px 0",
@@ -340,7 +416,51 @@ const GuideDashboard = () => {
               <strong>Contact:</strong> {reservation.traveler?.contactNumber}
             </p>
           </div>
+        <div style={{
+          display: "flex",
+          gap: "20px",
+          marginBottom: "15px"
+        }}>
+          <div>
+            <h5 style={{
+              margin: "0 0 8px 0",
+              fontSize: "14px",
+              color: "#532321",
+              fontWeight: "500"
+            }}>Traveler Details</h5>
+            <p style={{ margin: "4px 0", fontSize: "14px" }}>
+              <strong>Name:</strong> {reservation.traveler?.firstName} {reservation.traveler?.lastName}
+            </p>
+            <p style={{ margin: "4px 0", fontSize: "14px" }}>
+              <strong>Contact:</strong> {reservation.traveler?.contactNumber}
+            </p>
+          </div>
 
+          <div>
+            <h5 style={{
+              margin: "0 0 8px 0",
+              fontSize: "14px",
+              color: "#532321",
+              fontWeight: "500"
+            }}>Tour Details</h5>
+            <p style={{ margin: "4px 0", fontSize: "14px" }}>
+              <strong>Days:</strong> {reservation.numberOfDays}
+            </p>
+            <p style={{ margin: "4px 0", fontSize: "14px" }}>
+              <strong>Travelers:</strong> {reservation.dayDetails?.[0]?.numberOfTravelers || 'N/A'}
+            </p>
+            {reservation.estimatedPrice && (
+              <p style={{
+                margin: "4px 0",
+                fontSize: "14px",
+                color: "#2196F3",
+                fontWeight: "bold"
+              }}>
+                <strong>Estimated Price:</strong> {selectedCurrency} {reservation.estimatedPrice.toLocaleString()}
+              </p>
+            )}
+          </div>
+        </div>
           <div>
             <h5 style={{
               margin: "0 0 8px 0",
@@ -407,6 +527,14 @@ const GuideDashboard = () => {
           </div>
         </div>
 
+        {!isPast && (
+          <div style={{
+            display: "flex",
+            justifyContent: "flex-end",
+            gap: "10px",
+            alignItems: "center"
+          }}>
+            {reservation.status !== 'DECLINED' && reservation.status !== 'CANCELLED' && <MessageButton />}
         {!isPast && (
           <div style={{
             display: "flex",
@@ -487,7 +615,117 @@ const GuideDashboard = () => {
                 Remove
               </button>
             )}
+            {reservation.status === 'PENDING' && (
+              <>
+                <button
+                  onClick={() => {
+                    const response = window.confirm("Are you sure you want to decline this reservation?");
+                    if (response) {
+                      apiClient.put(`/api/reservations/${reservation.id}/decline`)
+                        .then(res => {
+                          const updated = reservations.map(r =>
+                            r.id === reservation.id ? res.data : r
+                          );
+                          setReservations(updated);
+                          localStorage.setItem(RESERVATIONS_STORAGE_KEY, JSON.stringify(updated));
+                          toast.success("Reservation declined");
+                        })
+                        .catch(err => {
+                          console.error("Failed to decline reservation:", err);
+                          setError("Failed to decline reservation. Please try again.");
+                          toast.error("Failed to decline reservation");
+                        });
+                    }
+                  }}
+                  style={{
+                    padding: "8px 16px",
+                    backgroundColor: "#F44336",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "4px",
+                    cursor: "pointer"
+                  }}
+                >
+                  Decline
+                </button>
+                <button
+                  onClick={() => handleConfirmClick(reservation.id)}
+                  style={{
+                    padding: "8px 16px",
+                    backgroundColor: "#4CAF50",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "4px",
+                    cursor: "pointer"
+                  }}
+                >
+                  Confirm
+                </button>
+              </>
+            )}
 
+            {(reservation.status === 'DECLINED' || reservation.status === 'CANCELLED') && (
+              <button
+                onClick={() => {
+                  setCurrentReservationId(reservation.id);
+                  setShowRemoveConfirm(true);
+                }}
+                style={{
+                  padding: "8px 16px",
+                  backgroundColor: "#f0f0f0",
+                  color: "#F44336",
+                  border: "none",
+                  borderRadius: "4px",
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "6px"
+                }}
+              >
+                <Trash2 size={16} />
+                Remove
+              </button>
+            )}
+
+            {reservation.status === 'CONFIRMED' && (
+              <>
+                <button
+                  onClick={() => {
+                    setCurrentReservationId(reservation.id);
+                    setShowCancelConfirm(true);
+                  }}
+                  style={{
+                    padding: "8px 16px",
+                    backgroundColor: "#f0f0f0",
+                    color: "#F44336",
+                    border: "none",
+                    borderRadius: "4px",
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "6px"
+                  }}
+                >
+                  <X size={16} />
+                  Cancel
+                </button>
+                <button
+                  onClick={() => handleCompleteClick(reservation.id)}
+                  style={{
+                    padding: "8px 16px",
+                    backgroundColor: "#2196F3",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "4px",
+                    cursor: "pointer"
+                  }}
+                >
+                  Mark as Completed
+                </button>
+              </>
+            )}
+          </div>
+        )}
             {reservation.status === 'CONFIRMED' && (
               <>
                 <button
@@ -799,6 +1037,116 @@ const GuideDashboard = () => {
                   }}
                 >
                   Yes, mark as completed
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {showCancelConfirm && (
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0,0,0,0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000
+          }}>
+            <div style={{
+              backgroundColor: 'white',
+              padding: '20px',
+              borderRadius: '8px',
+              width: '400px',
+              maxWidth: '90%'
+            }}>
+              <h3 style={{ marginTop: 0 }}>Cancel Reservation</h3>
+              <p>Are you sure you want to cancel this reservation?</p>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '20px' }}>
+                <button
+                  onClick={() => setShowCancelConfirm(false)}
+                  style={{
+                    padding: '8px 16px',
+                    backgroundColor: '#f0f0f0',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: 'pointer'
+                  }}
+                >
+                  No, Keep It
+                </button>
+                <button
+                  onClick={handleCancelReservation}
+                  disabled={processing}
+                  style={{
+                    padding: '8px 16px',
+                    backgroundColor: '#F44336',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    opacity: processing ? 0.7 : 1
+                  }}
+                >
+                  {processing ? 'Cancelling...' : 'Yes, Cancel'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {showRemoveConfirm && (
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0,0,0,0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000
+          }}>
+            <div style={{
+              backgroundColor: 'white',
+              padding: '20px',
+              borderRadius: '8px',
+              width: '400px',
+              maxWidth: '90%'
+            }}>
+              <h3 style={{ marginTop: 0 }}>Remove Reservation</h3>
+              <p>Are you sure you want to remove this reservation from your list?</p>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '20px' }}>
+                <button
+                  onClick={() => setShowRemoveConfirm(false)}
+                  style={{
+                    padding: '8px 16px',
+                    backgroundColor: '#f0f0f0',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: 'pointer'
+                  }}
+                >
+                  No, Keep It
+                </button>
+                <button
+                  onClick={handleRemoveReservation}
+                  disabled={processing}
+                  style={{
+                    padding: '8px 16px',
+                    backgroundColor: '#F44336',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    opacity: processing ? 0.7 : 1
+                  }}
+                >
+                  {processing ? 'Removing...' : 'Yes, Remove'}
                 </button>
               </div>
             </div>
