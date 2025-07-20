@@ -4,6 +4,7 @@ import { Search, MapPin, Languages, Car, Star, Users, Shield } from 'lucide-reac
 import GuideModal from '../components/GuideModal';
 import apiClient from '../services/axiosInstance';
 import { fetchUsersByRole } from '../services/userService';
+import { fetchLoggedInUser } from '../services/authService';
 
 import VehicleManagement from '../components/VehicleManagement';
 import { useUser } from '../context/UserContext';
@@ -16,7 +17,9 @@ import { Layout } from '../components/Layout'; // Added import
 const GuidesPage = () => {
   const location = useLocation();
   const navigate = useNavigate();
+
   const currentUser = useUser()?.user || {}; 
+
   const [guides, setGuides] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedGuide, setSelectedGuide] = useState(null);
@@ -28,7 +31,24 @@ const GuidesPage = () => {
   // Layout-related state
   const [selectedCurrency, setSelectedCurrency] = useState('LKR');
   const [unreadCount, setUnreadCount] = useState(0);
-  const loggedUser = currentUser; // or use context if available
+  const loggedUser = currentUser;
+
+  // Fetch logged-in user if not available
+  useEffect(() => {
+    const loadCurrentUser = async () => {
+      if (!currentUser) {
+        try {
+          const fetchedUser = await fetchLoggedInUser();
+          setCurrentUser(fetchedUser);
+        } catch (error) {
+          console.error('Error fetching logged-in user:', error);
+          // Don't redirect immediately, let the user browse guides
+        }
+      }
+    };
+
+    loadCurrentUser();
+  }, [currentUser]);
 
   useEffect(() => {
     const fetchGuides = async () => {
