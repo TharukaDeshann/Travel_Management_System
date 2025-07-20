@@ -32,6 +32,9 @@ public class PackageResponseDTO {
     // Driver details
     private DriverDetailsDTO selectedDriver;
     
+    // Guide details
+    private GuideDetailsDTO selectedGuide;
+    
     // Day plans
     private List<PackageDayPlanResponseDTO> dayPlans;
     

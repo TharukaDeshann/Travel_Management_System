@@ -27,6 +27,7 @@ public class TravelPackageService {
     private final HotelRepository hotelRepository;
     private final VehicleRepository vehicleRepository;
     private final DriverRepository driverRepository;
+    private final GuideRepository guideRepository;
     private final TravelerRepository travelerRepository;
     private final ModelMapper modelMapper;
     private final ObjectMapper objectMapper;
@@ -57,6 +58,12 @@ public class TravelPackageService {
                     .orElseThrow(() -> new ResourceNotFoundException("Driver not found with id: " + request.getSelectedDriverId()));
         }
         
+        Guide selectedGuide = null;
+        if (request.getSelectedGuideId() != null) {
+            selectedGuide = guideRepository.findById(request.getSelectedGuideId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Guide not found with id: " + request.getSelectedGuideId()));
+        }
+        
         // Create travel package
         TravelPackage travelPackage = new TravelPackage();
         travelPackage.setPackageName(request.getPackageName());
@@ -66,6 +73,7 @@ public class TravelPackageService {
         travelPackage.setSelectedHotel(selectedHotel);
         travelPackage.setSelectedVehicle(selectedVehicle);
         travelPackage.setSelectedDriver(selectedDriver);
+        travelPackage.setSelectedGuide(selectedGuide);
         
         // Set status from request or default to DRAFT
         TravelPackage.PackageStatus status = TravelPackage.PackageStatus.DRAFT;
@@ -187,6 +195,12 @@ public class TravelPackageService {
                     .orElseThrow(() -> new ResourceNotFoundException("Driver not found with id: " + request.getSelectedDriverId()));
         }
         
+        Guide selectedGuide = null;
+        if (request.getSelectedGuideId() != null) {
+            selectedGuide = guideRepository.findById(request.getSelectedGuideId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Guide not found with id: " + request.getSelectedGuideId()));
+        }
+        
         // Update package details
         existingPackage.setPackageName(request.getPackageName());
         existingPackage.setDescription(request.getDescription());
@@ -195,6 +209,7 @@ public class TravelPackageService {
         existingPackage.setSelectedHotel(selectedHotel);
         existingPackage.setSelectedVehicle(selectedVehicle);
         existingPackage.setSelectedDriver(selectedDriver);
+        existingPackage.setSelectedGuide(selectedGuide);
         
         // Update status if provided
         if (request.getStatus() != null) {
@@ -336,6 +351,11 @@ public class TravelPackageService {
      */
     private PackageResponseDTO convertToResponseDTO(TravelPackage travelPackage) {
         PackageResponseDTO dto = modelMapper.map(travelPackage, PackageResponseDTO.class);
+        
+        // Manually map guide details if present
+        if (travelPackage.getSelectedGuide() != null) {
+            dto.setSelectedGuide(GuideDetailsDTO.fromGuide(travelPackage.getSelectedGuide()));
+        }
         
         // Map day plans
         List<PackageResponseDTO.PackageDayPlanResponseDTO> dayPlanDtos = travelPackage.getDayPlans().stream()

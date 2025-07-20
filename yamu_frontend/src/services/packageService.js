@@ -169,6 +169,19 @@ export const packageService = {
     }
   },
 
+  // Get available guides
+  getAvailableGuides: async () => {
+    try {
+      console.log('👨‍🏫 Fetching available guides...');
+      const response = await apiClient.get('/api/guide/all');
+      console.log('✅ Guides fetched successfully:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('❌ Error fetching guides:', error);
+      throw new Error(error.response?.data?.message || 'Failed to fetch guides');
+    }
+  },
+
   // Traveler Package Operations
 
   // Get active packages (public view)

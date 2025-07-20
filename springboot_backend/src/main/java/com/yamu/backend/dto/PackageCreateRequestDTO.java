@@ -46,6 +46,9 @@ public class PackageCreateRequestDTO {
     // Driver selection (optional, can use vehicle's default driver)
     private Long selectedDriverId;
     
+    // Guide selection
+    private Long selectedGuideId;
+    
     // Day plans for the package
     @Valid
     @NotEmpty(message = "At least one day plan is required")

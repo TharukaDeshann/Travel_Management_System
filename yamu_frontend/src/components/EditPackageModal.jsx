@@ -14,6 +14,7 @@ import {
 import packageService from '../services/packageService';
 import HotelSelectorModal from './HotelSelectorModal';
 import DriverSelectorModal from './DriverSelectorModal';
+import GuideSelectorModal from './GuideSelectorModal';
 
 const EditPackageModal = ({ package: packageToEdit, onClose, onSuccess }) => {
   const [formData, setFormData] = useState({
@@ -23,6 +24,7 @@ const EditPackageModal = ({ package: packageToEdit, onClose, onSuccess }) => {
     status: 'DRAFT',
     selectedHotelId: '',
     selectedDriverId: '',
+    selectedGuideId: '',
     budgetPerPerson: 0,
     currency: 'LKR',
     dayPlans: []
@@ -30,7 +32,8 @@ const EditPackageModal = ({ package: packageToEdit, onClose, onSuccess }) => {
 
   const [availableResources, setAvailableResources] = useState({
     hotels: [],
-    drivers: []
+    drivers: [],
+    guides: []
   });
 
   const [loading, setLoading] = useState(false);
@@ -40,6 +43,7 @@ const EditPackageModal = ({ package: packageToEdit, onClose, onSuccess }) => {
   // Modal states
   const [isHotelModalOpen, setIsHotelModalOpen] = useState(false);
   const [isDriverModalOpen, setIsDriverModalOpen] = useState(false);
+  const [isGuideModalOpen, setIsGuideModalOpen] = useState(false);
   console.log("Edit Package Modal opened for package:", packageToEdit);
   // Initialize form data from package
   useEffect(() => {
@@ -59,6 +63,7 @@ const EditPackageModal = ({ package: packageToEdit, onClose, onSuccess }) => {
         status: packageToEdit.status || 'DRAFT',
         selectedHotelId: packageToEdit.selectedHotel?.id || '',
         selectedDriverId: packageToEdit.selectedDriver?.id || '',
+        selectedGuideId: packageToEdit.selectedGuide?.id || '',
         budgetPerPerson: packageToEdit.budgetPerPerson || 0,
         currency: packageToEdit.currency || 'LKR',
         dayPlans: parsedDayPlans
@@ -74,12 +79,13 @@ const EditPackageModal = ({ package: packageToEdit, onClose, onSuccess }) => {
   const loadAvailableResources = async () => {
     try {
       setResourcesLoading(true);
-      const [hotels, drivers] = await Promise.all([
+      const [hotels, drivers, guides] = await Promise.all([
         packageService.getAvailableHotels(),
-        packageService.getAvailableDrivers()
+        packageService.getAvailableDrivers(),
+        packageService.getAvailableGuides()
       ]);
 
-      setAvailableResources({ hotels, drivers });
+      setAvailableResources({ hotels, drivers, guides });
     } catch (err) {
       console.error('Error loading resources:', err);
       setError('Failed to load available resources');
@@ -217,7 +223,7 @@ const EditPackageModal = ({ package: packageToEdit, onClose, onSuccess }) => {
     setError(null);
 
     try {
-      // Check if hotel and driver are selected
+      // Check if hotel, driver, and guide are selected
       if (!formData.selectedHotelId) {
         setError('Please select a hotel');
         setLoading(false);
@@ -226,6 +232,12 @@ const EditPackageModal = ({ package: packageToEdit, onClose, onSuccess }) => {
 
       if (!formData.selectedDriverId) {
         setError('Please select a driver');
+        setLoading(false);
+        return;
+      }
+
+      if (!formData.selectedGuideId) {
+        setError('Please select a guide');
         setLoading(false);
         return;
       }
@@ -286,6 +298,13 @@ const EditPackageModal = ({ package: packageToEdit, onClose, onSuccess }) => {
     }));
   };
 
+  const handleGuideSelect = (guide) => {
+    setFormData(prev => ({
+      ...prev,
+      selectedGuideId: guide.id
+    }));
+  };
+
   const getSelectedHotel = () => {
     // First check if hotel data is available in packageToEdit
     if (packageToEdit?.selectedHotel && packageToEdit.selectedHotel.id == formData.selectedHotelId) {
@@ -302,6 +321,15 @@ const EditPackageModal = ({ package: packageToEdit, onClose, onSuccess }) => {
     }
     // Fall back to available resources
     return availableResources.drivers.find(driver => driver.id == formData.selectedDriverId);
+  };
+
+  const getSelectedGuide = () => {
+    // First check if guide data is available in packageToEdit
+    if (packageToEdit?.selectedGuide && packageToEdit.selectedGuide.id == formData.selectedGuideId) {
+      return packageToEdit.selectedGuide;
+    }
+    // Fall back to available resources
+    return availableResources.guides.find(guide => guide.id == formData.selectedGuideId);
   };
 
   // Ensure day plans have proper structure
@@ -435,7 +463,7 @@ const EditPackageModal = ({ package: packageToEdit, onClose, onSuccess }) => {
             <div className="space-y-4">
               <h4 className="text-md font-medium text-gray-900">Select Resources</h4>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 lg:grid-cols-3 md:grid-cols-2 gap-6">
                 {/* Hotel Selection */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -513,6 +541,49 @@ const EditPackageModal = ({ package: packageToEdit, onClose, onSuccess }) => {
                       <User className="w-8 h-8 text-gray-400 mx-auto mb-2" />
                       <p className="text-gray-600">Click to select a driver</p>
                       <p className="text-sm text-gray-400">Browse drivers with vehicle details</p>
+                    </button>
+                  )}
+                </div>
+
+                {/* Guide Selection */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <User className="inline w-4 h-4 mr-1" />
+                    Guide
+                  </label>
+                  
+                  {getSelectedGuide() ? (
+                    <div className="border border-blue-200 bg-blue-50 rounded-lg p-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <h5 className="font-medium text-gray-900">{getSelectedGuide().firstName} {getSelectedGuide().lastName}</h5>
+                        <button
+                          type="button"
+                          onClick={() => setIsGuideModalOpen(true)}
+                          className="text-blue-600 hover:text-blue-800 text-sm"
+                        >
+                          Change
+                        </button>
+                      </div>
+                      <p className="text-sm text-gray-600 flex items-center">
+                        <MapPin className="w-3 h-3 mr-1" />
+                        {getSelectedGuide().expertiseCityRegion}
+                      </p>
+                      <p className="text-sm text-gray-600">🗣️ {getSelectedGuide().language}</p>
+                      {getSelectedGuide().vehicleAvailability && (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800 mt-1">
+                          Vehicle Available
+                        </span>
+                      )}
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => setIsGuideModalOpen(true)}
+                      className="w-full border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-400 hover:bg-blue-50 transition-colors"
+                    >
+                      <User className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                      <p className="text-gray-600">Click to select a guide</p>
+                      <p className="text-sm text-gray-400">Browse guides with expertise details</p>
                     </button>
                   )}
                 </div>
@@ -665,6 +736,16 @@ const EditPackageModal = ({ package: packageToEdit, onClose, onSuccess }) => {
           onSelect={handleDriverSelect}
           drivers={availableResources.drivers}
           selectedDriverId={formData.selectedDriverId}
+          loading={resourcesLoading}
+        />
+
+        {/* Guide Selector Modal */}
+        <GuideSelectorModal
+          isOpen={isGuideModalOpen}
+          onClose={() => setIsGuideModalOpen(false)}
+          onSelect={handleGuideSelect}
+          guides={availableResources.guides}
+          selectedGuideId={formData.selectedGuideId}
           loading={resourcesLoading}
         />
       </div>
