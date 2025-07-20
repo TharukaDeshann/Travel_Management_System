@@ -1,12 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { X, Star, MapPin, Languages, Phone, Mail, Car, Shield, Clock, Calendar, Edit, Trash2, AlertCircle } from 'lucide-react';
 import apiClient from '../services/axiosInstance';
-import { fetchLoggedInUser } from '../services/authService';
-import ReviewModal from './ReviewModal';
 import { useUser } from '../context/UserContext';
+import { useNotification } from '../hooks/useNotification';
 
-const GuideModal = ({ guide, onClose, currentUser }) => {
+const GuideModal = ({ guide, onClose, currentUser, editReservationData }) => {
   const [activeTab, setActiveTab] = useState('details');
   const [numberOfDays, setNumberOfDays] = useState(1);
   const [reservationDetails, setReservationDetails] = useState(
@@ -15,45 +13,89 @@ const GuideModal = ({ guide, onClose, currentUser }) => {
       date: '',
       travelers: 1,
       vehicleRequested: false,
+      vehicleId: null,
       vehicleDetails: ''
     }))
   );
+  const [vehicles, setVehicles] = useState([]);
+  const [isLoadingVehicles, setIsLoadingVehicles] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
-  const [isLoadingUser, setIsLoadingUser] = useState(true);
   const [reviews, setReviews] = useState([]);
   const [averageRating, setAverageRating] = useState(null);
   const [isLoadingReviews, setIsLoadingReviews] = useState(true);
   const [reviewToEdit, setReviewToEdit] = useState(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
   const [reviewSuccess, setReviewSuccess] = useState(null);
-  const navigate = useNavigate();
+  const [isEditMode, setIsEditMode] = useState(false);
   const { user } = useUser();
+  const { showSuccess, showError } = useNotification();
   const loggedUser = currentUser || user;
 
-  // Fetch reviews when guide is selected
   useEffect(() => {
-    fetchReviews();
+    const fetchVehicles = async () => {
+      try {
+        setIsLoadingVehicles(true);
+        const response = await apiClient.get(`/api/guide/vehicles/${guide.id}`);
+        setVehicles(response.data);
+      } catch (error) {
+        console.error("Error fetching vehicles:", error);
+      } finally {
+        setIsLoadingVehicles(false);
+      }
+    };
+
+    if (guide.id) {
+      fetchVehicles();
+    }
   }, [guide.id]);
 
-  const fetchReviews = async () => {
-    try {
-      setIsLoadingReviews(true);
-      const response = await apiClient.get(`/api/reviews/guide/${guide.id}`);
-      setReviews(response.data || []);
+  useEffect(() => {
+    if (editReservationData) {
+      setIsEditMode(true);
+      setActiveTab('reservation');
       
-      const ratingResponse = await apiClient.get(`/api/reviews/guide/${guide.id}/average-rating`);
-      setAverageRating(ratingResponse.data);
-    } catch (error) {
-      console.error("Error fetching reviews:", error);
-    } finally {
-      setIsLoadingReviews(false);
+      if (editReservationData.guideId && editReservationData.guideId !== guide.id) {
+        setError('You can only edit reservations with this guide');
+        onClose();
+        return;
+      }
+      
+      if (editReservationData.dayDetails) {
+        setNumberOfDays(editReservationData.dayDetails.length);
+        setReservationDetails(editReservationData.dayDetails.map(day => ({
+          place: day.places,
+          date: day.date,
+          travelers: day.numberOfTravelers,
+          vehicleRequested: day.vehicleRequested || false,
+          vehicleId: day.vehicleId || null,
+          vehicleDetails: day.vehicleDetails || ''
+        })));
+      }
     }
-  };
+
+    const fetchReviews = async () => {
+      try {
+        setIsLoadingReviews(true);
+        const response = await apiClient.get(`/api/reviews/guide/${guide.id}`);
+        setReviews(response.data || []);
+        
+        const ratingResponse = await apiClient.get(`/api/reviews/guide/${guide.id}/average-rating`);
+        setAverageRating(ratingResponse.data);
+      } catch (error) {
+        console.error("Error fetching reviews:", error);
+        showError("Failed to load reviews");
+      } finally {
+        setIsLoadingReviews(false);
+      }
+    };
+
+    fetchReviews();
+  }, [guide.id, editReservationData, onClose, showError]);
 
   const handleDayChange = (e) => {
     const days = parseInt(e.target.value);
-    setNumberOfDays(days);
+    setNumberOfDays(Math.min(Math.max(days, 1), 30));
 
     const newDetails = [];
     for (let i = 0; i < days; i++) {
@@ -62,6 +104,7 @@ const GuideModal = ({ guide, onClose, currentUser }) => {
         date: '',
         travelers: 1,
         vehicleRequested: false,
+        vehicleId: null,
         vehicleDetails: ''
       });
     }
@@ -74,6 +117,12 @@ const GuideModal = ({ guide, onClose, currentUser }) => {
       ...updatedDetails[index],
       [field]: value
     };
+    
+    if (field === 'vehicleRequested' && !value) {
+      updatedDetails[index].vehicleId = null;
+      updatedDetails[index].vehicleDetails = '';
+    }
+    
     setReservationDetails(updatedDetails);
   };
 
@@ -84,7 +133,6 @@ const GuideModal = ({ guide, onClose, currentUser }) => {
     const maxDate = new Date();
     maxDate.setDate(maxDate.getDate() + 365);
 
-    // For the first day, min date is today
     if (index === 0) {
       return {
         min: today.toISOString().split('T')[0],
@@ -92,7 +140,6 @@ const GuideModal = ({ guide, onClose, currentUser }) => {
       };
     }
 
-    // For subsequent days, min date is the day after the previous day's date
     const prevDayDate = new Date(reservationDetails[index - 1].date);
     if (prevDayDate && !isNaN(prevDayDate.getTime())) {
       const nextDay = new Date(prevDayDate);
@@ -104,113 +151,85 @@ const GuideModal = ({ guide, onClose, currentUser }) => {
       };
     }
 
-    // Fallback to today if previous date isn't set
     return {
       min: today.toISOString().split('T')[0],
       max: maxDate.toISOString().split('T')[0]
     };
   };
 
-  const handleReviewSubmit = async (reviewData) => {
-    try {
-      setIsSubmitting(true);
-      
-      await apiClient.post(`/api/reviews/guide/${guide.id}`, {
-        rating: reviewData.rating,
-        comment: reviewData.comment
-      });
-      
-      setReviewSuccess("Review submitted successfully!");
-      await fetchReviews();
-      setReviewToEdit(null);
-      
-      setTimeout(() => setReviewSuccess(null), 3000);
-    } catch (err) {
-      console.error("Review submission error:", err);
-      setError(err.response?.data || "Failed to submit review. Please try again.");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleReviewDelete = async (reviewId) => {
-    try {
-      setIsSubmitting(true);
-      await apiClient.delete(`/api/reviews/${reviewId}`);
-      setReviewSuccess("Review deleted successfully!");
-      await fetchReviews();
-      setConfirmDeleteId(null);
-      
-      setTimeout(() => setReviewSuccess(null), 3000);
-    } catch (err) {
-      console.error("Review deletion error:", err);
-      setError(err.response?.data || "Failed to delete review. Please try again.");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
   const handleSubmit = async () => {
     if (!loggedUser || !loggedUser.id) {
       setError('Please login to make a reservation');
-      navigate('/login');
+      showError('Please login to make a reservation');
       return;
     }
-
-    // Validate all fields are filled
+  
+    // Validate all fields
     for (let i = 0; i < reservationDetails.length; i++) {
       const detail = reservationDetails[i];
       if (!detail.place || !detail.date || !detail.travelers) {
-        setError(`Please fill all required fields for Day ${i + 1}`);
+        const errorMsg = `Please fill all required fields for Day ${i + 1}`;
+        setError(errorMsg);
+        showError(errorMsg);
+        return;
+      }
+      
+      if (detail.vehicleRequested && !detail.vehicleId) {
+        const errorMsg = `Please select a vehicle for Day ${i + 1}`;
+        setError(errorMsg);
+        showError(errorMsg);
         return;
       }
     }
-
-    // Validate dates are within allowed range and sequential
+  
+    // Date validation
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-
     const maxAllowedDate = new Date();
     maxAllowedDate.setDate(maxAllowedDate.getDate() + 365);
-
+  
     for (let i = 0; i < reservationDetails.length; i++) {
       const detail = reservationDetails[i];
       const selectedDate = new Date(detail.date);
-
-      // Check if date is valid
+  
       if (isNaN(selectedDate.getTime())) {
-        setError(`Invalid date for Day ${i + 1}`);
+        const errorMsg = `Invalid date for Day ${i + 1}`;
+        setError(errorMsg);
+        showError(errorMsg);
         return;
       }
-
-      // Check if date is in the past
+  
       if (selectedDate < today) {
-        setError(`Date for Day ${i + 1} cannot be in the past`);
+        const errorMsg = `Date for Day ${i + 1} cannot be in the past`;
+        setError(errorMsg);
+        showError(errorMsg);
         return;
       }
-
-      // Check if date is within 365 days
+  
       if (selectedDate > maxAllowedDate) {
-        setError(`Date for Day ${i + 1} must be within 365 days from today`);
+        const errorMsg = `Date for Day ${i + 1} must be within 365 days from today`;
+        setError(errorMsg);
+        showError(errorMsg);
         return;
       }
-
-      // Check if dates are sequential
+  
       if (i > 0) {
         const previousDate = new Date(reservationDetails[i - 1].date);
         const nextValidDate = new Date(previousDate);
         nextValidDate.setDate(nextValidDate.getDate() + 1);
         
         if (selectedDate < nextValidDate) {
-          setError(`Date for Day ${i + 1} must be after Day ${i}`);
+          const errorMsg = `Date for Day ${i + 1} must be after Day ${i}`;
+          setError(errorMsg);
+          showError(errorMsg);
           return;
         }
       }
     }
-
+  
     setIsSubmitting(true);
     setError(null);
-
+  
     try {
       const reservationData = {
         travelerId: loggedUser.id,
@@ -221,42 +240,115 @@ const GuideModal = ({ guide, onClose, currentUser }) => {
           date: detail.date,
           numberOfTravelers: detail.travelers,
           vehicleRequested: detail.vehicleRequested,
+          vehicleId: detail.vehicleId,
           vehicleDetails: detail.vehicleDetails
         }))
       };
-
-      const response = await apiClient.post('/api/reservations', reservationData);
-
-      if (response.status === 200) {
-        onClose();
-        alert('Reservation request sent successfully!');
+  
+      let response;
+      if (isEditMode && editReservationData?.id) {
+        response = await apiClient.put(
+          `/api/reservations/${editReservationData.id}`,
+          reservationData
+        );
+      } else {
+        response = await apiClient.post('/api/reservations', reservationData);
       }
+
+      showSuccess(isEditMode ? "Reservation updated successfully!" : "Reservation request sent successfully!");
+      setTimeout(() => {
+        onClose();
+      }, 1500);
     } catch (err) {
       console.error('Reservation failed:', err);
-      setError(err.response?.data?.message || 'Failed to submit reservation. Please try again.');
+      const errorMessage = err.response?.data?.error || 
+                         err.response?.data?.message || 
+                         err.message || 
+                         'Reservation failed';
+      setError(errorMessage);
+      showError(errorMessage);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleReviewSubmit = async (reviewData) => {
+    try {
+      setIsSubmitting(true);
+      setError(null);
+      
+      let response;
+      if (reviewData.id) {
+        response = await apiClient.put(`/api/reviews/${reviewData.id}`, {
+          rating: reviewData.rating,
+          comment: reviewData.comment
+        });
+      } else {
+        response = await apiClient.post('/api/reviews', {
+          guideId: guide.id,
+          rating: reviewData.rating,
+          comment: reviewData.comment
+        });
+      }
+
+      setReviewSuccess(reviewData.id ? "Review updated successfully!" : "Review submitted successfully!");
+      setReviewToEdit(null);
+      
+      // Refresh reviews
+      const reviewsResponse = await apiClient.get(`/api/reviews/guide/${guide.id}`);
+      setReviews(reviewsResponse.data || []);
+      
+      const ratingResponse = await apiClient.get(`/api/reviews/guide/${guide.id}/average-rating`);
+      setAverageRating(ratingResponse.data);
+    } catch (err) {
+      console.error('Review submission failed:', err);
+      setError(err.response?.data?.error || err.message || 'Review submission failed');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleReviewDelete = async (reviewId) => {
+    try {
+      setIsSubmitting(true);
+      await apiClient.delete(`/api/reviews/${reviewId}`);
+      
+      setReviewSuccess("Review deleted successfully!");
+      setConfirmDeleteId(null);
+      
+      // Refresh reviews
+      const response = await apiClient.get(`/api/reviews/guide/${guide.id}`);
+      setReviews(response.data || []);
+      
+      const ratingResponse = await apiClient.get(`/api/reviews/guide/${guide.id}/average-rating`);
+      setAverageRating(ratingResponse.data);
+    } catch (err) {
+      console.error('Review deletion failed:', err);
+      setError(err.response?.data?.error || err.message || 'Review deletion failed');
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const renderStars = (rating) => {
-    return (
-      <div className="flex items-center gap-1">
-        {[1, 2, 3, 4, 5].map((star) => (
-          <Star
-            key={star}
-            size={16}
-            fill={rating >= star ? '#FFD700' : 'none'}
-            color={rating >= star ? '#FFD700' : '#ddd'}
-          />
-        ))}
-      </div>
-    );
+    const stars = [];
+    for (let i = 1; i <= 5; i++) {
+      stars.push(
+        <Star
+          key={i}
+          size={16}
+          fill={rating >= i ? '#FFD700' : 'none'}
+          color={rating >= i ? '#FFD700' : '#ddd'}
+        />
+      );
+    }
+    return <div className="flex items-center gap-1">{stars}</div>;
   };
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 overflow-y-auto">
       <div className="w-full max-w-5xl bg-white rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
+        {/* Modal Header */}
         <div className="bg-white border-b border-gray-100 sticky top-0 z-10">
           <div className="flex items-center justify-between px-6 pt-5 pb-3">
             <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-3">
@@ -276,6 +368,7 @@ const GuideModal = ({ guide, onClose, currentUser }) => {
             </button>
           </div>
           
+          {/* Tabs */}
           <div className="flex border-b border-gray-100">
             <button
               className={`px-6 py-3 font-medium text-sm transition-colors ${
@@ -314,11 +407,12 @@ const GuideModal = ({ guide, onClose, currentUser }) => {
                 setReviewToEdit(null);
               }}
             >
-              Make Reservation
+              {isEditMode ? 'Edit Reservation' : 'Make Reservation'}
             </button>
           </div>
         </div>
         
+        {/* Modal Content */}
         <div className="flex-1 overflow-y-auto">
           {activeTab === 'details' && (
             <div className="p-6">
@@ -334,7 +428,14 @@ const GuideModal = ({ guide, onClose, currentUser }) => {
                     <div className="mt-4 bg-gray-50 p-4 rounded-lg flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <div className="flex">
-                          {renderStars(averageRating)}
+                          {[1, 2, 3, 4, 5].map((star) => (
+                            <Star
+                              key={star}
+                              size={16}
+                              fill={averageRating >= star ? '#FFD700' : 'none'}
+                              color={averageRating >= star ? '#FFD700' : '#ddd'}
+                            />
+                          ))}
                         </div>
                         <span className="font-semibold text-gray-700">{averageRating.toFixed(1)}</span>
                       </div>
@@ -381,14 +482,6 @@ const GuideModal = ({ guide, onClose, currentUser }) => {
                       </div>
                       
                       <div className="flex items-start gap-2">
-                        <Car size={18} className="text-orange-500 mt-1 shrink-0" />
-                        <div>
-                          <p className="text-sm font-medium text-gray-500">Vehicle</p>
-                          <p className="text-gray-800">{guide.vehicleAvailability ? 'Available' : 'Not Available'}</p>
-                        </div>
-                      </div>
-                      
-                      <div className="flex items-start gap-2">
                         <Clock size={18} className="text-teal-500 mt-1 shrink-0" />
                         <div>
                           <p className="text-sm font-medium text-gray-500">Experience</p>
@@ -398,12 +491,37 @@ const GuideModal = ({ guide, onClose, currentUser }) => {
                     </div>
                   </div>
                   
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-800 mb-2">About</h3>
-                    <p className="text-gray-700 leading-relaxed">
-                      {guide.about || 'No information provided.'}
-                    </p>
-                  </div>
+                  {/* Vehicle Information Section */}
+                  {vehicles.length > 0 && (
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-800 mb-3">Available Vehicles</h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {vehicles.map(vehicle => (
+                          <div key={vehicle.id} className="border rounded-lg p-4">
+                            <div className="flex items-start gap-4">
+                              {vehicle.vehicleImageUrl && (
+                                <img 
+                                  src={vehicle.vehicleImageUrl} 
+                                  alt={`${vehicle.type} ${vehicle.model}`}
+                                  className="w-24 h-24 object-cover rounded"
+                                />
+                              )}
+                              <div>
+                                <h4 className="font-medium">{vehicle.type} {vehicle.model}</h4>
+                                <p className="text-sm text-gray-600">Capacity: {vehicle.capacity} people</p>
+                                <p className="text-sm text-gray-600">
+                                  {vehicle.airConditioned ? 'Air Conditioned' : 'No Air Conditioning'}
+                                </p>
+                                <p className="text-sm text-gray-600">
+                                  Status: {vehicle.available ? 'Available' : 'Not Available'}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                   
                   <div className="pt-4 flex justify-end gap-3">
                     <button
@@ -430,6 +548,12 @@ const GuideModal = ({ guide, onClose, currentUser }) => {
                 <div className="mb-6 p-3 bg-green-50 border border-green-100 text-green-700 rounded-lg flex items-center gap-2">
                   <div className="shrink-0">✓</div>
                   <p>{reviewSuccess}</p>
+                  <button 
+                    onClick={() => setReviewSuccess(null)}
+                    className="ml-auto text-green-700 hover:text-green-900"
+                  >
+                    <X size={16} />
+                  </button>
                 </div>
               )}
             
@@ -484,9 +608,7 @@ const GuideModal = ({ guide, onClose, currentUser }) => {
                           </div>
                           <div>
                             <h4 className="font-medium text-gray-900">{review.travelerName || 'Anonymous'}</h4>
-                            <div className="flex text-yellow-400">
-                              {renderStars(review.rating)}
-                            </div>
+                            {renderStars(review.rating)}
                           </div>
                         </div>
                         <div className="text-sm text-gray-500">
@@ -553,7 +675,10 @@ const GuideModal = ({ guide, onClose, currentUser }) => {
                   {reviewToEdit.id ? 'Edit Your Review' : 'Write a Review'}
                 </h3>
                 <button 
-                  onClick={() => setReviewToEdit(null)}
+                  onClick={() => {
+                    setReviewToEdit(null);
+                    setError(null);
+                  }}
                   className="p-1 rounded-full hover:bg-gray-100 transition-colors"
                 >
                   <X size={20} className="text-gray-500" />
@@ -603,7 +728,10 @@ const GuideModal = ({ guide, onClose, currentUser }) => {
               
               <div className="flex justify-end gap-3">
                 <button
-                  onClick={() => setReviewToEdit(null)}
+                  onClick={() => {
+                    setReviewToEdit(null);
+                    setError(null);
+                  }}
                   className="px-5 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-lg font-medium transition-colors"
                 >
                   Cancel
@@ -621,10 +749,18 @@ const GuideModal = ({ guide, onClose, currentUser }) => {
           
           {activeTab === 'reservation' && (
             <div className="p-6">
-              <h3 className="text-xl font-semibold text-gray-800 mb-4">Create Reservation</h3>
+              <h3 className="text-xl font-semibold text-gray-800 mb-4">
+                {isEditMode ? 'Edit Reservation' : 'Make Reservation'}
+              </h3>
               <p className="text-gray-600 mb-6">
                 Booking guide: {guide.firstName} {guide.lastName} ({guide.expertiseCityRegion})
               </p>
+              
+              {isEditMode && (
+                <div className="mb-4 p-3 bg-blue-50 border border-blue-100 text-blue-700">
+                  <p className="text-sm">You are editing an existing reservation with this guide.</p>
+                </div>
+              )}
               
               <div className="mb-6">
                 <label className="block mb-2 font-medium text-gray-700">
@@ -686,28 +822,54 @@ const GuideModal = ({ guide, onClose, currentUser }) => {
                         />
                       </div>
                       
-                      {guide.vehicleAvailability && (
-                        <div className="mt-4">
-                          <label className="flex items-center cursor-pointer">
+                      {/* Vehicle Selection */}
+                      {vehicles.length > 0 && (
+                        <div className="mt-4 p-4 bg-blue-50 rounded-lg">
+                          <label className="flex items-center cursor-pointer mb-3">
                             <input
                               type="checkbox"
                               checked={detail.vehicleRequested}
                               onChange={(e) => handleDetailChange(index, 'vehicleRequested', e.target.checked)}
                               className="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                             />
-                            <span className="ml-2 text-sm font-medium text-gray-700">Request Vehicle for this day</span>
+                            <span className="ml-2 text-sm font-medium text-gray-700">
+                              Require vehicle service for this day?
+                            </span>
                           </label>
                           
                           {detail.vehicleRequested && (
-                            <div className="mt-3">
-                              <label className="block mb-2 text-sm font-medium text-gray-700">Vehicle Details:</label>
-                              <textarea
-                                value={detail.vehicleDetails}
-                                onChange={(e) => handleDetailChange(index, 'vehicleDetails', e.target.value)}
-                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                rows="3"
-                                placeholder="Any special requirements for the vehicle?"
-                              />
+                            <div className="mt-3 space-y-3">
+                              <div>
+                                <label className="block mb-2 text-sm font-medium text-gray-700">
+                                  Select Vehicle
+                                </label>
+                                <select
+                                  value={detail.vehicleId || ''}
+                                  onChange={(e) => handleDetailChange(index, 'vehicleId', e.target.value)}
+                                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                  required
+                                >
+                                  <option value="">Select a vehicle</option>
+                                  {vehicles.filter(v => v.available).map(vehicle => (
+                                    <option key={vehicle.id} value={vehicle.id}>
+                                      {vehicle.type} {vehicle.model} ({vehicle.capacity} people)
+                                    </option>
+                                  ))}
+                                </select>
+                              </div>
+                              
+                              <div>
+                                <label className="block mb-2 text-sm font-medium text-gray-700">
+                                  Special Requirements
+                                </label>
+                                <textarea
+                                  value={detail.vehicleDetails}
+                                  onChange={(e) => handleDetailChange(index, 'vehicleDetails', e.target.value)}
+                                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                  rows="3"
+                                  placeholder="Any special requirements for the vehicle?"
+                                />
+                              </div>
                             </div>
                           )}
                         </div>
@@ -735,7 +897,7 @@ const GuideModal = ({ guide, onClose, currentUser }) => {
                   disabled={isSubmitting}
                   className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors disabled:opacity-70"
                 >
-                  {isSubmitting ? 'Processing...' : 'Confirm Reservation'}
+                  {isSubmitting ? 'Processing...' : isEditMode ? 'Update Reservation' : 'Confirm Reservation'}
                 </button>
               </div>
             </div>

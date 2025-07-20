@@ -3,7 +3,6 @@ package com.yamu.backend.dto;
 import jakarta.validation.constraints.*;
 import java.util.List;
 
-// DTO for creating a reservation request
 public class CreateReservationRequest {
 
     @NotNull(message = "Traveler ID is required")
@@ -15,7 +14,6 @@ public class CreateReservationRequest {
     @NotEmpty(message = "At least one day detail is required")
     private List<DayDetail> dayDetails;
 
-    // Getters and Setters
     public Long getTravelerId() {
         return travelerId;
     }
@@ -40,7 +38,6 @@ public class CreateReservationRequest {
         this.dayDetails = dayDetails;
     }
 
-    // Inner class representing details for each day of the reservation
     public static class DayDetail {
         @Min(value = 1, message = "Day number must be at least 1")
         private int dayNumber;
@@ -55,6 +52,7 @@ public class CreateReservationRequest {
         private int numberOfTravelers;
 
         private boolean vehicleRequested;
+        private Long vehicleId;
         private String vehicleDetails;
 
         // Getters and Setters
@@ -96,6 +94,14 @@ public class CreateReservationRequest {
 
         public void setVehicleRequested(boolean vehicleRequested) {
             this.vehicleRequested = vehicleRequested;
+        }
+
+        public Long getVehicleId() {
+            return vehicleId;
+        }
+
+        public void setVehicleId(Long vehicleId) {
+            this.vehicleId = vehicleId;
         }
 
         public String getVehicleDetails() {

@@ -1,7 +1,6 @@
 package com.yamu.backend.dto;
 
 import lombok.Data;
-
 import java.util.List;
 
 @Data
@@ -26,6 +25,7 @@ public class GuideReservationResponse {
         private String date;
         private int numberOfTravelers;
         private boolean vehicleRequested;
+        private VehicleResponseDTO selectedVehicle;
         private String vehicleDetails;
     }
 }

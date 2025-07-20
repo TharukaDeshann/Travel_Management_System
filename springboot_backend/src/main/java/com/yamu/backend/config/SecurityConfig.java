@@ -59,6 +59,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/reviews/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/reviews/**").authenticated()
                         .requestMatchers(HttpMethod.DELETE, "/api/reviews/**").authenticated()
+                        
                         .requestMatchers("/ws/**", "/app/**", "/topic/**", "/queue/**", "/user/**").permitAll()
                         .requestMatchers(
                                 "/api/auth/login", 
@@ -73,6 +74,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.PUT, "/api/users/{id}").authenticated()
                         .requestMatchers(HttpMethod.PUT, "/api/users/{id}/update-email").authenticated()
                         .requestMatchers(HttpMethod.PUT, "/api/users/{id}/update-password").authenticated()
+                        
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .requestMatchers("/api/guide/**").hasAnyRole("GUIDE", "ADMIN", "TRAVELER")
                         .requestMatchers("/api/traveler/**").hasRole("TRAVELER")

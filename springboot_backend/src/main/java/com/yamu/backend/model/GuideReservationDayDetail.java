@@ -42,6 +42,10 @@ public class GuideReservationDayDetail {
     @Column
     private Boolean vehicleRequested = false;
 
+    @ManyToOne
+    @JoinColumn(name = "vehicle_id")
+    private Vehicle selectedVehicle;
+
     // Details of the vehicle requested
     @Column(length = 500)
     private String vehicleDetails;

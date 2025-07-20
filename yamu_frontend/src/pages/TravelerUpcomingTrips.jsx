@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Mail } from "lucide-react";
+import { Mail, Edit, Trash2, X, Car } from "lucide-react";
+import { toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import apiClient from "../services/axiosInstance";
 import { Layout } from "../components/Layout";
 import { useUser } from "../context/UserContext";
@@ -12,6 +14,9 @@ const TravelerUpcomingTrips = ({ currentUser }) => {
   const [activeTab, setActiveTab] = useState('upcoming');
   const [unreadCount, setUnreadCount] = useState(0);
   const [selectedCurrency, setSelectedCurrency] = useState('LKR');
+  const [showCancelConfirm, setShowCancelConfirm] = useState(null);
+  const [showRemoveConfirm, setShowRemoveConfirm] = useState(null);
+  const [processing, setProcessing] = useState(false);
   const navigate = useNavigate();
   const { user: loggedUser } = useUser();
 
@@ -35,7 +40,6 @@ const TravelerUpcomingTrips = ({ currentUser }) => {
             ? new Date(b.dayDetails[0].date) 
             : new Date(b.createdAt);
 
-          // Sort by proximity to today's date
           return Math.abs(dateA - today) - Math.abs(dateB - today);
         });
         
@@ -89,37 +93,119 @@ const TravelerUpcomingTrips = ({ currentUser }) => {
     navigate(`/inbox?select=${guideId}`);
   };
 
-  const MessageButton = ({ guideId }) => (
-    <button
-      onClick={() => handleMessageClick(guideId)}
-      style={{
-        padding: "8px 16px",
-        backgroundColor: "#f0f0f0",
-        border: "none",
-        borderRadius: "4px",
-        cursor: "pointer",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        gap: "6px",
-        transition: "all 0.2s ease"
-      }}
-    >
-      <Mail size={16} />
-      Message
-    </button>
-  );
+  const handleEditReservation = (reservation) => {
+    navigate('/guides-page', {
+      state: {
+        editReservation: true,
+        reservationData: reservation,
+        guideId: reservation.guideId
+      }
+    });
+  };
+
+  const handleCancelReservation = async (reservationId) => {
+    try {
+      setProcessing(true);
+      await apiClient.put(`/api/reservations/${reservationId}/cancel`);
+      await refreshData();
+      setShowCancelConfirm(null);
+      toast.success("Reservation cancelled successfully");
+    } catch (err) {
+      console.error("Cancellation failed:", err);
+      let errorMsg = "Failed to cancel reservation";
+      
+      if (err.response) {
+        if (err.response.status === 401) {
+          errorMsg = "Please login to perform this action";
+        } else if (err.response.status === 403) {
+          errorMsg = "You don't have permission to cancel this reservation";
+        } else if (err.response.data?.message) {
+          errorMsg = err.response.data.message;
+        }
+      }
+      
+      setError(errorMsg);
+      toast.error(errorMsg);
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  const handleRemoveReservation = async (reservationId) => {
+    try {
+      setProcessing(true);
+      await apiClient.delete(`/api/reservations/${reservationId}`);
+      await refreshData();
+      setShowRemoveConfirm(null);
+      toast.success("Reservation removed successfully");
+    } catch (err) {
+      console.error("Removal failed:", err);
+      let errorMsg = "Failed to remove reservation";
+      
+      if (err.response) {
+        if (err.response.status === 401) {
+          errorMsg = "Please login to perform this action";
+        } else if (err.response.status === 403) {
+          errorMsg = "You don't have permission to remove this reservation";
+        } else if (err.response.status === 404) {
+          errorMsg = "Reservation not found";
+        } else if (err.response.data?.message) {
+          errorMsg = err.response.data.message;
+        }
+      }
+      
+      setError(errorMsg);
+      toast.error(errorMsg);
+    } finally {
+      setProcessing(false);
+    }
+  };
 
   const statusColors = {
     'PENDING': '#FFA500',
     'CONFIRMED': '#4CAF50',
     'DECLINED': '#F44336',
     'COMPLETED': '#2196F3',
-    'CANCELLED': '#9E9E9E'
+    'CANCELLED': '#F44336'
   };
 
   const upcomingReservations = reservations.filter(res => res.status !== 'COMPLETED');
   const pastReservations = reservations.filter(res => res.status === 'COMPLETED');
+
+  const VehicleInfo = ({ vehicle }) => {
+    if (!vehicle) return null;
+
+    return (
+      <div style={{
+        marginTop: "10px",
+        padding: "10px",
+        backgroundColor: "#f0f8ff",
+        borderRadius: "4px",
+        borderLeft: "3px solid #2196F3"
+      }}>
+        <p style={{ margin: "4px 0", fontWeight: "500" }}>
+          <Car size={14} style={{ marginRight: "5px" }} />
+          {vehicle.type} {vehicle.model}
+        </p>
+        <div style={{ display: "flex", gap: "15px", fontSize: "12px" }}>
+          <span>Capacity: {vehicle.capacity}</span>
+          <span>{vehicle.airConditioned ? 'AC Available' : 'No AC'}</span>
+        </div>
+        {vehicle.vehicleImageUrl && (
+          <img 
+            src={vehicle.vehicleImageUrl} 
+            alt={`${vehicle.type} ${vehicle.model}`}
+            style={{ 
+              maxWidth: '100%', 
+              maxHeight: '150px', 
+              marginTop: '10px',
+              borderRadius: '4px'
+            }}
+          />
+        )}
+      </div>
+    );
+  };
 
   const ReservationCard = ({ reservation }) => {
     const firstDayDate = reservation.dayDetails && reservation.dayDetails.length > 0
@@ -211,7 +297,7 @@ const TravelerUpcomingTrips = ({ currentUser }) => {
                 color: "#2196F3",
                 fontWeight: "bold"
               }}>
-                <strong>Estimated Price:</strong> LKR {reservation.estimatedPrice.toLocaleString()}
+                <strong>Estimated Price:</strong> {selectedCurrency} {reservation.estimatedPrice.toLocaleString()}
               </p>
             )}
           </div>
@@ -239,9 +325,19 @@ const TravelerUpcomingTrips = ({ currentUser }) => {
                     <strong>Date:</strong> {new Date(day.date).toLocaleDateString()}
                   </p>
                   {day.vehicleRequested && (
-                    <p style={{ margin: "4px 0", fontSize: "13px" }}>
-                      <strong>Vehicle:</strong> {day.vehicleDetails || 'No details'}
-                    </p>
+                    <>
+                      <p style={{ margin: "4px 0", fontSize: "13px" }}>
+                        <strong>Vehicle Requested:</strong> Yes
+                      </p>
+                      {day.selectedVehicle && (
+                        <VehicleInfo vehicle={day.selectedVehicle} />
+                      )}
+                      {day.vehicleDetails && (
+                        <p style={{ margin: "4px 0", fontSize: "13px" }}>
+                          <strong>Special Requirements:</strong> {day.vehicleDetails}
+                        </p>
+                      )}
+                    </>
                   )}
                 </div>
               ))}
@@ -252,8 +348,101 @@ const TravelerUpcomingTrips = ({ currentUser }) => {
         </div>
 
         <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px" }}>
+          {reservation.status === 'PENDING' && (
+            <>
+              <button
+                onClick={() => handleEditReservation(reservation)}
+                style={{
+                  padding: "8px 16px",
+                  backgroundColor: "#f0f0f0",
+                  border: "none",
+                  borderRadius: "4px",
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "6px"
+                }}
+              >
+                <Edit size={16} />
+                Edit
+              </button>
+              <button
+                onClick={() => setShowCancelConfirm(reservation.id)}
+                style={{
+                  padding: "8px 16px",
+                  backgroundColor: "#f0f0f0",
+                  border: "none",
+                  borderRadius: "4px",
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "6px",
+                  color: "#F44336"
+                }}
+              >
+                <X size={16} />
+                Cancel
+              </button>
+            </>
+          )}
+          
+          {(reservation.status === 'DECLINED' || reservation.status === 'CANCELLED') && (
+            <button
+              onClick={() => setShowRemoveConfirm(reservation.id)}
+              style={{
+                padding: "8px 16px",
+                backgroundColor: "#f0f0f0",
+                border: "none",
+                borderRadius: "4px",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                gap: "6px",
+                color: "#F44336"
+              }}
+            >
+              <Trash2 size={16} />
+              Remove
+            </button>
+          )}
+          
+          {reservation.status === 'CONFIRMED' && (
+            <button
+              onClick={() => setShowCancelConfirm(reservation.id)}
+              style={{
+                padding: "8px 16px",
+                backgroundColor: "#f0f0f0",
+                border: "none",
+                borderRadius: "4px",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                gap: "6px",
+                color: "#F44336"
+              }}
+            >
+              <X size={16} />
+              Cancel
+            </button>
+          )}
+          
           {reservation.guideId && (
-            <MessageButton guideId={reservation.guideId} />
+            <button
+              onClick={() => handleMessageClick(reservation.guideId)}
+              style={{
+                padding: "8px 16px",
+                backgroundColor: "#f0f0f0",
+                border: "none",
+                borderRadius: "4px",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                gap: "6px"
+              }}
+            >
+              <Mail size={16} />
+              Message
+            </button>
           )}
         </div>
       </div>
@@ -423,6 +612,116 @@ const TravelerUpcomingTrips = ({ currentUser }) => {
             </div>
           )}
         </div>
+
+        {showCancelConfirm && (
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0,0,0,0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000
+          }}>
+            <div style={{
+              backgroundColor: 'white',
+              padding: '20px',
+              borderRadius: '8px',
+              width: '400px',
+              maxWidth: '90%'
+            }}>
+              <h3 style={{ marginTop: 0 }}>Cancel Reservation</h3>
+              <p>Are you sure you want to cancel this reservation?</p>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '20px' }}>
+                <button
+                  onClick={() => setShowCancelConfirm(null)}
+                  style={{
+                    padding: '8px 16px',
+                    backgroundColor: '#f0f0f0',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: 'pointer'
+                  }}
+                >
+                  No, Keep It
+                </button>
+                <button
+                  onClick={() => handleCancelReservation(showCancelConfirm)}
+                  disabled={processing}
+                  style={{
+                    padding: '8px 16px',
+                    backgroundColor: '#F44336',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    opacity: processing ? 0.7 : 1
+                  }}
+                >
+                  {processing ? 'Cancelling...' : 'Yes, Cancel'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {showRemoveConfirm && (
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0,0,0,0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000
+          }}>
+            <div style={{
+              backgroundColor: 'white',
+              padding: '20px',
+              borderRadius: '8px',
+              width: '400px',
+              maxWidth: '90%'
+            }}>
+              <h3 style={{ marginTop: 0 }}>Remove Reservation</h3>
+              <p>Are you sure you want to remove this reservation from your list?</p>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '20px' }}>
+                <button
+                  onClick={() => setShowRemoveConfirm(null)}
+                  style={{
+                    padding: '8px 16px',
+                    backgroundColor: '#f0f0f0',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: 'pointer'
+                  }}
+                >
+                  No, Keep It
+                </button>
+                <button
+                  onClick={() => handleRemoveReservation(showRemoveConfirm)}
+                  disabled={processing}
+                  style={{
+                    padding: '8px 16px',
+                    backgroundColor: '#F44336',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    opacity: processing ? 0.7 : 1
+                  }}
+                >
+                  {processing ? 'Removing...' : 'Yes, Remove'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </Layout>
   );

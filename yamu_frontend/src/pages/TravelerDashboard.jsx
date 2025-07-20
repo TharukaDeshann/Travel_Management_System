@@ -406,7 +406,7 @@ export default function TravelerDashboard({ currentUser }) {
                   </svg>
                 </button>
                 
-                <label htmlFor="image-upload" className="image-upload-button">
+                <label htmlFor="image-upload" className="image-upload-button" title="Search by image - Upload a photo of a place to identify it">
                   <input 
                     id="image-upload" 
                     type="file" 
