@@ -394,11 +394,41 @@ public class TravelPackageService {
         TravelPackage travelPackage = travelPackageRepository.findById(request.getPackageId())
                 .orElseThrow(() -> new ResourceNotFoundException("Travel package not found with id: " + request.getPackageId()));
         
-        // Check if traveler has already applied for this package
-        packageApplicationRepository.findByTravelerIdAndPackageId(travelerId, request.getPackageId())
-                .ifPresent(existingApplication -> {
-                    throw new IllegalStateException("You have already applied for this package");
-                });
+        // Check for date conflicts with existing applications
+        java.time.LocalDate newStartDate = request.getStartingDate();
+        java.time.LocalDate newEndDate = newStartDate.plusDays(travelPackage.getDurationDays() - 1);
+        
+        // Get all existing applications for this traveler (excluding rejected ones)
+        List<PackageApplication> existingApplications = packageApplicationRepository.findByTravelerIdOrderByAppliedAtDesc(travelerId)
+                .stream()
+                .filter(app -> app.getStatus() != PackageApplication.ApplicationStatus.REJECTED)
+                .collect(Collectors.toList());
+        
+        // Check for date overlaps
+        for (PackageApplication existingApp : existingApplications) {
+            java.time.LocalDate existingStartDate = existingApp.getStartingDate();
+            java.time.LocalDate existingEndDate = existingStartDate.plusDays(existingApp.getTravelPackage().getDurationDays() - 1);
+            
+            // Check if dates overlap
+            boolean datesOverlap = !(newEndDate.isBefore(existingStartDate) || newStartDate.isAfter(existingEndDate));
+            
+            if (datesOverlap) {
+                // If it's the same package, prevent duplicate application
+                if (existingApp.getTravelPackage().getId().equals(request.getPackageId())) {
+                    throw new IllegalStateException("You have already applied for this package for the same or overlapping dates");
+                } else {
+                    // Different package but overlapping dates
+                    throw new IllegalStateException(
+                        String.format("You have an existing application for package '%s' from %s to %s which overlaps with the requested dates (%s to %s)",
+                            existingApp.getTravelPackage().getPackageName(),
+                            existingStartDate,
+                            existingEndDate,
+                            newStartDate,
+                            newEndDate)
+                    );
+                }
+            }
+        }
         
         // Calculate total budget for the group
         BigDecimal totalBudget = travelPackage.getBudgetPerPerson()
