@@ -17,7 +17,10 @@ public record DriverBookingResponseDTO(
         Double endLocationLat,
         Double endLocationLon,
         Long driverId,
-        DriverInfo driver
+        DriverInfo driver,
+        Double travelCost,
+        Double travelLength,
+        Long dayPlanId
 ) {
     public static DriverBookingResponseDTO fromDriverBooking(DriverBooking booking) {
         DriverInfo driverInfo = null;
@@ -50,7 +53,10 @@ public record DriverBookingResponseDTO(
             booking.getEndLocationLat(),
             booking.getEndLocationLon(),
             booking.getDriver() != null ? booking.getDriver().getId() : null,
-            driverInfo
+            driverInfo,
+            booking.getTravelCost(),
+            booking.getTravelLength(),
+            booking.getDayPlan() != null ? booking.getDayPlan().getId() : null
         );
     }
     

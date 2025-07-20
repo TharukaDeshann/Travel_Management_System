@@ -4,6 +4,7 @@ import com.yamu.backend.model.GuideReservationByTraveler;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
+import java.util.Optional;
 
 // Repository interface for managing GuideReservationByTraveler entities
 public interface GuideReservationByTravelerRepository extends JpaRepository<GuideReservationByTraveler, Long> {
@@ -13,4 +14,6 @@ public interface GuideReservationByTravelerRepository extends JpaRepository<Guid
 
     // Find reservations by traveler ID
     List<GuideReservationByTraveler> findByTravelerId(Long travelerId);
+
+    Optional<GuideReservationByTraveler> findByDayPlanId(Long dayPlanId);
 }

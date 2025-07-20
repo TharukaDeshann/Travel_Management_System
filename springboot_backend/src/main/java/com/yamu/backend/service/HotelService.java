@@ -5,6 +5,7 @@ import com.yamu.backend.model.*;
 import com.yamu.backend.repository.HotelBookingRepository;
 import com.yamu.backend.repository.HotelRepository;
 import com.yamu.backend.repository.TravelerRepository;
+import com.yamu.backend.repository.DayPlanRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
@@ -33,6 +34,7 @@ public class HotelService {
     private final HotelMockDataService mockDataService;
     private final OpenStreetMapHotelService openStreetMapHotelService; // Changed from GooglePlacesService
     private final ModelMapper modelMapper;
+    private final DayPlanRepository dayPlanRepository;
     
     @Transactional
     public List<HotelResponseDTO> searchHotelsAlongRoute(HotelSearchRequestDTO searchRequest) {
@@ -159,6 +161,13 @@ public class HotelService {
         booking.setTotalPrice(bookingRequest.getPaymentAmount());
         booking.setSpecialRequests(bookingRequest.getSpecialRequests());
         booking.setBookingStatus(HotelBooking.BookingStatus.CONFIRMED);
+        
+        // Set day plan if provided
+        if (bookingRequest.getDayPlanId() != null) {
+            DayPlan dayPlan = dayPlanRepository.findById(bookingRequest.getDayPlanId())
+                .orElseThrow(() -> new RuntimeException("DayPlan not found"));
+            booking.setDayPlan(dayPlan);
+        }
         
         // Create fake payment info
         PaymentInfo paymentInfo = createFakePaymentInfo(bookingRequest);
@@ -427,7 +436,7 @@ public class HotelService {
             dto.setCurrencyCode(booking.getPaymentInfo().getCurrencyCode());
             dto.setTransactionId(booking.getPaymentInfo().getTransactionId());
         }
-        
+        dto.setDayPlanId(booking.getDayPlan() != null ? booking.getDayPlan().getId() : null);
         return dto;
     }
     

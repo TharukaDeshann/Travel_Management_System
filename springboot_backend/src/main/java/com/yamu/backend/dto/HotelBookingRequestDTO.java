@@ -82,4 +82,6 @@ public class HotelBookingRequestDTO {
     @NotBlank(message = "Currency code is required")
     @Size(min = 3, max = 3, message = "Currency code must be 3 characters")
     private String currencyCode;
+
+    private Long dayPlanId;
 }

@@ -17,9 +17,7 @@ class WebSocketService {
   initialize() {
     this.client = new Client({
       webSocketFactory: () => new SockJS('http://localhost:8080/ws'),
-      connectHeaders: {
-        Authorization: `Bearer ${localStorage.getItem('token')}`
-      },
+      // No Authorization header needed; JWT will be sent via cookies
       reconnectDelay: this.connectionState.reconnectDelay,
       heartbeatIncoming: 10000,
       heartbeatOutgoing: 10000,
@@ -53,14 +51,7 @@ class WebSocketService {
     }
 
     return new Promise((resolve, reject) => {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        reject(new Error('No authentication token available'));
-        return;
-      }
-
-      this.client.connectHeaders = { Authorization: `Bearer ${token}` };
-
+      // No token needed; cookies will be sent automatically
       const onConnect = () => {
         this.connectionState.isConnected = true;
         this.connectionState.retryCount = 0;
@@ -131,7 +122,7 @@ class WebSocketService {
       this.client.publish({
         destination,
         body: JSON.stringify(body),
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+        // No Authorization header needed; JWT will be sent via cookies
       });
       return true;
     } catch (error) {

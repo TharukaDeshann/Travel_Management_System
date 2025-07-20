@@ -63,7 +63,10 @@ public class GuideReservationByTravelerController {
                 .map(this::convertDayDetailToDto)
                 .collect(Collectors.toList()));
         }
-        
+
+        // Map day plan ID if available
+        dto.setDayPlanId(reservation.getDayPlan() != null ? reservation.getDayPlan().getId() : null);
+
         return dto;
     }
 
@@ -148,5 +151,13 @@ public class GuideReservationByTravelerController {
             reservationId, 
             request.get("estimatedPrice"));
         return ResponseEntity.ok(convertToDto(reservation));
+    }
+
+    @GetMapping("/by-dayplan/{dayPlanId}")
+    public ResponseEntity<GuideReservationResponse> getByDayPlan(@PathVariable Long dayPlanId) {
+        return reservationService.getByDayPlanId(dayPlanId)
+            .map(this::convertToDto)
+            .map(ResponseEntity::ok)
+            .orElse(ResponseEntity.notFound().build());
     }
 }

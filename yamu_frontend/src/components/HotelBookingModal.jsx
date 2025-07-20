@@ -9,8 +9,9 @@ const HotelBookingModal = ({
   availability, 
   checkInDate, 
   checkOutDate,
-  onBookingComplete ,
-  travelerId
+  onBookingComplete,
+  travelerId,
+  dayPlanId // <-- add this
 }) => {
   const [bookingData, setBookingData] = useState({
     guestName: '',
@@ -133,7 +134,8 @@ const HotelBookingModal = ({
         cardholderName: paymentData.cardHolderName,
         cardLastFour: paymentData.cardNumber.slice(-4),
         paymentAmount: total.grandTotal,
-        currencyCode: "LKR"
+        currencyCode: "LKR",
+        dayPlanId: dayPlanId // <-- add this
       };
 
       console.log('📝 Creating hotel booking:', bookingRequest,travelerId);

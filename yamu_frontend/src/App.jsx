@@ -33,7 +33,8 @@ import ProfileView from "./pages/ProfileView.jsx";
 import AdminDashboard from "./pages/AdminDashboard.jsx";
 import UsersSocialPage from "./pages/UsersSocialPage.jsx";
 import SpeechToTextDemo from "./pages/SpeechToTextDemo.jsx";
-
+import UserSearch from "./components/UserSearch.jsx";
+import EmergencyContacts from "./pages/EmergencyContacts.jsx";
 
 
 const App = () => {

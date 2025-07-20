@@ -1,6 +1,12 @@
 import React from "react";
 
-const ConfirmDriverSelection = ({ driver, onConfirm, onCancel }) => (
+const ConfirmDriverSelection = ({
+  driver,
+  totalCost,
+  distanceKm,
+  onConfirm,
+  onCancel,
+}) => (
   <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-[1030]">
     <div className="bg-white p-8 rounded-lg shadow-2xl w-full max-w-md">
       <div className="flex flex-col items-center">
@@ -21,9 +27,15 @@ const ConfirmDriverSelection = ({ driver, onConfirm, onCancel }) => (
         <div className="text-lg font-semibold text-blue-900">
           {driver.name}
         </div>
-        <div className="text-sm text-gray-500 mb-1">
-          <span className="mr-2">Rating: {driver.rating}</span>
-          <span>| {driver.vehicleType}</span>
+        <div className="text-sm text-gray-500 mb-1 flex flex-col items-center text-center">
+          <div>
+            <span className="mr-2">Rating: {driver.rating}</span>
+            <span>| {driver.vehicleType}</span>
+          </div>
+          <div>
+            <span>Distance: {distanceKm} km </span>
+            <span>| Total Cost: Rs.{totalCost.toFixed(2)}</span>
+          </div>
         </div>
         <div className="flex gap-4 mt-4 w-full">
           <button

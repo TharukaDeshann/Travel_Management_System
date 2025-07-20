@@ -30,6 +30,10 @@ public class HotelBooking {
     @JoinColumn(name = "traveler_id", nullable = false)
     private Traveler traveler;
     
+    @ManyToOne
+    @JoinColumn(name = "day_plan_id")
+    private DayPlan dayPlan;
+    
     @Column(name = "check_in_date", nullable = false)
     private LocalDate checkInDate;
     

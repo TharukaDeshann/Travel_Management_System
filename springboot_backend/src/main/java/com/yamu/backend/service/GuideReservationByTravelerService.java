@@ -5,13 +5,16 @@ import com.yamu.backend.enums.UserRole;
 import com.yamu.backend.model.*;
 import com.yamu.backend.repository.GuideReservationByTravelerRepository;
 import com.yamu.backend.repository.UserRepository;
+import com.yamu.backend.repository.DayPlanRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.Optional;
 
 // Service class for managing guide reservations made by travelers
 @Service
@@ -19,6 +22,9 @@ public class GuideReservationByTravelerService {
 
     private final GuideReservationByTravelerRepository reservationRepository;
     private final UserRepository userRepository;
+
+    @Autowired
+    private DayPlanRepository dayPlanRepository;
 
     // Constructor to inject dependencies
     public GuideReservationByTravelerService(
@@ -53,6 +59,12 @@ public class GuideReservationByTravelerService {
         reservation.setGuide(guide);
         reservation.setNumberOfDays(request.getDayDetails().size());
         reservation.setStatus(GuideReservationByTraveler.ReservationStatus.PENDING);
+
+        if (request.getDayPlanId() != null) {
+            DayPlan dayPlan = dayPlanRepository.findById(request.getDayPlanId())
+                .orElseThrow(() -> new RuntimeException("DayPlan not found"));
+            reservation.setDayPlan(dayPlan);
+        }
 
         List<GuideReservationDayDetail> dayDetails = request.getDayDetails().stream()
                 .map(detail -> {
@@ -103,5 +115,9 @@ public class GuideReservationByTravelerService {
         reservation.setEstimatedPrice(estimatedPrice);
         reservation.setUpdatedAt(LocalDateTime.now());
         return reservationRepository.save(reservation);
+    }
+
+    public Optional<GuideReservationByTraveler> getByDayPlanId(Long dayPlanId) {
+        return reservationRepository.findByDayPlanId(dayPlanId);
     }
 }

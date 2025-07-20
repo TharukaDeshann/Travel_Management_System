@@ -35,7 +35,12 @@ const DriverDetailsCard = ({ summary, expanded, onExpand, onSelect }) => {
             <span className="inline-block px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 mr-2">
               {summary.rating} ★
             </span>
-            {summary.vehicleType}
+            <span className="inline-block px-2 py-0.5 rounded-full bg-green-100 text-green-700">
+              {summary.vehicleType}
+            </span>
+            <span className="ml-2 text-gray-600">
+              Rs.{summary.ratePerLng}/Km
+            </span>
           </div>
         </div>
         <button
@@ -71,6 +76,14 @@ const DriverDetailsCard = ({ summary, expanded, onExpand, onSelect }) => {
                 </span>
                 <span className="block text-gray-700">
                   {details.vehicleNumber}
+                </span>
+              </div>
+              <div className="mb-2">
+                <span className="block text-sm text-gray-500 mb-1">
+                  Rate per Km
+                </span>
+                <span className="block text-gray-700">
+                  Rs.{details.ratePerLng}
                 </span>
               </div>
               <button

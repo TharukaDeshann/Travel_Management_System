@@ -15,6 +15,8 @@ public class CreateReservationRequest {
     @NotEmpty(message = "At least one day detail is required")
     private List<DayDetail> dayDetails;
 
+    private Long dayPlanId; // Optional, can be null
+
     // Getters and Setters
     public Long getTravelerId() {
         return travelerId;
@@ -38,6 +40,14 @@ public class CreateReservationRequest {
 
     public void setDayDetails(List<DayDetail> dayDetails) {
         this.dayDetails = dayDetails;
+    }
+
+    public Long getDayPlanId() {
+        return dayPlanId;
+    }
+
+    public void setDayPlanId(Long dayPlanId) {
+        this.dayPlanId = dayPlanId;
     }
 
     // Inner class representing details for each day of the reservation

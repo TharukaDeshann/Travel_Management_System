@@ -214,7 +214,7 @@ const SpeechToTextDemo = () => {
   return (
     <div style={{ maxWidth: 520, margin: "40px auto", padding: 0, border: "none", borderRadius: 18, background: "#f7fafd", boxShadow: "0 4px 24px 0 rgba(60,60,120,0.10)" }}>
       <div style={{ padding: 32, borderRadius: 18, background: "#fff", border: "1px solid #e3e8f0" }}>
-        <h2 style={{ textAlign: 'center', fontWeight: 700, fontSize: 28, marginBottom: 8, color: '#2d3a4a', letterSpacing: 0.5 }}>Speech to Text Demo</h2>
+        <h2 style={{ textAlign: 'center', fontWeight: 700, fontSize: 28, marginBottom: 8, color: '#2d3a4a', letterSpacing: 0.5 }}>Speech to Text </h2>
         {/* Credentials input fields */}
         <div style={{ marginBottom: 8 }}>
           <label style={{ display: "block", marginBottom: 4, fontWeight: 500, color: '#2d3a4a' }}>
@@ -356,7 +356,7 @@ const SpeechToTextDemo = () => {
         `}</style>
         <div style={{ marginTop: 32, fontSize: 14, color: '#888', textAlign: 'center', lineHeight: 1.7 }}>
           <div>• Try Sri Lankan place names, botanical gardens, and tourist attractions for best results.</div>
-          <div>• You can change credentials above for different Azure accounts.</div>
+          <div>• have credentials for  Azure accounts.</div>
           <div>• The phrase list is optimized for Sri Lankan travel demo.</div>
         </div>
       </div>

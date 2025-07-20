@@ -4,7 +4,6 @@ import com.yamu.backend.security.JwtAuthenticationFilter;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -17,6 +16,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.http.HttpMethod;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -26,7 +26,6 @@ import java.util.List;
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
-
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
     public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter) {
@@ -52,47 +51,51 @@ public class SecurityConfig {
             .csrf(AbstractHttpConfigurer::disable)
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .authorizeHttpRequests(auth -> auth
-                // Public endpoints - NO AUTHENTICATION REQUIRED FOR DEMO
-                .requestMatchers("/api/auth/**").permitAll()
-                .requestMatchers("/api/day-plans/**").permitAll()
-                .requestMatchers("/api/day-plan-guides/**").permitAll()
-                .requestMatchers("/api/reservations/**").permitAll()
-                .requestMatchers("/api/users/**").permitAll()
+                // Public endpoints (your workload)
+                .requestMatchers("/api/itineraries/**").permitAll()  // Itineraries public
+                .requestMatchers("/api/day-plans/**").permitAll()     // Day-plans public
+
+                // Public endpoints (from GitHub)
                 .requestMatchers("/api/drivers/**").permitAll()
                 .requestMatchers("/api/weather/**").permitAll()
                 .requestMatchers("/api/hotels/**").permitAll()
                 .requestMatchers("/api/hotels/bookings/**").permitAll()
                 .requestMatchers("/h2-console/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/reviews/**").permitAll()
+                .requestMatchers("/ws/**", "/app/**", "/topic/**", "/queue/**", "/user/**").permitAll()
+                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                .requestMatchers(
+                    "/api/auth/login", 
+                    "/api/auth/register",
+                    "/api/auth/refresh-token", 
+                    "/api/auth/user", 
+                    "/api/auth/me", 
+                    "/api/locations/**", 
+                    "/api/auth/verify-email", 
+                    "/api/auth/resend-verification"
+                ).permitAll()
+
+                // Protected endpoints (from GitHub)
                 .requestMatchers(HttpMethod.POST, "/api/reviews/**").authenticated()
                 .requestMatchers(HttpMethod.DELETE, "/api/reviews/**").authenticated()
-                .requestMatchers("/ws/**", "/app/**", "/topic/**", "/queue/**", "/user/**").permitAll()
-                .requestMatchers("/api/auth/login", "/api/auth/register",
-                        "/api/auth/refresh-token", "/api/auth/user", "api/auth/me", 
-                        "/api/locations/**", "/api/auth/verify-email", "api/auth/resend-verification",
-                        "/api/itineraries/**", "/api/dayplans/**")
-                .permitAll()
                 .requestMatchers(HttpMethod.PUT, "/api/users/{id}").authenticated()
                 .requestMatchers(HttpMethod.PUT, "/api/users/{id}/update-email").authenticated()
                 .requestMatchers(HttpMethod.PUT, "/api/users/{id}/update-password").authenticated()
-                .requestMatchers(HttpMethod.PUT, "/api/itineraries/{id}").authenticated()
-                
-                // Protected endpoints
-                .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                .requestMatchers("/api/admin/**", "/api/admin/travelers/**","/api/search/**").hasRole("ADMIN")
                 .requestMatchers("/api/guide/**").hasAnyRole("GUIDE", "ADMIN", "TRAVELER")
                 .requestMatchers("/api/traveler/**").hasRole("TRAVELER")
-                .requestMatchers("/api/users/**", "/api/search/**").hasAnyRole("ADMIN", "GUIDE", "TRAVELER")
-                .requestMatchers("/api/itineraries/**").hasRole("TRAVELER") // Restrict itineraries to TRAVELER
+                .requestMatchers("/api/users/**").hasAnyRole("ADMIN", "GUIDE", "TRAVELER")
 
-                // All other endpoints require authentication
+                // Default to authenticated
                 .anyRequest().authenticated()
             )
             .exceptionHandling(ex -> ex
-                .authenticationEntryPoint((req, res, ex2) -> res.sendError(HttpServletResponse.SC_UNAUTHORIZED,
-                        "Authentication required")))
-            .sessionManagement(sess -> sess
-                .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                .authenticationEntryPoint((req, res, ex2) -> res.sendError(
+                    HttpServletResponse.SC_UNAUTHORIZED,
+                    "Authentication required"))
             )
+            .sessionManagement(sess -> sess
+                .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
             .headers(headers -> headers.frameOptions().disable());
 
@@ -103,7 +106,6 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(List.of("http://localhost:5173"));
-
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);

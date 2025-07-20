@@ -157,7 +157,7 @@ public class AuthController {
                     .httpOnly(true)
                     .secure(false) // set to true in production with HTTPS
                     .path("/")
-                    .maxAge(60)
+                    .maxAge(900)
                     .sameSite("Strict")
                     .build();
 
@@ -202,9 +202,9 @@ public class AuthController {
 
                 ResponseCookie accessTokenCookie = ResponseCookie.from("accessToken", newAccessToken)
                         .httpOnly(true)
-                        .secure(true)
+                        .secure(false)
                         .path("/")
-                        .maxAge(60)
+                        .maxAge(900)
                         .sameSite("Strict")
                         .build();
 
@@ -275,7 +275,13 @@ public class AuthController {
     }
 
     @GetMapping("/me")
-    public ResponseEntity<?> getCurrentUser(@CookieValue(value = "accessToken", required = false) String accessToken) {
+    public ResponseEntity<?> getCurrentUser(
+        @CookieValue(value = "accessToken", required = false) String accessToken,
+        @RequestHeader(value = "Authorization", required = false) String authHeader
+    ) {
+        if (accessToken == null && authHeader != null && authHeader.startsWith("Bearer ")) {
+            accessToken = authHeader.substring(7);
+        }
         if (accessToken == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Access token is missing"));
         }

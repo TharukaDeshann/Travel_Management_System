@@ -28,6 +28,11 @@ public class GuideReservationByTraveler {
     @JoinColumn(name = "guide_id", nullable = false)
     private User guide;
 
+    // Many-to-one relationship with the DayPlan entity
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "day_plan_id", nullable = true)
+    private DayPlan dayPlan;
+
     // Number of days for the reservation
     @Column(nullable = false)
     private Integer numberOfDays;

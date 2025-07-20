@@ -6,7 +6,6 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-
 import org.springframework.lang.NonNull;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -14,10 +13,8 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
-
 import com.yamu.backend.service.TokenBlacklistService;
 import com.yamu.backend.util.JwtUtil;
-
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Optional;
@@ -29,20 +26,23 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final UserDetailsService userDetailsService;
     private final TokenBlacklistService tokenBlacklistService;
 
-    public JwtAuthenticationFilter(JwtUtil jwtUtil, UserDetailsService userDetailsService, TokenBlacklistService tokenBlacklistService) {
+    public JwtAuthenticationFilter(JwtUtil jwtUtil, 
+                                 UserDetailsService userDetailsService,
+                                 TokenBlacklistService tokenBlacklistService) {
         this.jwtUtil = jwtUtil;
         this.userDetailsService = userDetailsService;
         this.tokenBlacklistService = tokenBlacklistService;
     }
 
     @Override
-    protected void doFilterInternal(@NonNull HttpServletRequest request, 
-                                  @NonNull HttpServletResponse response, 
-                                  @NonNull FilterChain chain)
-            throws ServletException, IOException {
-
+    protected void doFilterInternal(
+            @NonNull HttpServletRequest request,
+            @NonNull HttpServletResponse response,
+            @NonNull FilterChain chain
+    ) throws ServletException, IOException {
+        
         String token = extractToken(request);
-
+        
         if (token == null) {
             chain.doFilter(request, response);
             return;
@@ -71,11 +71,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
             UserDetails userDetails = userDetailsService.loadUserByUsername(email);
-
+            
             if (jwtUtil.validateToken(token, userDetails.getUsername())) {
                 var authToken = new org.springframework.security.authentication.UsernamePasswordAuthenticationToken(
                         userDetails, null, userDetails.getAuthorities());
-
                 authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                 SecurityContextHolder.getContext().setAuthentication(authToken);
             }
@@ -88,19 +87,19 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     protected boolean shouldNotFilter(@NonNull HttpServletRequest request) {
         String path = request.getServletPath();
         return path.equals("/api/auth/login") 
-            || path.equals("/api/auth/refresh-token")
-            || path.startsWith("/api/day-plans")
-            || path.startsWith("/api/day-plan-guides")
-            || path.startsWith("/api/reservations")
-            || path.startsWith("/api/users");
+                || path.equals("/api/auth/refresh-token")
+                || path.startsWith("/api/itineraries")  // Keep itineraries public
+                || path.startsWith("/api/day-plans");    // Keep day-plans public
     }
 
     private String extractToken(HttpServletRequest request) {
+        // Check Authorization header
         String authHeader = request.getHeader("Authorization");
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             return authHeader.substring(7);
         }
 
+        // Check cookies
         if (request.getCookies() != null) {
             Optional<Cookie> accessTokenCookie = Arrays.stream(request.getCookies())
                     .filter(cookie -> "accessToken".equals(cookie.getName()))

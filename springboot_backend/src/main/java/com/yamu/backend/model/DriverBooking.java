@@ -35,5 +35,12 @@ public class DriverBooking {
     private Double endLocationLat;
     private Double endLocationLon;
 
+    private Double travelCost;    // Total cost for this booking
+    private Double travelLength;  // Total distance in KM
+
+    @ManyToOne
+    @JoinColumn(name = "day_plan_id")
+    private DayPlan dayPlan;
+
     // Getters and Setters (if not using Lombok)
 }

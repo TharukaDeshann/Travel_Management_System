@@ -12,9 +12,6 @@ export const searchLocations = async (query) => {
         params: {
           format: 'json',
           q: query
-        },
-        headers: {
-          'User-Agent': 'YourAppName/1.0'
         }
       }
     );

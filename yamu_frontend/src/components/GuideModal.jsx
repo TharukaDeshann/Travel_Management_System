@@ -6,7 +6,18 @@ import { fetchLoggedInUser } from '../services/authService';
 import ReviewModal from './ReviewModal';
 import { useUser } from '../context/UserContext';
 
-const GuideModal = ({ guide, onClose, currentUser, prefillDate, prefillPlaces }) => {
+const GuideModal = ({
+  guide,
+  onClose,
+  currentUser,
+  prefillDate,
+  prefillPlaces,
+  itineraryId,
+  dayIndex,
+  travelerId,
+  dayPlanId,
+  onBookingComplete
+}) => {
   const [activeTab, setActiveTab] = useState('details');
   const [numberOfDays, setNumberOfDays] = useState(1);
   const [reservationDetails, setReservationDetails] = useState(
@@ -33,6 +44,8 @@ const GuideModal = ({ guide, onClose, currentUser, prefillDate, prefillPlaces })
   const location = useLocation();
   const { user } = useUser();
   const loggedUser = currentUser || user;
+  const [showAwaitConfirmation, setShowAwaitConfirmation] = useState(false);
+  const [reservationResult, setReservationResult] = useState(null);
 
   // Fetch reviews when guide is selected
   useEffect(() => {
@@ -44,7 +57,6 @@ const GuideModal = ({ guide, onClose, currentUser, prefillDate, prefillPlaces })
       setIsLoadingReviews(true);
       const response = await apiClient.get(`/api/reviews/guide/${guide.id}`);
       setReviews(response.data || []);
-      
       const ratingResponse = await apiClient.get(`/api/reviews/guide/${guide.id}/average-rating`);
       setAverageRating(ratingResponse.data);
     } catch (error) {
@@ -67,7 +79,6 @@ const GuideModal = ({ guide, onClose, currentUser, prefillDate, prefillPlaces })
       }
     };
     loadUser();
-    
     // Pre-fill the form with itinerary data
     if (prefillDate && prefillPlaces && prefillPlaces.length > 0) {
       const updatedDetails = [...reservationDetails];
@@ -161,7 +172,7 @@ const GuideModal = ({ guide, onClose, currentUser, prefillDate, prefillPlaces })
     }
   };
 
-  // UPDATED HANDLE SUBMIT FUNCTION
+  // --- MODIFIED handleSubmit ---
   const handleSubmit = async () => {
     if (isLoadingUser) {
       setError('Please wait while we load your user data');
@@ -211,7 +222,7 @@ const GuideModal = ({ guide, onClose, currentUser, prefillDate, prefillPlaces })
 
     try {
       const reservationData = {
-        travelerId: userToUse.id,
+        travelerId: travelerId || userToUse.id,
         guideId: guide.id,
         dayDetails: reservationDetails.map((detail, index) => ({
           dayNumber: index + 1,
@@ -220,40 +231,44 @@ const GuideModal = ({ guide, onClose, currentUser, prefillDate, prefillPlaces })
           numberOfTravelers: detail.travelers,
           vehicleRequested: detail.vehicleRequested,
           vehicleDetails: detail.vehicleDetails
-        }))
+        })),
+        dayPlanId: dayPlanId // <-- INCLUDED HERE
       };
 
-      const response = await apiClient.post('/api/reservations', reservationData);
+      // Create reservation
+      const reservationResponse = await apiClient.post('/api/reservations', reservationData);
+      const reservation = reservationResponse.data;
+      setReservationResult(reservation);
 
-      // CRITICAL UPDATE: Handle itinerary flow
-      if (location.state?.fromItinerary) {
-        // Navigate back to map with reservation result
-        navigate('/map', {
-          state: {
-            guideReservationResult: {
-              dayIndex: location.state.dayIndex,
-              reservation: response.data
-            },
-            // Pass back all original state
-            itineraryId: location.state.itineraryId,
-            dates: location.state.dates,
-            tripTitle: location.state.tripTitle,
-            budget: location.state.budget,
-            currency: location.state.currency,
-            travelerId: location.state.travelerId
-          }
-        });
-      } else {
-        // Normal flow
-        onClose();
-        alert('Reservation request sent successfully!');
-      }
+      // Show "await confirmation" dialog
+      setShowAwaitConfirmation(true);
     } catch (err) {
       console.error('Reservation failed:', err);
-      setError(err.response?.data?.message || 'Failed to submit reservation. Please try again.');
+      setError(err.response?.data?.message || err.message || 'Failed to submit reservation. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  // Handler for OK button in the confirmation dialog
+  const handleAwaitConfirmationOk = async () => {
+    if (reservationResult && dayPlanId) {
+      // Find the correct day detail for this day
+      const dayDetail = (reservationResult.dayDetails || []).find(
+        d => d.date === prefillDate
+      );
+      if (dayDetail) {
+        try {
+          // The backend now handles linking the reservation to the day plan.
+          // No need to call a separate service here.
+        } catch (err) {
+          // Optionally show error
+        }
+      }
+    }
+    setShowAwaitConfirmation(false);
+    onClose && onClose();
+    onBookingComplete && onBookingComplete();
   };
 
   const renderStars = (rating) => {
@@ -767,6 +782,20 @@ const GuideModal = ({ guide, onClose, currentUser, prefillDate, prefillPlaces })
           )}
         </div>
       </div>
+      {showAwaitConfirmation && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[1100]">
+          <div className="bg-white rounded-lg p-8 shadow-lg text-center">
+            <h2 className="text-xl font-bold mb-4">Await Guide Confirmation</h2>
+            <p className="mb-6">Your reservation has been sent. Please wait for the guide to confirm.</p>
+            <button
+              className="px-6 py-2 bg-blue-600 text-white rounded-lg"
+              onClick={handleAwaitConfirmationOk}
+            >
+              OK
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

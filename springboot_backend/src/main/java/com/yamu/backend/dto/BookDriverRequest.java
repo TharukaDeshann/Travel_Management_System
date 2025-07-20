@@ -5,5 +5,8 @@ public record BookDriverRequest(
         String date,
         Long travelerId,
         LocationDTO startLocation,
-        LocationDTO endLocation
+        LocationDTO endLocation,
+        Double travelCost,
+        Double travelLength,
+        Long dayPlanId
 ) {}

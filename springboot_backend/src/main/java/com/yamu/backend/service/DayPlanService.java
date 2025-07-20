@@ -20,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Date;
 
 @Service
 public class DayPlanService {
@@ -100,6 +101,10 @@ public class DayPlanService {
         
         // Build response with all details
         return buildDayPlanResponse(dayPlan);
+    }
+
+    public DayPlan getDayPlanByItineraryIdAndDate(Long itineraryId, Date date) {
+        return dayPlanRepository.findByItineraryIdAndDate(itineraryId, date);
     }
     
     private DayPlanDetailResponse buildDayPlanResponse(DayPlan dayPlan) {

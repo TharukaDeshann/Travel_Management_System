@@ -18,6 +18,7 @@
     "debounce": "^2.2.0",
     "formik": "^2.4.6",
     "framer-motion": "^12.9.4",
+    "html2pdf.js": "^0.10.3",
     "leaflet": "^1.9.4",
     "leaflet-routing-machine": "^3.2.12",
     "lucide-react": "^0.475.0",

@@ -7,8 +7,10 @@ import com.yamu.backend.dto.DriverSummaryDTO;
 import com.yamu.backend.dto.DriverBookingResponseDTO;
 import com.yamu.backend.model.Driver;
 import com.yamu.backend.model.DriverBooking;
+import com.yamu.backend.model.DayPlan;
 import com.yamu.backend.repository.DriverBookingRepository;
 import com.yamu.backend.repository.DriverRepository;
+import com.yamu.backend.repository.DayPlanRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -25,6 +27,9 @@ public class DriverController {
 
     @Autowired
     private DriverBookingRepository bookingRepository;
+
+    @Autowired
+    private DayPlanRepository dayPlanRepository;
 
     // List available drivers for a day
     @GetMapping("/available")
@@ -59,6 +64,8 @@ public class DriverController {
         booking.setBookingDate(bookingDate);
         booking.setTravelerId(req.travelerId());
         booking.setStatus("BOOKED");
+        booking.setTravelCost(req.travelCost());
+        booking.setTravelLength(req.travelLength());
 
         // Set start and end location details
         if (req.startLocation() != null) {
@@ -71,7 +78,12 @@ public class DriverController {
             booking.setEndLocationLat(req.endLocation().latitude());
             booking.setEndLocationLon(req.endLocation().longitude());
         }
-
+        // Set day plan if provided
+        if (req.dayPlanId() != null) {
+            DayPlan dayPlan = dayPlanRepository.findById(req.dayPlanId())
+                .orElseThrow(() -> new RuntimeException("DayPlan not found"));
+            booking.setDayPlan(dayPlan);
+        }
         bookingRepository.save(booking);
         return "BOOKED";
     }

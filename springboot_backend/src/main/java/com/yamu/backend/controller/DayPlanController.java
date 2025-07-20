@@ -21,4 +21,26 @@ public class DayPlanController {
          DayPlanDetailResponse response = dayPlanService.createDayPlan(itineraryId, request);
         return ResponseEntity.ok(response);
     }
+
+    @GetMapping("/itinerary/{itineraryId}/date/{date}")
+    public ResponseEntity<DayPlanDetailResponse> getDayPlanByItineraryIdAndDate(
+            @PathVariable Long itineraryId,
+            @PathVariable String date) {
+        try {
+            java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyy-MM-dd");
+            java.util.Date parsedDate = sdf.parse(date);
+            var dayPlan = dayPlanService.getDayPlanByItineraryIdAndDate(itineraryId, parsedDate);
+            if (dayPlan == null) return ResponseEntity.notFound().build();
+            // Reuse buildDayPlanResponse for DTO
+            DayPlanDetailResponse response = new DayPlanDetailResponse();
+            response.setId(dayPlan.getId());
+            response.setDate(dayPlan.getDate());
+            response.setHotelDetails(dayPlan.getHotelDetails());
+            response.setTransportDetails(dayPlan.getTransportDetails());
+            // Optionally add locations/route if needed
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
 }

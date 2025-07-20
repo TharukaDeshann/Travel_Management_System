@@ -37,4 +37,6 @@ public class HotelBookingResponseDTO {
     private LocalDateTime paymentTimestamp;
     private String currencyCode;
     private String transactionId;
+
+    private Long dayPlanId;
 }

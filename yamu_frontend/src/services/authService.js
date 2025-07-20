@@ -1,82 +1,43 @@
 import axios from "axios";
+const API_URL = "http://localhost:8080/api/auth";
 import apiClient from "./axiosInstance";
 
-const API_URL = "http://localhost:8080/api/auth";
-
-// Save token in localStorage
-const saveAccessToken = (token) => {
-  localStorage.setItem("accessToken", token);
-};
-
-const getAccessToken = () => {
-  return localStorage.getItem("accessToken");
-};
-
-// 1️⃣ Register user
+// Register
 export const register = async (userData) => {
-  const response = await axios.post(`${API_URL}/register`, userData);
+  const response = await axios.post(`${API_URL}/register`, userData, { withCredentials: true });
   return response.data;
 };
 
-// 2️⃣ Login user and save token to localStorage
+// Login
 export const login = async (credentials) => {
-  const response = await axios.post(`${API_URL}/login`, credentials, {
-    withCredentials: true,
-  });
-
-  if (response.data.accessToken) {
-    saveAccessToken(response.data.accessToken);
-  }
-
+  // No need to handle tokens, just let cookies be set
+  const response = await axios.post(`${API_URL}/login`, credentials, { withCredentials: true });
   return response.data;
 };
 
-// 3️⃣ Fetch logged-in user using token from localStorage
+// Fetch logged-in user
 export const fetchLoggedInUser = async () => {
-  const token = getAccessToken();
-
-  if (!token) throw new Error("No access token found");
-
-  const response = await apiClient.get(`${API_URL}/me`, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-
+  const response = await apiClient.get(`${API_URL}/me`, { withCredentials: true });
   return response.data;
 };
 
-// 4️⃣ Refresh token (optional - not used if storing in localStorage)
+// Refresh token
 export const refreshToken = async () => {
-  const response = await axios.post(`${API_URL}/refresh-token`, {}, {
-    withCredentials: true,
-  });
-
-  if (response.data.accessToken) {
-    saveAccessToken(response.data.accessToken);
-  }
-
+  const response = await axios.post(`${API_URL}/refresh-token`, {}, { withCredentials: true });
   return response.data;
 };
 
-// 5️⃣ Logout user
+// Logout
 export const logoutUser = async () => {
+  await axios.post(`${API_URL}/logout`, {}, { withCredentials: true });
+};
+
+// Check login status (optional, just try fetchLoggedInUser and handle 401)
+export const isLoggedIn = async () => {
   try {
-    await axios.post(`${API_URL}/logout`, {}, {
-      withCredentials: true,
-    });
-    localStorage.removeItem("accessToken");
-  } catch (error) {
-    console.error("Logout error:", error);
-    throw error;
+    await fetchLoggedInUser();
+    return true;
+  } catch {
+    return false;
   }
 };
-
-// 6️⃣ Check login status
-export const isLoggedIn = () => {
-  const token = getAccessToken();
-  return !!token;
-};
-
-// 7️⃣ Export token for other services like dayPlanService
-export const getStoredToken = getAccessToken;

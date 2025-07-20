@@ -18,6 +18,7 @@ public class GuideReservationResponse {
     private String createdAt;
     private String updatedAt;
     private List<DayDetailDto> dayDetails;
+    private Long dayPlanId;
 
     @Data
     public static class DayDetailDto {
