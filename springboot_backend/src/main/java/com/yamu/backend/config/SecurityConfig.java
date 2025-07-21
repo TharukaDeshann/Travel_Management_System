@@ -97,7 +97,17 @@ public class SecurityConfig {
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .headers(headers -> headers.frameOptions().disable());
+                .exceptionHandling(ex -> ex
+                        .authenticationEntryPoint((req, res, ex2) -> res.sendError(
+                                HttpServletResponse.SC_UNAUTHORIZED,
+                                "Authentication required")))
+                .sessionManagement(sess -> sess
+                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+                .headers(headers -> headers.frameOptions().disable());
 
+        return http.build();
+    }
         return http.build();
     }
 
