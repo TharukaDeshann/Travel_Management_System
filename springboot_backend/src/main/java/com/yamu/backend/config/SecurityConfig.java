@@ -51,10 +51,7 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/drivers/**").permitAll()
                         .requestMatchers("/api/weather/**").permitAll()
-                        .requestMatchers("/api/hotels/**").permitAll()
-                        .requestMatchers("/api/hotels/bookings/**").permitAll()
                         .requestMatchers("/h2-console/**").permitAll()
                         .requestMatchers("/ws/**", "/app/**", "/topic/**", "/queue/**", "/user/**").permitAll()
 
@@ -89,6 +86,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/itineraries/**").hasRole("TRAVELER") // Restrict itineraries to TRAVELER
                         .anyRequest().authenticated())
 
+
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint((req, res, ex2) -> res.sendError(
                                 HttpServletResponse.SC_UNAUTHORIZED,
@@ -97,20 +95,9 @@ public class SecurityConfig {
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .headers(headers -> headers.frameOptions().disable());
-                .exceptionHandling(ex -> ex
-                        .authenticationEntryPoint((req, res, ex2) -> res.sendError(
-                                HttpServletResponse.SC_UNAUTHORIZED,
-                                "Authentication required")))
-                .sessionManagement(sess -> sess
-                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
-                .headers(headers -> headers.frameOptions().disable());
-
         return http.build();
     }
-        return http.build();
-    }
-
+    
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();

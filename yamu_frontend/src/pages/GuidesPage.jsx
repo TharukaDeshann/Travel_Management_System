@@ -36,22 +36,8 @@ const GuidesPage = () => {
   const loggedUser = currentUser;
 
 
-  // Fetch logged-in user if not available
-  useEffect(() => {
-    const loadCurrentUser = async () => {
-      if (!currentUser) {
-        try {
-          const fetchedUser = await fetchLoggedInUser();
-          setCurrentUser(fetchedUser);
-        } catch (error) {
-          console.error('Error fetching logged-in user:', error);
-          // Don't redirect immediately, let the user browse guides
-        }
-      }
-    };
-
-    loadCurrentUser();
-  }, [currentUser]);
+ 
+ 
 
 
   useEffect(() => {
