@@ -81,6 +81,7 @@ const Analytics = () => {
 
       const summaryData = await getAnalyticsSummary();
       setGuidesSummary(summaryData);
+      console.log('Analytics Summary:', summaryData);
 
     } catch (err) {
       console.error('Error fetching analytics data:', err);
