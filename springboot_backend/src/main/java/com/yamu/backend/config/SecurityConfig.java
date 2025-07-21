@@ -51,7 +51,7 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .authorizeHttpRequests(auth -> auth
-                        // Public endpoints first
+<
                         .requestMatchers(
                                 "/api/auth/login",
                                 "/api/auth/register",
@@ -60,6 +60,7 @@ public class SecurityConfig {
                                 "/api/auth/me",
                                 "/api/locations/**",
                                 "/api/auth/verify-email",
+
                                 "/api/auth/resend-verification",
                                 "/api/facebook-events",
                                 "/error" // Explicitly allow error endpoint
@@ -76,6 +77,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         
                         // Authenticated endpoints
+
                         .requestMatchers(HttpMethod.PUT, "/api/users/{id}").authenticated()
                         .requestMatchers(HttpMethod.PUT, "/api/users/{id}/update-email").authenticated()
                         .requestMatchers(HttpMethod.PUT, "/api/users/{id}/update-password").authenticated()
@@ -97,15 +99,24 @@ public class SecurityConfig {
                         
                         // Guide role specific endpoints
                         .requestMatchers("/api/guide/reservations/**").hasRole("GUIDE")
-                        
-                        // Multi-role endpoints
-                        .requestMatchers("/api/packages/applications/**").hasAnyRole("ADMIN", "TRAVELER")
-                        .requestMatchers("/api/guide/vehicles/**").hasAnyRole("GUIDE", "TRAVELER")
+
+                        .requestMatchers("/api/guide/vehicles/**", "/api/messages/**", "/api/reviews/**",
+                                "/api/reservations/**")
+                        .hasAnyRole("GUIDE", "TRAVELER")
                         .requestMatchers("/api/guide/**").hasAnyRole("GUIDE", "ADMIN", "TRAVELER")
                         .requestMatchers("/api/users/**").hasAnyRole("ADMIN", "GUIDE", "TRAVELER")
-                        
-                        // Catch-all for other requests
+                        .requestMatchers("/api/packages/applications/**").hasAnyRole("ADMIN", "TRAVELER")
+                        .requestMatchers("/api/admin/**", "/api/admin/travelers/**", "/api/search/**").hasRole("ADMIN")
+
+                        .requestMatchers("/api/traveler/**", "/api/hotels/**", "/api/drivers/**").hasRole("TRAVELER")
+
+                        .requestMatchers("/api/users/**").hasAnyRole("ADMIN", "GUIDE", "TRAVELER")
+                        .requestMatchers("/api/itineraries/**").hasRole("TRAVELER") // Restrict itineraries to TRAVELER
                         .anyRequest().authenticated())
+
+
+                        
+                       
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint((req, res, ex2) -> res.sendError(
                                 HttpServletResponse.SC_UNAUTHORIZED,
@@ -114,10 +125,9 @@ public class SecurityConfig {
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .headers(headers -> headers.frameOptions().disable());
-
         return http.build();
     }
-
+    
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, use } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Search, MapPin, Languages, Car, Star, Users, Shield } from 'lucide-react';
 import GuideModal from '../components/GuideModal';
@@ -18,7 +18,9 @@ const GuidesPage = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
+
   const currentUser = useUser()?.user || {}; 
+
 
   const [guides, setGuides] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -33,22 +35,10 @@ const GuidesPage = () => {
   const [unreadCount, setUnreadCount] = useState(0);
   const loggedUser = currentUser;
 
-  // Fetch logged-in user if not available
-  useEffect(() => {
-    const loadCurrentUser = async () => {
-      if (!currentUser) {
-        try {
-          const fetchedUser = await fetchLoggedInUser();
-          setCurrentUser(fetchedUser);
-        } catch (error) {
-          console.error('Error fetching logged-in user:', error);
-          // Don't redirect immediately, let the user browse guides
-        }
-      }
-    };
 
-    loadCurrentUser();
-  }, [currentUser]);
+ 
+ 
+
 
   useEffect(() => {
     const fetchGuides = async () => {
@@ -141,12 +131,10 @@ const GuidesPage = () => {
 
   return (
     <Layout
-      user={loggedUser}
+      user={loggedUser || {}}
       unreadCount={unreadCount}
       onCurrencyChange={setSelectedCurrency}
       selectedCurrency={selectedCurrency}
-      navigate={navigate}
-      location={location}
     >
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
         {/* Header Section */}
