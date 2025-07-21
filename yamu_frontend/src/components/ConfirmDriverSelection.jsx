@@ -32,7 +32,7 @@ const ConfirmDriverSelection = ({
             <span>| {driver.vehicleType}</span>
           </div>
           <div>
-            <span>Distance: {distanceKm || 0} km </span>
+            <span>Distance: {distanceKm.toFixed(2) || 0} km </span>
             <span>| Total Cost: </span>
             <PriceDisplay 
               price={totalCost || 0} 
