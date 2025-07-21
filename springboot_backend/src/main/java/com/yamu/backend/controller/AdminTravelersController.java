@@ -17,6 +17,7 @@ import com.yamu.backend.enums.UserRole;
 import com.yamu.backend.model.DriverBooking;
 import com.yamu.backend.model.GuideReservationByTraveler;
 import com.yamu.backend.model.GuideReservationDayDetail;
+import com.yamu.backend.model.User;
 import com.yamu.backend.repository.DriverBookingRepository;
 import com.yamu.backend.service.GuideReservationByTravelerService;
 import com.yamu.backend.service.HotelService;
@@ -34,12 +35,14 @@ public class AdminTravelersController {
     private final HotelService hotelService;
     private final DriverBookingRepository bookingRepository;
     private final UserService userService;
+    private final UserController userController;
 
-    public AdminTravelersController(GuideReservationByTravelerService reservationService, HotelService hotelService, DriverBookingRepository bookingRepository, UserService userService) {
+    public AdminTravelersController(GuideReservationByTravelerService reservationService, HotelService hotelService, DriverBookingRepository bookingRepository, UserService userService, UserController userController) {
         this.reservationService = reservationService;
         this.hotelService = hotelService;
         this.bookingRepository = bookingRepository;
         this.userService = userService;
+        this.userController = userController;
     }
 
     private GuideReservationResponse convertToDto(GuideReservationByTraveler reservation) {
@@ -140,7 +143,7 @@ public class AdminTravelersController {
         }
     }
 
-    // Get normal users by role
+    // Get travelers
     @GetMapping("/role/TRAVELER")
     public ResponseEntity<List<UserResponseDTO>> getUsersByRole() {
         
@@ -148,9 +151,13 @@ public class AdminTravelersController {
         return ResponseEntity.ok(userService.getUsersByRole(UserRole.TRAVELER));
     }
 
-    // Delete user (soft delete)
-    @DeleteMapping("/{id}")
+    // Delete traveler (soft delete)
+    @DeleteMapping("/{id}/delete-user")
     public ResponseEntity<String> deleteUser(@PathVariable Long id) {
+        User currentUser = userController.getCurrentUser();
+        if (currentUser.getId() != id && currentUser.getRole() != UserRole.ADMIN) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You are not authorized to delete this user");
+        }
         userService.deleteUser(id);
         return ResponseEntity.ok("User deleted successfully");
     }

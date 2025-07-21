@@ -1,11 +1,14 @@
 package com.yamu.backend.service;
 
+import com.yamu.backend.controller.UserController;
 import com.yamu.backend.dto.ReviewDto;
 import com.yamu.backend.dto.ReviewResponseDto;
+import com.yamu.backend.enums.UserRole;
 import com.yamu.backend.exception.ResourceNotFoundException;
 import com.yamu.backend.exception.UnauthorizedAccessException;
 import com.yamu.backend.model.Review;
 import com.yamu.backend.model.Traveler;
+import com.yamu.backend.model.User;
 import com.yamu.backend.model.Guide;
 import com.yamu.backend.repository.ReviewRepository;
 import com.yamu.backend.repository.TravelerRepository;
@@ -25,13 +28,16 @@ public class ReviewService {
     private final ReviewRepository reviewRepository;
     private final TravelerRepository travelerRepository;
     private final GuideRepository guideRepository;
+    private final UserController userController;
 
     public ReviewService(ReviewRepository reviewRepository, 
                        TravelerRepository travelerRepository,
-                       GuideRepository guideRepository) {
+                       GuideRepository guideRepository,
+                       UserController userController) {
         this.reviewRepository = reviewRepository;
         this.travelerRepository = travelerRepository;
         this.guideRepository = guideRepository;
+        this.userController = userController;
     }
 
     @Transactional
@@ -95,7 +101,9 @@ public class ReviewService {
         Review review = reviewRepository.findById(reviewId)
             .orElseThrow(() -> new ResourceNotFoundException("Review not found with id: " + reviewId));
         
-        if (!review.getTraveler().getId().equals(userId)) {
+        User currentUser = userController.getCurrentUser();
+
+        if (!review.getTraveler().getId().equals(userId) && !currentUser.getRole().equals(UserRole.ADMIN)) {
             throw new UnauthorizedAccessException("You can only delete your own reviews");
         }
         

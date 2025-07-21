@@ -11,7 +11,6 @@ import com.azure.core.credential.AzureKeyCredential;
 import com.azure.search.documents.SearchClient;
 import com.azure.search.documents.SearchClientBuilder;
 import com.azure.search.documents.models.SearchOptions;
-import com.azure.search.documents.models.SuggestOptions;
 import com.azure.search.documents.util.SearchPagedIterable;
 import com.azure.search.documents.util.SuggestPagedIterable;
 import com.azure.search.documents.models.SearchResult;

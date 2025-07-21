@@ -6,6 +6,7 @@ import { fetchLoggedInUser, logoutUser } from "../../services/authService";
 import { useNotification } from "../../hooks/useNotification";
 import { uploadImage } from "../../services/imageUploadService";
 import VehicleManagement from "../../components/VehicleManagement";
+import BackButton from "../../components/BackButton";
 
 const UserProfile = () => {
   const { user, setUser } = useUser();
@@ -110,6 +111,7 @@ const UserProfile = () => {
   if (!user) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-cyan-50 flex items-center justify-center">
+        <BackButton />
         <div className="text-center bg-white rounded-2xl shadow-xl p-8 max-w-md mx-4">
           <div className="w-20 h-20 bg-gradient-to-r from-indigo-500 to-cyan-500 rounded-full flex items-center justify-center mx-auto mb-6">
             <User className="w-10 h-10 text-white" />
@@ -128,6 +130,7 @@ const UserProfile = () => {
   }
 
   return (
+    
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-cyan-50">
       {/* Enhanced Header Section */}
       <div className="bg-white/80 backdrop-blur-sm shadow-lg border-b border-gray-100">
@@ -290,9 +293,9 @@ const UserProfile = () => {
               </div>
             </div>
           </div>
-
           {/* Enhanced Right Column - Detailed Information */}
           <div className="lg:col-span-2">
+            
             {user.role === "GUIDE" && (
               <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl p-8 mb-8 border border-gray-100">
                 <div className="flex items-center space-x-3 mb-6">
@@ -377,6 +380,8 @@ const UserProfile = () => {
               </div>
             )}
 
+          
+
             {/* Enhanced Vehicle Management Section for Guides */}
             {user.role === "GUIDE" && (
               <div className="bg-gradient-to-r from-indigo-50 via-white to-cyan-50 rounded-2xl shadow-xl p-8 border border-gray-100">
@@ -408,6 +413,7 @@ const UserProfile = () => {
                 </div>
               </div>
             )}
+            <BackButton />
           </div>
         </div>
       </div>

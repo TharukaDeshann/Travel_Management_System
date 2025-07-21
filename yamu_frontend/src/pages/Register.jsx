@@ -186,8 +186,7 @@ const Register = () => {
         }).join(", "); // Join multiple languages with comma and space
       }
       
-      // Convert vehicle availability to integer
-      transformedValues.vehicleAvailability = values.vehicleAvailability ? 1 : 0;
+      
     }
     
     // For TRAVELER role
@@ -197,8 +196,7 @@ const Register = () => {
         transformedValues.nationality = countryMap[values.nationality];
       }
       
-      // Remove unnecessary vehicleAvailability for TRAVELER
-      delete transformedValues.vehicleAvailability;
+      
     }
     
     // Combine data from both steps
@@ -208,7 +206,6 @@ const Register = () => {
     };
     
     try {
-      console.log("Registering user with payload:", payload);
       await register(payload);
       message.success("Registration successful! Please check your email to verify your account.");
       navigate('/verify-email-pending'); // Page with "Check your inbox" message
@@ -279,7 +276,6 @@ const Register = () => {
         initialValues={{
           // Set initial values from stored data when returning to step 1
           ...formData,
-          vehicleAvailability: false // Default value for switch
         }}
       >
         {step === 0 && (
@@ -572,18 +568,7 @@ const Register = () => {
                   </Form.Item>
                 </Col>
                 
-                <Col span={24}>
-                  <Form.Item 
-                    name="vehicleAvailability" 
-                    valuePropName="checked"
-                    style={{ marginBottom: 24 }}
-                  >
-                    <Switch 
-                      checkedChildren="Vehicle Available" 
-                      unCheckedChildren="No Vehicle" 
-                    />
-                  </Form.Item>
-                </Col>
+                
               </>
             )}
 

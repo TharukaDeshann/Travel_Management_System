@@ -4,8 +4,6 @@ import com.yamu.backend.dto.UserLoginRequest;
 import com.yamu.backend.dto.UserRegistrationRequest;
 import com.yamu.backend.dto.UserResponseDTO;
 import com.yamu.backend.enums.UserRole;
-import com.yamu.backend.model.Guide;
-import com.yamu.backend.model.Traveler;
 import com.yamu.backend.model.User;
 import com.yamu.backend.repository.UserRepository;
 import com.yamu.backend.service.EmailService;
@@ -21,7 +19,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.server.ResponseStatusException;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolation;

@@ -2,13 +2,15 @@ import React, { useState, useEffect } from 'react';
 import { UpdateUserDetails } from '../../../services/userService'; 
 import useNotification from '../../../hooks/useNotification';
 import { useUser } from '../../../context/UserContext';
+import { fetchCountries, fetchLanguages, fetchRegions } from "../../../services/dropdownService";
 
 // UpdatePasswordModal and UpdateEmailModal components
 import UpdatePasswordModal from './UpdatePasswordModal';
 import UpdateEmailModal from './UpdateEmailModal';
 import BackButton from '../../../components/BackButton';
-import { Button } from 'antd';
+import { Button, Select, Spin } from 'antd';
 
+const { Option } = Select;
 
 const UpdateUserProfile = () => {
   const { showSuccess, showError } = useNotification();
@@ -16,6 +18,15 @@ const UpdateUserProfile = () => {
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [showEmailModal, setShowEmailModal] = useState(false);
   const [errors, setErrors] = useState({});
+  
+  // API data states
+  const [countries, setCountries] = useState([]);
+  const [regions, setRegions] = useState([]);
+  const [languages, setLanguages] = useState([]);
+  const [loadingCountries, setLoadingCountries] = useState(false);
+  const [loadingRegions, setLoadingRegions] = useState(false);
+  const [loadingLanguages, setLoadingLanguages] = useState(false);
+  const [selectedCountry, setSelectedCountry] = useState('');
   
   // Initial form state
   const [formData, setFormData] = useState({
@@ -28,13 +39,58 @@ const UpdateUserProfile = () => {
     expertiseCityRegion: '',
     language: '',
     about: '',
-    vehicleAvailability: false
   });
   
   // User type state (determines which fields to show)
   const [userType, setUserType] = useState(null); // 'traveler' or 'guide'
 
   const userData = useUser().user; // load logged user data 
+  
+  // Load countries and languages on component mount
+  useEffect(() => {
+    const loadInitialData = async () => {
+      try {
+        setLoadingCountries(true);
+        setLoadingLanguages(true);
+        
+        const [countriesData, languagesData] = await Promise.all([
+          fetchCountries(),
+          fetchLanguages()
+        ]);
+        
+        setCountries(countriesData);
+        setLanguages(languagesData);
+      } catch (error) {
+        showError('Failed to load countries and languages data.');
+        console.error('Error loading initial data:', error);
+      } finally {
+        setLoadingCountries(false);
+        setLoadingLanguages(false);
+      }
+    };
+    
+    loadInitialData();
+  }, [showError]);
+  
+  // Load regions when a country is selected (for guides)
+  useEffect(() => {
+    const loadRegions = async () => {
+      if (selectedCountry && userType === 'GUIDE') {
+        try {
+          setLoadingRegions(true);
+          const regionsData = await fetchRegions(selectedCountry);
+          setRegions(regionsData);
+        } catch (error) {
+          showError('Failed to load regions for the selected country.');
+          console.error('Error loading regions:', error);
+        } finally {
+          setLoadingRegions(false);
+        }
+      }
+    };
+    
+    loadRegions();
+  }, [selectedCountry, userType, showError]);
   
   // Fetch current user data on component mount
   useEffect(() => {
@@ -50,11 +106,18 @@ const UpdateUserProfile = () => {
           expertiseCityRegion: userData.expertiseCityRegion || '',
           language: userData.language || '',
           about: userData.about || '',
-          vehicleAvailability: userData.vehicleAvailability || false
         });
         
         // Set user type
         setUserType(userData.role); // set user role 
+        
+        // If user has nationality, find the country code for region loading
+        if (userData.nationality && userData.role === 'GUIDE') {
+          const country = countries.find(c => c.name === userData.nationality);
+          if (country) {
+            setSelectedCountry(country.code);
+          }
+        }
         
       } catch (error) {
         showError('Failed to load user data. Please try again.');
@@ -62,8 +125,10 @@ const UpdateUserProfile = () => {
       }
     };
     
-    fetchUserData();
-  }, [showError]);
+    if (countries.length > 0) {
+      fetchUserData();
+    }
+  }, [showError, countries, userData]);
   
   // Handle input changes
   const handleChange = (e) => {
@@ -76,6 +141,45 @@ const UpdateUserProfile = () => {
     // Clear error for the field being edited
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: '' }));
+    }
+  };
+  
+  // Handle select changes
+  const handleSelectChange = (name, value) => {
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+    
+    // Handle country selection for guides (to load regions)
+    if (name === 'nationality' && userType === 'GUIDE') {
+      const country = countries.find(c => c.name === value);
+      if (country) {
+        setSelectedCountry(country.code);
+        // Reset region selection when country changes
+        setFormData(prev => ({
+          ...prev,
+          expertiseCityRegion: ''
+        }));
+      }
+    }
+    
+    // Clear error for the field being edited
+    if (errors[name]) {
+      setErrors(prev => ({ ...prev, [name]: '' }));
+    }
+  };
+  
+  // Handle multiple language selection
+  const handleLanguageChange = (selectedLanguages) => {
+    const languageString = selectedLanguages.join(', ');
+    setFormData(prev => ({
+      ...prev,
+      language: languageString
+    }));
+    
+    if (errors.language) {
+      setErrors(prev => ({ ...prev, language: '' }));
     }
   };
   
@@ -129,12 +233,15 @@ const UpdateUserProfile = () => {
     }
   };
 
+  // Get selected languages array for multi-select
+  const getSelectedLanguages = () => {
+    if (!formData.language) return [];
+    return formData.language.split(', ').filter(lang => lang.trim() !== '');
+  };
+
   return (
-    
     <div className="w-full px-4 py-8">
-      
       <div className="max-w-6xl mx-auto bg-white rounded-lg shadow-lg overflow-hidden">
-        
         <div className="p-6 md:p-8">
           <BackButton/>
           <h1 className="text-2xl md:text-3xl font-bold text-gray-800">Update Profile</h1>
@@ -219,14 +326,25 @@ const UpdateUserProfile = () => {
                   <label htmlFor="nationality" className="block text-sm font-medium text-gray-700">
                     Nationality
                   </label>
-                  <input
+                  <Select
                     id="nationality"
-                    name="nationality"
-                    value={formData.nationality}
-                    onChange={handleChange}
-                    className={`w-full px-3 py-2 border rounded-md ${errors.nationality ? 'border-red-500' : 'border-gray-300'}`}
-                    placeholder="Nationality"
-                  />
+                    value={formData.nationality || undefined}
+                    onChange={(value) => handleSelectChange('nationality', value)}
+                    placeholder="Select your nationality"
+                    className="w-full"
+                    showSearch
+                    filterOption={(input, option) =>
+                      option.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                    }
+                    loading={loadingCountries}
+                    notFoundContent={loadingCountries ? <Spin size="small" /> : 'No countries found'}
+                  >
+                    {countries.map(country => (
+                      <Option key={country.code} value={country.name}>
+                        {country.name}
+                      </Option>
+                    ))}
+                  </Select>
                   {errors.nationality && <p className="text-sm text-red-500">{errors.nationality}</p>}
                 </div>
               </div>
@@ -239,34 +357,84 @@ const UpdateUserProfile = () => {
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <label htmlFor="expertiseCityRegion" className="block text-sm font-medium text-gray-700">
-                      Expertise City/Region
+                    <label htmlFor="nationality" className="block text-sm font-medium text-gray-700">
+                      Country
                     </label>
-                    <input
-                      id="expertiseCityRegion"
-                      name="expertiseCityRegion"
-                      value={formData.expertiseCityRegion}
-                      onChange={handleChange}
-                      className={`w-full px-3 py-2 border rounded-md ${errors.expertiseCityRegion ? 'border-red-500' : 'border-gray-300'}`}
-                      placeholder="City or Region of Expertise"
-                    />
-                    {errors.expertiseCityRegion && <p className="text-sm text-red-500">{errors.expertiseCityRegion}</p>}
+                    <Select
+                      id="nationality"
+                      value={formData.nationality || undefined}
+                      onChange={(value) => handleSelectChange('nationality', value)}
+                      placeholder="Select your country"
+                      className="w-full"
+                      showSearch
+                      filterOption={(input, option) =>
+                        option.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                      }
+                      loading={loadingCountries}
+                      notFoundContent={loadingCountries ? <Spin size="small" /> : 'No countries found'}
+                    >
+                      {countries.map(country => (
+                        <Option key={country.code} value={country.name}>
+                          {country.name}
+                        </Option>
+                      ))}
+                    </Select>
+                    {errors.nationality && <p className="text-sm text-red-500">{errors.nationality}</p>}
                   </div>
                   
                   <div className="space-y-2">
-                    <label htmlFor="language" className="block text-sm font-medium text-gray-700">
-                      Languages
+                    <label htmlFor="expertiseCityRegion" className="block text-sm font-medium text-gray-700">
+                      Expertise City/Region
                     </label>
-                    <input
-                      id="language"
-                      name="language"
-                      value={formData.language}
-                      onChange={handleChange}
-                      className={`w-full px-3 py-2 border rounded-md ${errors.language ? 'border-red-500' : 'border-gray-300'}`}
-                      placeholder="Languages (separated by commas)"
-                    />
-                    {errors.language && <p className="text-sm text-red-500">{errors.language}</p>}
+                    <Select
+                      id="expertiseCityRegion"
+                      value={formData.expertiseCityRegion || undefined}
+                      onChange={(value) => handleSelectChange('expertiseCityRegion', value)}
+                      placeholder="Select city/region of expertise"
+                      className="w-full"
+                      showSearch
+                      filterOption={(input, option) =>
+                        option.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                      }
+                      loading={loadingRegions}
+                      disabled={!selectedCountry}
+                      notFoundContent={loadingRegions ? <Spin size="small" /> : selectedCountry ? 'No regions found' : 'Please select a country first'}
+                    >
+                      {regions.map(region => (
+                        <Option key={region.id} value={region.name}>
+                          {region.name}
+                        </Option>
+                      ))}
+                    </Select>
+                    {errors.expertiseCityRegion && <p className="text-sm text-red-500">{errors.expertiseCityRegion}</p>}
                   </div>
+                </div>
+                
+                <div className="mt-6 space-y-2">
+                  <label htmlFor="language" className="block text-sm font-medium text-gray-700">
+                    Languages
+                  </label>
+                  <Select
+                    id="language"
+                    mode="multiple"
+                    value={getSelectedLanguages()}
+                    onChange={handleLanguageChange}
+                    placeholder="Select languages you speak"
+                    className="w-full"
+                    showSearch
+                    filterOption={(input, option) =>
+                      option.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                    }
+                    loading={loadingLanguages}
+                    notFoundContent={loadingLanguages ? <Spin size="small" /> : 'No languages found'}
+                  >
+                    {languages.map(language => (
+                      <Option key={language.code} value={language.name}>
+                        {language.name}
+                      </Option>
+                    ))}
+                  </Select>
+                  {errors.language && <p className="text-sm text-red-500">{errors.language}</p>}
                 </div>
                 
                 <div className="mt-6 space-y-2">
@@ -283,20 +451,6 @@ const UpdateUserProfile = () => {
                     rows={4}
                   />
                   {errors.about && <p className="text-sm text-red-500">{errors.about}</p>}
-                </div>
-                
-                <div className="mt-4 flex items-center">
-                  <input
-                    type="checkbox"
-                    id="vehicleAvailability"
-                    name="vehicleAvailability"
-                    checked={formData.vehicleAvailability}
-                    onChange={handleChange}
-                    className="h-4 w-4 text-blue-600 rounded border-gray-300"
-                  />
-                  <label htmlFor="vehicleAvailability" className="ml-3 text-sm text-gray-700">
-                    I have a vehicle available for tours
-                  </label>
                 </div>
               </div>
             )}
@@ -317,7 +471,6 @@ const UpdateUserProfile = () => {
                   Change Email
                 </button>
                 
-                
                 <button 
                   type="button" 
                   onClick={() => setShowPasswordModal(true)}
@@ -330,17 +483,14 @@ const UpdateUserProfile = () => {
             
             {/* Submit button */}
             <div className="mt-6 flex justify-end">
-              
-              
-                      <Button
-                        type="primary"
-                        htmlType="submit"
-                        loading={isLoading}
-                        size="large"
-                        >
-                        {isLoading ? "Updating..." : "Save Changes"}
-                      </Button>
-
+              <Button
+                type="primary"
+                htmlType="submit"
+                loading={isLoading}
+                size="large"
+              >
+                {isLoading ? "Updating..." : "Save Changes"}
+              </Button>
             </div>
           </form>
         </div>

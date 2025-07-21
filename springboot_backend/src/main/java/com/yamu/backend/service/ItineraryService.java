@@ -15,7 +15,6 @@ import com.yamu.backend.model.Route;
 import com.yamu.backend.model.Traveler;
 import com.yamu.backend.repository.ItineraryRepository;
 import com.yamu.backend.repository.TravelerRepository;
-import com.yamu.backend.repository.UserRepository;
 
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
