@@ -30,7 +30,7 @@ import UserProfile from "./pages/profile/UserProfile.jsx";
 import UpdateUserProfile from "./pages/profile/components/UpdateUserProfile.jsx";
 import ProfileView from "./pages/ProfileView.jsx";
 import UsersSocialPage from "./pages/UsersSocialPage.jsx";
-
+import PackageManagement from "./pages/admin_dashboard/PackageManagenent.jsx";
 
 {/* admin dashboard */}
 // import Overview from "./pages/admin_dashboard/Overview.jsx";
@@ -88,6 +88,9 @@ const App = () => {
               <Analytics />
               </RoleProtectedRoute>
               } />
+               <Route path="/admin-package-management" element={<RoleProtectedRoute allowedRoles={['ADMIN']}>
+                 <PackageManagement />
+                  </RoleProtectedRoute>} />
 
             {/* Traveler Management Routes */}
             <Route path="/inbox" element={

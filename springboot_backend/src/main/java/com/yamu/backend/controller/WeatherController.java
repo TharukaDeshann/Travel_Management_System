@@ -9,7 +9,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/weather")
-@CrossOrigin(origins = "http://localhost:5173")
+@CrossOrigin(origins = "*")
 public class WeatherController {
     // Cache to store weather data for location+date combinations
     private final Map<String, Map<String, Object>> weatherCache = new HashMap<>();

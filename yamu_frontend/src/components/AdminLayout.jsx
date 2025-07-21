@@ -71,6 +71,12 @@ const AdminLayout = ({ children, currentPage = 'User Management' }) => {
       path: '/admin-traveler-management' 
     },
     { 
+      id: 'package-management', 
+      label: 'Package Management', 
+      icon: LayoutDashboard, 
+      path: '/admin-package-management' 
+    },
+    { 
       id: 'analytics', 
       label: 'Analytics', 
       icon: BarChart3, 
