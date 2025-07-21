@@ -15,27 +15,18 @@ import {
   Settings,
 } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
+import CurrencySelector from "./CurrencySelector";
 
 // Header Component
 const Header = ({
   user = {},
   unreadCount = 0,
-  onCurrencyChange = () => {},
-  selectedCurrency = "LKR",
   navigate = () => {},
   location = { pathname: "" },
 }) => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isCurrencyOpen, setIsCurrencyOpen] = useState(false);
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
-
-  const currencies = [
-    { code: "USD", symbol: "$", name: "US Dollar" },
-    { code: "LKR", symbol: "Rs.", name: "Sri Lankan Rupee" },
-    { code: "EUR", symbol: "€", name: "Euro" },
-    { code: "CHF", symbol: "Fr.", name: "Swiss Franc" },
-  ];
 
   const notifications = [
     {
@@ -97,8 +88,8 @@ const Header = ({
   const navigationItems = getNavigationItems();
   // Helper functions for role-based rendering
   const shouldShowCurrencySelector = () => {
-    if (!user || !user.role) return false;
-    return user.role === "TRAVELER" || !user.role; // Show for travelers and guests
+    if (!user) return true; // Show for guests (no user logged in)
+    return user.role === "TRAVELER"; // Show for travelers only
   };
 
   const shouldShowMessages = () => {
@@ -118,59 +109,6 @@ const Header = ({
   const isActivePath = (path) => {
     return location.pathname === path;
   };
-
-  const CurrencySelector = () => (
-    <div className="relative">
-      <button
-        onClick={() => setIsCurrencyOpen(!isCurrencyOpen)}
-        className="flex items-center gap-2 px-3 py-2.5 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all duration-200 group min-w-[90px] justify-center"
-        title="Change Currency"
-      >
-        <Globe className="w-5 h-5" />
-        <span className="font-semibold text-base">
-          {currencies.find((c) => c.code === selectedCurrency)?.symbol}
-        </span>
-        <ChevronDown
-          className={`w-4 h-4 transition-transform duration-200 ${
-            isCurrencyOpen ? "rotate-180" : ""
-          }`}
-        />
-      </button>
-
-      {isCurrencyOpen && (
-        <div className="absolute right-0 mt-2 w-52 bg-white border border-gray-200 rounded-xl shadow-xl z-50 py-2">
-          <div className="px-4 py-2 text-sm font-semibold text-gray-500 uppercase tracking-wide">
-            Select Currency
-          </div>
-          {currencies.map((currency) => (
-            <button
-              key={currency.code}
-              onClick={() => {
-                onCurrencyChange?.(currency.code);
-                setIsCurrencyOpen(false);
-              }}
-              className={`w-full px-4 py-3 text-left hover:bg-blue-50 flex items-center justify-between transition-colors ${
-                selectedCurrency === currency.code
-                  ? "bg-blue-50 text-blue-600"
-                  : "text-gray-700"
-              }`}
-            >
-              <div className="flex items-center gap-3">
-                <span className="font-semibold text-lg">{currency.symbol}</span>
-                <div>
-                  <div className="font-semibold text-base">{currency.code}</div>
-                  <div className="text-sm text-gray-500">{currency.name}</div>
-                </div>
-              </div>
-              {selectedCurrency === currency.code && (
-                <div className="w-2.5 h-2.5 bg-blue-600 rounded-full"></div>
-              )}
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
-  );
 
   const NotificationCenter = () => (
     <div className="relative">
@@ -388,7 +326,12 @@ const Header = ({
             {/* Action buttons group */}
             <div className="flex items-center bg-gray-50 rounded-2xl p-2 gap-1">
               {/* Currency Selector */}
-              {shouldShowCurrencySelector() && <CurrencySelector />}
+              {shouldShowCurrencySelector() && (
+                <CurrencySelector 
+                  variant="minimal" 
+                  size="default"
+                />
+              )}
 
               {/* Divider */}
               {shouldShowCurrencySelector() && (
@@ -574,8 +517,6 @@ const Layout = ({
   children,
   user,
   unreadCount,
-  onCurrencyChange,
-  selectedCurrency,
 }) => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -585,8 +526,6 @@ const Layout = ({
       <Header
         user={user}
         unreadCount={unreadCount}
-        onCurrencyChange={onCurrencyChange}
-        selectedCurrency={selectedCurrency}
         navigate={navigate}
         location={location}
       />

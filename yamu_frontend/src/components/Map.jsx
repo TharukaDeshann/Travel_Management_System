@@ -21,8 +21,10 @@ import HotelBookingModal from "./HotelBookingModal";
 import BookTransportButton from "./BookTransportButton";
 import AvailableDriversPopup from "./AvailableDriversPopup";
 import ConfirmDriverSelection from "./ConfirmDriverSelection";
+import WeatherInfo from "./WeatherInfo";
 import apiClient from "../services/axiosInstance";
 import { fetchLoggedInUser } from "../services/authService";
+import { fetchWeatherData } from "../services/weatherService";
 
 // Marker icon configuration
 delete L.Icon.Default.prototype._getIconUrl;
@@ -143,6 +145,11 @@ const Map = () => {
   const [totalCost, setTotalCost] = useState(0);
   const [distanceKm, setDistanceKm] = useState(0);
 
+  // Weather states
+  const [weatherData, setWeatherData] = useState({});
+  const [weatherLoading, setWeatherLoading] = useState({});
+  const [weatherErrors, setWeatherErrors] = useState({});
+
   useEffect(() => {
     const loadUser = async () => {
       try {
@@ -160,6 +167,33 @@ const Map = () => {
     if (dates.length === 0) navigate("/");
   }, [dates, navigate]);
 
+  const fetchWeatherForLocation = async (locationName, date) => {
+    const weatherKey = `${locationName}-${date}`;
+    
+    // Check if weather data already exists
+    if (weatherData[weatherKey]) {
+      return weatherData[weatherKey];
+    }
+
+    setWeatherLoading(prev => ({ ...prev, [weatherKey]: true }));
+    setWeatherErrors(prev => ({ ...prev, [weatherKey]: null }));
+
+    try {
+      // Extract city name from full location string
+      const cityName = locationName.split(',')[0].trim();
+      const weather = await fetchWeatherData(cityName, date);
+      
+      setWeatherData(prev => ({ ...prev, [weatherKey]: weather }));
+      return weather;
+    } catch (error) {
+      console.error(`Error fetching weather for ${locationName}:`, error);
+      setWeatherErrors(prev => ({ ...prev, [weatherKey]: error.message }));
+      return null;
+    } finally {
+      setWeatherLoading(prev => ({ ...prev, [weatherKey]: false }));
+    }
+  };
+
   const handleSearch = async (query) => {
     if (query.length > 2) {
       try {
@@ -176,7 +210,7 @@ const Map = () => {
     }
   };
 
-  const addLocation = (lat, lon, name) => {
+  const addLocation = async (lat, lon, name) => {
     const updatedLocations = [...locations];
     updatedLocations[currentIndex] = [
       ...updatedLocations[currentIndex],
@@ -186,6 +220,9 @@ const Map = () => {
     setSearchTerm("");
     setSearchResults([]);
     setShowSearchResults(false);
+
+    // Fetch weather data for the new location
+    await fetchWeatherForLocation(name, dates[currentIndex]);
   };
 
   const removeLocation = (index) => {
@@ -611,18 +648,32 @@ const Map = () => {
                 subdomains={["mt0", "mt1", "mt2", "mt3"]}
                 attribution="Map data ©2025 Google"
               />
-              {locations[currentIndex].map((loc, index) => (
-                <Marker key={index} position={[loc.lat, loc.lon]}>
-                  <Popup>
-                    <div className="font-semibold text-[#4285F4]">
-                      {loc.name.split(",")[0]}
-                    </div>
-                    <div className="text-xs text-gray-500">
-                      {loc.name.split(",").slice(1, 3).join(",")}
-                    </div>
-                  </Popup>
-                </Marker>
-              ))}
+              {locations[currentIndex].map((loc, index) => {
+                const weatherKey = `${loc.name}-${dates[currentIndex]}`;
+                const weather = weatherData[weatherKey];
+                const loading = weatherLoading[weatherKey];
+                const error = weatherErrors[weatherKey];
+
+                return (
+                  <Marker key={index} position={[loc.lat, loc.lon]}>
+                    <Popup>
+                      <div className="min-w-[200px]">
+                        <div className="font-semibold text-[#4285F4]">
+                          {loc.name.split(",")[0]}
+                        </div>
+                        <div className="text-xs text-gray-500 mb-2">
+                          {loc.name.split(",").slice(1, 3).join(",")}
+                        </div>
+                        <WeatherInfo 
+                          weatherData={weather}
+                          loading={loading}
+                          error={error}
+                        />
+                      </div>
+                    </Popup>
+                  </Marker>
+                );
+              })}
               {locations[currentIndex].length > 1 && (
                 <RoutingMachine
                   locations={locations[currentIndex]}
@@ -652,38 +703,52 @@ const Map = () => {
                       ref={provided.innerRef}
                       className="space-y-2"
                     >
-                      {locations[currentIndex].map((loc, index) => (
-                        <Draggable
-                          key={index}
-                          draggableId={String(index)}
-                          index={index}
-                        >
-                          {(provided) => (
-                            <div
-                              ref={provided.innerRef}
-                              {...provided.draggableProps}
-                              {...provided.dragHandleProps}
-                              className="bg-[#F7FBFF] p-3 rounded-xl shadow-xs text-sm hover:bg-[#E3F0FE] transition-colors flex justify-between items-center border border-gray-100"
-                            >
-                              <div className="truncate flex flex-col">
-                                <span className="font-medium text-[#4285F4] truncate">
-                                  {loc.name.split(",")[0]}
-                                </span>
-                                <span className="text-xs text-gray-500 truncate">
-                                  {loc.name.split(",").slice(1, 3).join(",")}
-                                </span>
-                              </div>
-                              <button
-                                onClick={() => removeLocation(index)}
-                                className="text-red-500 hover:text-red-700 ml-2 text-xs rounded-full px-2 py-1 transition shadow-sm"
-                                aria-label="Remove stop"
+                      {locations[currentIndex].map((loc, index) => {
+                        const weatherKey = `${loc.name}-${dates[currentIndex]}`;
+                        const weather = weatherData[weatherKey];
+                        const loading = weatherLoading[weatherKey];
+                        const error = weatherErrors[weatherKey];
+
+                        return (
+                          <Draggable
+                            key={index}
+                            draggableId={String(index)}
+                            index={index}
+                          >
+                            {(provided) => (
+                              <div
+                                ref={provided.innerRef}
+                                {...provided.draggableProps}
+                                {...provided.dragHandleProps}
+                                className="bg-[#F7FBFF] p-3 rounded-xl shadow-xs text-sm hover:bg-[#E3F0FE] transition-colors border border-gray-100"
                               >
-                                ✕
-                              </button>
-                            </div>
-                          )}
-                        </Draggable>
-                      ))}
+                                <div className="flex justify-between items-start">
+                                  <div className="truncate flex flex-col flex-1">
+                                    <span className="font-medium text-[#4285F4] truncate">
+                                      {loc.name.split(",")[0]}
+                                    </span>
+                                    <span className="text-xs text-gray-500 truncate">
+                                      {loc.name.split(",").slice(1, 3).join(",")}
+                                    </span>
+                                    <WeatherInfo 
+                                      weatherData={weather}
+                                      loading={loading}
+                                      error={error}
+                                    />
+                                  </div>
+                                  <button
+                                    onClick={() => removeLocation(index)}
+                                    className="text-red-500 hover:text-red-700 ml-2 text-xs rounded-full px-2 py-1 transition shadow-sm flex-shrink-0"
+                                    aria-label="Remove stop"
+                                  >
+                                    ✕
+                                  </button>
+                                </div>
+                              </div>
+                            )}
+                          </Draggable>
+                        );
+                      })}
                       {provided.placeholder}
                     </div>
                   )}
