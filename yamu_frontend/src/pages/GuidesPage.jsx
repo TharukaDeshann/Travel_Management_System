@@ -45,7 +45,7 @@ const GuidesPage = () => {
       try {
         setLoading(true);
         const response = await fetchUsersByRole('GUIDE');
-
+        console.log("Fetched guides:", response);
         setGuides(response);
 
         // Fetch ratings for all guides

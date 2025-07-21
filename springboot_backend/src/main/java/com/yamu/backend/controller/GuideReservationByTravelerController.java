@@ -124,4 +124,13 @@ public class GuideReservationByTravelerController {
             GuideReservationByTraveler.ReservationStatus.COMPLETED);
         return ResponseEntity.ok(convertToDto(reservation));
     }
+
+    @PutMapping("/{reservationId}/cancel")
+    public ResponseEntity<GuideReservationResponse> cancelReservation(
+            @PathVariable Long reservationId) {
+        GuideReservationByTraveler reservation = reservationService.updateReservationStatus(
+            reservationId, 
+            GuideReservationByTraveler.ReservationStatus.CANCELLED);
+        return ResponseEntity.ok(convertToDto(reservation));
+    }
 }

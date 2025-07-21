@@ -91,7 +91,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     @Override
     protected boolean shouldNotFilter(@NonNull HttpServletRequest request) {
         String path = request.getServletPath();
-        return path.equals("/api/auth/login") || path.equals("/api/auth/refresh-token");
+        return path.equals("/api/auth/login") || path.equals("/api/auth/refresh-token") || path.equals("/api/facebook-events");
     }
 
     /**
