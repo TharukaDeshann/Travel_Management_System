@@ -96,6 +96,13 @@ export const usePriceDisplay = (price, fromCurrency = 'LKR') => {
     let isMounted = true;
     
     const convert = async () => {
+      // Validate the price input
+      if (price === undefined || price === null || isNaN(price) || price < 0) {
+        console.warn('usePriceDisplay: Invalid price value:', price);
+        if (isMounted) setConvertedPrice(0);
+        return;
+      }
+
       if (fromCurrency === selectedCurrency) {
         if (isMounted) setConvertedPrice(price);
         return;

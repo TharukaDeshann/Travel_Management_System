@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { createHotelBooking } from '../services/hotelService';
+import PriceDisplay from './PriceDisplay';
 
 const HotelBookingModal = ({ 
   isOpen, 
@@ -44,7 +45,18 @@ const HotelBookingModal = ({
   const calculateNights = () => {
     const checkIn = new Date(dateData.checkInDate);
     const checkOut = new Date(dateData.checkOutDate);
-    return Math.ceil((checkOut - checkIn) / (1000 * 60 * 60 * 24));
+    const nights = Math.ceil((checkOut - checkIn) / (1000 * 60 * 60 * 24));
+    
+    console.log('🗓️ HotelBookingModal - Date calculations:', {
+      checkInDate: dateData.checkInDate,
+      checkOutDate: dateData.checkOutDate,
+      checkIn,
+      checkOut,
+      nights,
+      isValidNights: !isNaN(nights) && nights > 0
+    });
+    
+    return isNaN(nights) || nights <= 0 ? 1 : nights;
   };
 
   const calculateTotal = () => {
@@ -52,6 +64,17 @@ const HotelBookingModal = ({
     const roomTotal = selectedRoom.pricePerNight * nights;
     const taxes = roomTotal * 0.12; // 12% tax
     const serviceFee = roomTotal * 0.05; // 5% service fee
+    
+    console.log('🧮 HotelBookingModal - Price calculations:', {
+      selectedRoom: selectedRoom,
+      pricePerNight: selectedRoom?.pricePerNight,
+      nights,
+      roomTotal,
+      taxes,
+      serviceFee,
+      grandTotal: roomTotal + taxes + serviceFee
+    });
+    
     return {
       roomTotal,
       taxes,
@@ -440,20 +463,20 @@ const HotelBookingModal = ({
               <div className="border-t pt-4">
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
-                    <span>Room Cost ({calculateNights()} nights × LKR {selectedRoom.pricePerNight.toLocaleString()})</span>
-                    <span>LKR {total.roomTotal.toLocaleString()}</span>
+                    <span>Room Cost ({calculateNights()} nights × <PriceDisplay amount={selectedRoom.pricePerNight} />)</span>
+                    <PriceDisplay amount={total.roomTotal} />
                   </div>
                   <div className="flex justify-between">
                     <span>Taxes (12%)</span>
-                    <span>LKR {total.taxes.toLocaleString()}</span>
+                    <PriceDisplay amount={total.taxes} />
                   </div>
                   <div className="flex justify-between">
                     <span>Service Fee (5%)</span>
-                    <span>LKR {total.serviceFee.toLocaleString()}</span>
+                    <PriceDisplay amount={total.serviceFee} />
                   </div>
                   <div className="border-t pt-2 flex justify-between font-bold text-lg">
                     <span>Total Amount</span>
-                    <span>LKR {total.grandTotal.toLocaleString()}</span>
+                    <PriceDisplay amount={total.grandTotal} size="lg" />
                   </div>
                 </div>
               </div>
@@ -485,7 +508,9 @@ const HotelBookingModal = ({
                 disabled={loading}
                 className="px-6 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
               >
-                {loading ? 'Processing...' : `Pay LKR ${total.grandTotal.toLocaleString()}`}
+                {loading ? 'Processing...' : (
+                  <>Pay <PriceDisplay amount={total.grandTotal} inline /></>
+                )}
               </button>
             )}
           </div>

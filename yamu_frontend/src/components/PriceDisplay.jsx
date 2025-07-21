@@ -3,41 +3,70 @@ import { usePriceDisplay } from '../hooks/useCurrencyConverter';
 
 const PriceDisplay = ({ 
   price, 
+  amount, // Support both 'price' and 'amount' props
   fromCurrency = 'LKR', 
   className = "",
   showOriginal = false,
-  size = "default" // "small", "default", "large"
+  size = "default", // "small", "default", "large"
+  inline = false
 }) => {
+  // Use amount if provided, otherwise use price
+  const priceValue = amount !== undefined ? amount : price;
+  
+  // Add validation for the price value
+  if (priceValue === undefined || priceValue === null || isNaN(priceValue)) {
+    return (
+      <span className={`${className} text-red-500`}>
+        Invalid price
+      </span>
+    );
+  }
+  
   const { 
     convertedPrice, 
     formattedPrice, 
     isConverting, 
     originalPrice, 
     originalCurrency 
-  } = usePriceDisplay(price, fromCurrency);
+  } = usePriceDisplay(priceValue, fromCurrency);
 
   const sizeClasses = {
     small: "text-sm",
     default: "text-base", 
+    lg: "text-lg",
     large: "text-lg"
   };
 
   if (isConverting) {
     return (
-      <div className={`${sizeClasses[size]} ${className}`}>
-        <span className="text-gray-500">Converting...</span>
-      </div>
+      <span className={`${sizeClasses[size]} ${className} text-gray-500`}>
+        Converting...
+      </span>
     );
   }
 
-  return (
-    <div className={`${sizeClasses[size]} ${className}`}>
+  const content = (
+    <>
       <span className="font-semibold">{formattedPrice}</span>
       {showOriginal && fromCurrency !== 'LKR' && (
         <span className="text-gray-500 text-sm ml-2">
           (Originally: Rs. {originalPrice?.toLocaleString()})
         </span>
       )}
+    </>
+  );
+
+  if (inline) {
+    return (
+      <span className={`${sizeClasses[size]} ${className}`}>
+        {content}
+      </span>
+    );
+  }
+
+  return (
+    <div className={`${sizeClasses[size]} ${className}`}>
+      {content}
     </div>
   );
 };

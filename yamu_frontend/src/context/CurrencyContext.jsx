@@ -135,6 +135,12 @@ export const CurrencyProvider = ({ children }) => {
   // Format amount with currency symbol
   const formatAmount = useCallback((amount, currencyCode = selectedCurrency, showSymbol = true) => {
     try {
+      // Validate the amount
+      if (amount === undefined || amount === null || isNaN(amount)) {
+        console.warn('formatAmount: Invalid amount received:', amount);
+        return showSymbol ? `${getCurrencySymbol(currencyCode)} 0` : '0';
+      }
+      
       const symbol = getCurrencySymbol(currencyCode);
       const formattedAmount = Number(amount).toLocaleString();
       return showSymbol ? `${symbol} ${formattedAmount}` : formattedAmount;

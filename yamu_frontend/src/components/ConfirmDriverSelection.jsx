@@ -1,4 +1,5 @@
 import React from "react";
+import PriceDisplay from "./PriceDisplay";
 
 const ConfirmDriverSelection = ({
   driver,
@@ -32,7 +33,13 @@ const ConfirmDriverSelection = ({
           </div>
           <div>
             <span>Distance: {distanceKm || 0} km </span>
-            <span>| Total Cost: Rs.{totalCost ? totalCost.toFixed(2) : '0.00'}</span>
+            <span>| Total Cost: </span>
+            <PriceDisplay 
+              price={totalCost || 0} 
+              fromCurrency="LKR"
+              className="inline-block font-medium"
+              size="small"
+            />
           </div>
         </div>
         <div className="flex gap-4 mt-4 w-full">

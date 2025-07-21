@@ -13,12 +13,15 @@ import LocationSelector from '../components/LocationSelector';
 import useNotification from '../hooks/useNotification';
 import { fetchLoggedInUser } from '../services/authService';
 import apiClient from "../services/axiosInstance";
+import { useCurrency } from '../context/CurrencyContext';
+import PriceDisplay from '../components/PriceDisplay';
 
 const Reservations = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [loggedUser,setLoggedUser]=useState(null) 
   const { showSuccess, showError, showWarning } = useNotification();
+  const { formatAmount, convertAmount } = useCurrency();
   
   useEffect(() => {
     const  loadUser=async() => {
@@ -39,8 +42,8 @@ const Reservations = () => {
     console.log('🏨 Loaded logged in user:', loggedUser);
 
   },[])
+  
   // Layout states
-  const [selectedCurrency, setSelectedCurrency] = useState('LKR');
   const [unreadCount, setUnreadCount] = useState(0);
   
   
@@ -344,6 +347,17 @@ const Reservations = () => {
     return baseFare + (distanceKm * ratePerKm);
   };
 
+  // Transport cost display component
+  const TransportCostDisplay = ({ cost, className = "" }) => {
+    return (
+      <PriceDisplay 
+        price={cost} 
+        fromCurrency="LKR"
+        className={className}
+      />
+    );
+  };
+
   // Transportation related functions
   const handleBookTransport = () => {
     // Check if both locations are selected
@@ -562,10 +576,6 @@ const Reservations = () => {
     <Layout
       user={loggedUser}
       unreadCount={unreadCount}
-      onCurrencyChange={setSelectedCurrency}
-      selectedCurrency={selectedCurrency}
-      navigate={navigate}
-      location={location}
     >
       <div className="min-h-screen bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -1051,11 +1061,15 @@ const Reservations = () => {
                                         </div>
                                         <div>
                                           <span className="text-gray-500">Total:</span>
-                                          <p className={`font-medium text-lg ${
+                                          <div className={`font-medium text-lg ${
                                             booking.bookingStatus === 'CANCELLED' ? 'text-gray-500 line-through' : 'text-green-600'
                                           }`}>
-                                            LKR {booking.totalPrice?.toLocaleString()}
-                                          </p>
+                                            <PriceDisplay 
+                                              price={booking.totalPrice} 
+                                              fromCurrency="LKR"
+                                              className={booking.bookingStatus === 'CANCELLED' ? 'text-gray-500' : 'text-green-600'}
+                                            />
+                                          </div>
                                         </div>
                                       </div>
                                       
@@ -1536,7 +1550,14 @@ const Reservations = () => {
                     <div><strong>Check-in:</strong> {formatDate(bookingToCancel.checkInDate)}</div>
                     <div><strong>Check-out:</strong> {formatDate(bookingToCancel.checkOutDate)}</div>
                     <div><strong>Guests:</strong> {bookingToCancel.numberOfGuests}</div>
-                    <div><strong>Total:</strong> LKR {bookingToCancel.totalPrice?.toLocaleString()}</div>
+                    <div className="flex items-center gap-2">
+                      <strong>Total:</strong> 
+                      <PriceDisplay 
+                        price={bookingToCancel.totalPrice} 
+                        fromCurrency="LKR"
+                        size="small"
+                      />
+                    </div>
                     <div><strong>Ref:</strong> {bookingToCancel.bookingReference}</div>
                   </div>
                 </div>
