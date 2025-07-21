@@ -1458,7 +1458,11 @@ const Reservations = () => {
                           <span className="text-green-600">💰</span>
                           <span className="font-medium">Est. Cost:</span>
                           <span className="text-green-600 font-semibold">
-                            Rs.{(200 + (routeInfo.distance * 50)).toFixed(2)}
+                            <PriceDisplay 
+                              price={(200 + (routeInfo.distance * 50))} 
+                              fromCurrency="LKR" 
+                              inline 
+                            />
                           </span>
                         </div>
                       </div>
