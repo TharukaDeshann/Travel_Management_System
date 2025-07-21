@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, use } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Search, MapPin, Languages, Car, Star, Users, Shield } from 'lucide-react';
 import GuideModal from '../components/GuideModal';
@@ -16,7 +16,7 @@ import { Layout } from '../components/Layout'; // Added import
 const GuidesPage = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const currentUser = location.state?.currentUser;
+  const currentUser = useUser().user;
   const [guides, setGuides] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedGuide, setSelectedGuide] = useState(null);
@@ -28,7 +28,7 @@ const GuidesPage = () => {
   // Layout-related state
   const [selectedCurrency, setSelectedCurrency] = useState('LKR');
   const [unreadCount, setUnreadCount] = useState(0);
-  const loggedUser = currentUser; // or use context if available
+  const loggedUser = currentUser;
 
   useEffect(() => {
     const fetchGuides = async () => {
@@ -121,12 +121,10 @@ const GuidesPage = () => {
 
   return (
     <Layout
-      user={loggedUser}
+      user={loggedUser || {}}
       unreadCount={unreadCount}
       onCurrencyChange={setSelectedCurrency}
       selectedCurrency={selectedCurrency}
-      navigate={navigate}
-      location={location}
     >
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
         {/* Header Section */}

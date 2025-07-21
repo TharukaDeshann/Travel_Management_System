@@ -4,6 +4,7 @@ import { Layout } from "../components/Layout";
 import apiClient from "../services/axiosInstance";
 import { fetchLoggedInUser } from "../services/authService";
 
+
 const GuideReview = () => {
   const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -32,7 +33,7 @@ const GuideReview = () => {
 
   return (
     <Layout 
-      user={currentUser} 
+      user={currentUser || {}} 
       unreadCount={0} // You can pass actual unread count from your state
       onCurrencyChange={() => {}} // Add currency change handler if needed
       selectedCurrency="LKR" // Set default currency
