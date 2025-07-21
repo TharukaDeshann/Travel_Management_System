@@ -14,6 +14,8 @@ import { useUser } from "../context/UserContext";
 import { Layout } from "../components/Layout";
 import { fetchLoggedInUser } from "../services/authService";
 import { useCurrencyConverter } from "../hooks/useCurrencyConverter";
+import PriceDisplay from "../components/PriceDisplay";
+import useNotification from "../hooks/useNotification";
 
 export default function TravelerDashboard({ currentUser: propCurrentUser }) {
   const navigate = useNavigate();
@@ -37,6 +39,9 @@ export default function TravelerDashboard({ currentUser: propCurrentUser }) {
   
   // Use the currency converter hook
   const { convertPackages, selectedCurrency, getCurrencySymbol } = useCurrencyConverter();
+  
+  // Use the notification hook
+  const { showSuccess, showError } = useNotification();
   
 
   const loggedUser = useUser().user || currentUser;
@@ -163,7 +168,7 @@ export default function TravelerDashboard({ currentUser: propCurrentUser }) {
     e.preventDefault();
     
     if (!applicationForm.startingDate || applicationForm.groupMemberCount < 1) {
-      alert('Please fill in all required fields');
+      showError('Please fill in all required fields', 'Validation Error');
       return;
     }
 
@@ -178,18 +183,18 @@ export default function TravelerDashboard({ currentUser: propCurrentUser }) {
       };
 
       const response = await apiClient.post(`/api/packages/${selectedPackage.id}/apply/${loggedUser.id}`, applicationData);
-
-      if (response.status === 200) {
-        alert('Package application submitted successfully!');
+      console.log('Package application response:', response);
+      if (response.status === 201) {
+        showSuccess('Your package application has been submitted successfully!', 'Application Submitted');
         setShowApplicationModal(false);
         setSelectedPackage(null);
       }
     } catch (error) {
       console.error('Error submitting application:', error);
       if (error.response?.data?.error) {
-        alert(error.response.data.error);
+        showError(error.response.data.error, 'Application Failed');
       } else {
-        alert('Failed to submit application. Please try again.');
+        showError('Failed to submit application. Please try again.', 'Submission Error');
       }
     } finally {
       setIsSubmittingApplication(false);
@@ -443,7 +448,7 @@ export default function TravelerDashboard({ currentUser: propCurrentUser }) {
                 </div>
                 <div className="flex items-center">
                   <DollarSign className="w-4 h-4 mr-2 text-gray-600" />
-                  <span>Rs. {selectedPackage.budgetPerPerson?.toLocaleString()} per person</span>
+                  <span><PriceDisplay price={selectedPackage.budgetPerPerson} fromCurrency="LKR" inline /> per person</span>
                 </div>
               </div>
               <p className="text-gray-600 mt-3">{selectedPackage.description}</p>
@@ -489,7 +494,11 @@ export default function TravelerDashboard({ currentUser: propCurrentUser }) {
                     required
                   />
                   <p className="text-sm text-gray-500 mt-1">
-                    Total cost: Rs. {(selectedPackage.budgetPerPerson * applicationForm.groupMemberCount).toLocaleString()}
+                    Total cost: <PriceDisplay 
+                      price={selectedPackage.budgetPerPerson * applicationForm.groupMemberCount} 
+                      fromCurrency="LKR" 
+                      inline 
+                    />
                   </p>
                 </div>
 
