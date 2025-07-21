@@ -16,7 +16,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.azure.core.annotation.Get;
 import com.yamu.backend.dto.VehicleRequestDTO;
 import com.yamu.backend.dto.VehicleResponseDTO;
 import com.yamu.backend.service.Guide_Specific_Services.VehicleService;

@@ -50,9 +50,13 @@ public class SecurityConfig {
         http
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-.authorizeHttpRequests(auth -> auth
-        .requestMatchers(
-                "/api/auth/login",
+
+                .authorizeHttpRequests(auth -> auth
+
+                        .requestMatchers(
+                                "/api/auth/login",
+
+
                                 "/api/auth/register",
                                 "/api/auth/refresh-token",
                                 "/api/auth/user",

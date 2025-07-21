@@ -1,15 +1,11 @@
 package com.yamu.backend.dto;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
 
 import com.yamu.backend.enums.UserRole;
-import com.yamu.backend.model.Vehicle;
 import com.yamu.backend.validation.GuideRegistration;
 import com.yamu.backend.validation.TravelerRegistration;
 
-import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
 import lombok.Getter;
 import lombok.Setter;

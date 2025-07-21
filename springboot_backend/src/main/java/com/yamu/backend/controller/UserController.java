@@ -1,23 +1,21 @@
 package com.yamu.backend.controller;
 
-import java.time.LocalDateTime;
+
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.UUID;
+
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.Authentication;
+
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -26,14 +24,12 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
-import com.azure.core.annotation.Patch;
 import com.yamu.backend.dto.EmailUpdateRequest;
 import com.yamu.backend.dto.PasswordUpdateRequest;
 import com.yamu.backend.dto.UserResponseDTO;
 import com.yamu.backend.dto.UserUpdateRequest;
 import com.yamu.backend.enums.UserRole;
 import com.yamu.backend.model.User;
-import com.yamu.backend.model.WeatherResponse.Sys;
 import com.yamu.backend.repository.UserRepository;
 import com.yamu.backend.service.EmailService;
 import com.yamu.backend.service.ImageUploadService;
@@ -179,6 +175,10 @@ public class UserController {
     // Delete user (soft delete)
     @DeleteMapping("/{id}")
     public ResponseEntity<String> deleteUser(@PathVariable Long id) {
+        User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        if (user.getId() != id && user.getRole() != UserRole.ADMIN) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You are not authorized to delete this user");
+        }
         userService.deleteUser(id);
         return ResponseEntity.ok("User deleted successfully");
     }
