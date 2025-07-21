@@ -13,20 +13,14 @@ import EventModal from "../components/EventModal";
 import { useUser } from "../context/UserContext";
 import { Layout } from "../components/Layout";
 import { fetchLoggedInUser } from "../services/authService";
-
-const currencies = [
-  { code: 'USD', symbol: '$' },
-  { code: 'LKR', symbol: 'Rs.' },
-  { code: 'EUR', symbol: '€' },
-  { code: 'CHF', symbol: 'Fr.' }
-];
+import { useCurrencyConverter } from "../hooks/useCurrencyConverter";
+import PriceDisplay from "../components/PriceDisplay";
+import useNotification from "../hooks/useNotification";
 
 export default function TravelerDashboard({ currentUser: propCurrentUser }) {
   const navigate = useNavigate();
   const location = useLocation();
-  const [selectedCurrency, setSelectedCurrency] = useState('LKR');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [exchangeRates, setExchangeRates] = useState({});
   const [guides, setGuides] = useState([]);
   const [showLeftButton, setShowLeftButton] = useState({});
   const [selectedGuide, setSelectedGuide] = useState(null);
@@ -42,6 +36,12 @@ export default function TravelerDashboard({ currentUser: propCurrentUser }) {
     specialRequests: ''
   });
   const [isSubmittingApplication, setIsSubmittingApplication] = useState(false);
+  
+  // Use the currency converter hook
+  const { convertPackages, selectedCurrency, getCurrencySymbol } = useCurrencyConverter();
+  
+  // Use the notification hook
+  const { showSuccess, showError } = useNotification();
   
 
   const loggedUser = useUser().user || currentUser;
@@ -141,37 +141,17 @@ export default function TravelerDashboard({ currentUser: propCurrentUser }) {
 
   const [convertedPackages, setConvertedPackages] = useState([]);
 
-  const fetchExchangeRates = async () => {
-    if (selectedCurrency === 'LKR') {
-      setConvertedPackages(packages.map(pkg => ({
-        ...pkg,
-        convertedPrice: pkg.budgetPerPerson
-      })));
-      return;
-    }
-
-    try {
-      const response = await fetch(`https://v6.exchangerate-api.com/v6/ee302ff3be157ca6a021f6a0/pair/LKR/${selectedCurrency}`);
-      const data = await response.json();
-      
-      if (data && data.conversion_rate) {
-        const rate = data.conversion_rate;
-        const updatedPackages = packages.map(pkg => ({
-          ...pkg,
-          convertedPrice: Math.round((pkg.budgetPerPerson * rate) * 100) / 100
-        }));
-        setConvertedPackages(updatedPackages);
-      }
-    } catch (error) {
-      console.error("Error fetching exchange rates:", error);
-    }
-  };
-
+  // Convert packages when currency or packages change
   useEffect(() => {
-    fetchExchangeRates();
-    const intervalId = setInterval(fetchExchangeRates, 60000);
-    return () => clearInterval(intervalId);
-  }, [selectedCurrency, packages]);
+    const convertAndSetPackages = async () => {
+      if (packages.length > 0) {
+        const converted = await convertPackages(packages);
+        setConvertedPackages(converted);
+      }
+    };
+
+    convertAndSetPackages();
+  }, [packages, selectedCurrency, convertPackages]);
 
   // Handle package application functions
   const handlePackageClick = (pkg) => {
@@ -188,7 +168,7 @@ export default function TravelerDashboard({ currentUser: propCurrentUser }) {
     e.preventDefault();
     
     if (!applicationForm.startingDate || applicationForm.groupMemberCount < 1) {
-      alert('Please fill in all required fields');
+      showError('Please fill in all required fields', 'Validation Error');
       return;
     }
 
@@ -203,18 +183,18 @@ export default function TravelerDashboard({ currentUser: propCurrentUser }) {
       };
 
       const response = await apiClient.post(`/api/packages/${selectedPackage.id}/apply/${loggedUser.id}`, applicationData);
-
-      if (response.status === 200) {
-        alert('Package application submitted successfully!');
+      console.log('Package application response:', response);
+      if (response.status === 201) {
+        showSuccess('Your package application has been submitted successfully!', 'Application Submitted');
         setShowApplicationModal(false);
         setSelectedPackage(null);
       }
     } catch (error) {
       console.error('Error submitting application:', error);
       if (error.response?.data?.error) {
-        alert(error.response.data.error);
+        showError(error.response.data.error, 'Application Failed');
       } else {
-        alert('Failed to submit application. Please try again.');
+        showError('Failed to submit application. Please try again.', 'Submission Error');
       }
     } finally {
       setIsSubmittingApplication(false);
@@ -245,8 +225,6 @@ export default function TravelerDashboard({ currentUser: propCurrentUser }) {
     <Layout 
       user={loggedUser || currentUser}
       unreadCount={unreadCount}
-      onCurrencyChange={setSelectedCurrency}
-      selectedCurrency={selectedCurrency}
     >
       <div className="main-content">
         <div className="search-container">
@@ -384,8 +362,7 @@ export default function TravelerDashboard({ currentUser: propCurrentUser }) {
                     <div className="card-overlay">
                       <h3 className="card-title">{pkg.packageName}</h3>
                       <p className="text-white text-lg font-semibold">
-                        {selectedCurrency === 'LKR' ? 'Rs. ' : currencies.find(c => c.code === selectedCurrency)?.symbol}
-                        {pkg.convertedPrice?.toLocaleString()}
+                        {getCurrencySymbol()} {pkg.convertedPrice?.toLocaleString()}
                       </p>
                       <div className="flex items-center text-white text-sm mt-1">
                         <Clock className="w-4 h-4 mr-1" />
@@ -471,7 +448,7 @@ export default function TravelerDashboard({ currentUser: propCurrentUser }) {
                 </div>
                 <div className="flex items-center">
                   <DollarSign className="w-4 h-4 mr-2 text-gray-600" />
-                  <span>Rs. {selectedPackage.budgetPerPerson?.toLocaleString()} per person</span>
+                  <span><PriceDisplay price={selectedPackage.budgetPerPerson} fromCurrency="LKR" inline /> per person</span>
                 </div>
               </div>
               <p className="text-gray-600 mt-3">{selectedPackage.description}</p>
@@ -517,7 +494,11 @@ export default function TravelerDashboard({ currentUser: propCurrentUser }) {
                     required
                   />
                   <p className="text-sm text-gray-500 mt-1">
-                    Total cost: Rs. {(selectedPackage.budgetPerPerson * applicationForm.groupMemberCount).toLocaleString()}
+                    Total cost: <PriceDisplay 
+                      price={selectedPackage.budgetPerPerson * applicationForm.groupMemberCount} 
+                      fromCurrency="LKR" 
+                      inline 
+                    />
                   </p>
                 </div>
 
