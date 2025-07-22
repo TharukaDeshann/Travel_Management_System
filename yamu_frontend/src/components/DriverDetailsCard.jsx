@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import apiClient from "../services/axiosInstance";
+import PriceDisplay from "./PriceDisplay";
 
 const DriverDetailsCard = ({ summary, expanded, onExpand, onSelect }) => {
   const [details, setDetails] = useState(null);
@@ -45,7 +46,12 @@ const DriverDetailsCard = ({ summary, expanded, onExpand, onSelect }) => {
               {summary.vehicleType}
             </span>
             <span className="ml-2 text-gray-600">
-              Rs.{summary.ratePerLng}/Km
+              <PriceDisplay 
+                price={summary.ratePerLng} 
+                fromCurrency="LKR" 
+                inline 
+                size="small"
+              />/Km
             </span>
           </div>
         </div>
@@ -91,7 +97,10 @@ const DriverDetailsCard = ({ summary, expanded, onExpand, onSelect }) => {
                   Rate per Km
                 </span>
                 <span className="block text-gray-700">
-                  Rs.{details.ratePerLng}
+                  <PriceDisplay 
+                    price={details.ratePerLng} 
+                    fromCurrency="LKR"
+                  />
                 </span>
               </div>
 
