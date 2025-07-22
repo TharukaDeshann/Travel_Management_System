@@ -27,6 +27,8 @@ const UserDetailsModal = ({ isOpen, onClose, userId }) => {
       loadUserProfile();
     }
   }, [isOpen, userId]);
+  console.log("user : ", user); 
+
 
   const getRoleIcon = (role) => {
     switch (role) {
@@ -103,7 +105,15 @@ const UserDetailsModal = ({ isOpen, onClose, userId }) => {
               <div className="flex items-center gap-4 pb-4 border-b border-gray-200">
                 <div className="w-16 h-16 bg-gradient-to-br from-amber-400 to-yellow-500 rounded-full flex items-center justify-center">
                   <span className="text-white font-bold text-xl">
-                    {user.firstName?.[0]}{user.lastName?.[0]}
+                    {user.profileImageUrl ? (
+                        <img 
+                          src={user.profileImageUrl} 
+                          alt="Profile" 
+                          className="w-full h-full rounded-full object-cover"
+                        />
+                      ) : (
+                        getUserInitials()
+                      )}
                   </span>
                 </div>
                 <div>
@@ -147,12 +157,9 @@ const UserDetailsModal = ({ isOpen, onClose, userId }) => {
               </div>
 
               {/* Role-specific Attributes */}
-              {user.role === 'guide' && (
+              {user.role === 'GUIDE' && (
                 <div className="space-y-4">
-                  <h4 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                    <Users className="w-5 h-5 text-amber-500" />
-                    Guide Information
-                  </h4>
+                  
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="flex items-center gap-3 p-3 bg-amber-50 rounded-lg">
@@ -182,12 +189,12 @@ const UserDetailsModal = ({ isOpen, onClose, userId }) => {
                 </div>
               )}
 
-              {user.role === 'traveler' && (
+              {user.role === 'TRAVELER' && (
                 <div className="space-y-4">
-                  <h4 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                  {/* <h4 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
                     <Plane className="w-5 h-5 text-blue-500" />
                     Traveler Information
-                  </h4>
+                  </h4> */}
                   
                   <div className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg">
                     <Globe className="w-5 h-5 text-blue-600" />
@@ -199,7 +206,7 @@ const UserDetailsModal = ({ isOpen, onClose, userId }) => {
                 </div>
               )}
 
-              {user.role === 'admin' && (
+              {user.role === 'ADMIN' && (
                 <div className="space-y-4">
                   <h4 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
                     <Shield className="w-5 h-5 text-red-500" />

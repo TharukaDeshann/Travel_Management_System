@@ -1,50 +1,50 @@
-import React, { useState, useEffect, use } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { Search, MapPin, Languages, Car, Star, Users, Shield } from 'lucide-react';
-import GuideModal from '../components/GuideModal';
-import apiClient from '../services/axiosInstance';
-import { fetchUsersByRole } from '../services/userService';
-import { fetchLoggedInUser } from '../services/authService';
+import React, { useState, useEffect, use } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
+import {
+  Search,
+  MapPin,
+  Languages,
+  Car,
+  Star,
+  Users,
+  Shield,
+} from "lucide-react";
+import GuideModal from "../components/GuideModal";
+import apiClient from "../services/axiosInstance";
+import { fetchUsersByRole } from "../services/userService";
+import { fetchLoggedInUser } from "../services/authService";
+import { getPublicSuggestions } from "../services/searchService";
+import VehicleManagement from "../components/VehicleManagement";
+import { useUser } from "../context/UserContext";
 
-import VehicleManagement from '../components/VehicleManagement';
-import { useUser } from '../context/UserContext';
-
-
-
-import { Layout } from '../components/Layout'; // Added import
-
+import { Layout } from "../components/Layout"; // Added import
 
 const GuidesPage = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
-
-  const currentUser = useUser()?.user || {}; 
-
+  const currentUser = useUser()?.user || {};
 
   const [guides, setGuides] = useState([]);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
   const [selectedGuide, setSelectedGuide] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [sortBy, setSortBy] = useState('name');
+  const [sortBy, setSortBy] = useState("name");
   const [filterVerified, setFilterVerified] = useState(false);
   const [filterVehicle, setFilterVehicle] = useState(false);
   const [guideRatings, setGuideRatings] = useState({});
-  // Layout-related state
-  const [selectedCurrency, setSelectedCurrency] = useState('LKR');
+  const [suggestions, setSuggestions] = useState([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [selectedSuggestionIndex, setSelectedSuggestionIndex] = useState(-1);
+  const [selectedCurrency, setSelectedCurrency] = useState("LKR");
   const [unreadCount, setUnreadCount] = useState(0);
   const loggedUser = currentUser;
-
-
- 
- 
-
 
   useEffect(() => {
     const fetchGuides = async () => {
       try {
         setLoading(true);
-        const response = await fetchUsersByRole('GUIDE');
+        const response = await fetchUsersByRole("GUIDE");
         console.log("Fetched guides:", response);
         setGuides(response);
 
@@ -53,7 +53,9 @@ const GuidesPage = () => {
         await Promise.all(
           response.map(async (guide) => {
             try {
-              const ratingResponse = await apiClient.get(`/api/reviews/guide/${guide.id}/average-rating`);
+              const ratingResponse = await apiClient.get(
+                `/api/reviews/guide/${guide.id}/average-rating`
+              );
               ratings[guide.id] = ratingResponse.data || 0;
             } catch (error) {
               ratings[guide.id] = 0;
@@ -61,7 +63,6 @@ const GuidesPage = () => {
           })
         );
         setGuideRatings(ratings);
-
       } catch (error) {
         console.error("Error fetching guides:", error);
       } finally {
@@ -72,14 +73,78 @@ const GuidesPage = () => {
     fetchGuides();
   }, []);
 
+  const fetchSuggestions = async (query) => {
+    if (query.length < 2) {
+      setSuggestions([]);
+      setShowSuggestions(false);
+      return;
+    }
+
+    try {
+      const suggestions = await getPublicSuggestions(query);
+      setSuggestions(suggestions);
+      setShowSuggestions(true);
+    } catch (error) {
+      console.error("Error fetching suggestions:", error);
+      setSuggestions([]);
+      setShowSuggestions(false);
+    }
+  };
+
+  //debounce search suggestions
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      fetchSuggestions(searchTerm);
+    }, 300); // 300ms debounce
+
+    return () => clearTimeout(timeoutId);
+  }, [searchTerm]);
+
+  //  Handle keyboard navigation
+  const handleKeyDown = (e) => {
+    if (!showSuggestions) return;
+
+    switch (e.key) {
+      case "ArrowDown":
+        e.preventDefault();
+        setSelectedSuggestionIndex((prev) =>
+          prev < suggestions.length - 1 ? prev + 1 : prev
+        );
+        break;
+      case "ArrowUp":
+        e.preventDefault();
+        setSelectedSuggestionIndex((prev) => (prev > 0 ? prev - 1 : -1));
+        break;
+      case "Enter":
+        e.preventDefault();
+        if (selectedSuggestionIndex >= 0) {
+          setSearchTerm(suggestions[selectedSuggestionIndex]);
+          setShowSuggestions(false);
+          setSelectedSuggestionIndex(-1);
+        }
+        break;
+      case "Escape":
+        setShowSuggestions(false);
+        setSelectedSuggestionIndex(-1);
+        break;
+    }
+  };
+
+  //hendle suggestion selection
+  const handleSuggestionClick = (suggestion) => {
+    setSearchTerm(suggestion);
+    setShowSuggestions(false);
+    setSelectedSuggestionIndex(-1);
+  };
   const filteredAndSortedGuides = guides
-    .filter(guide => {
+    .filter((guide) => {
       const searchLower = searchTerm.toLowerCase();
-      const matchesSearch = (
-        (guide.firstName + ' ' + guide.lastName).toLowerCase().includes(searchLower) ||
+      const matchesSearch =
+        (guide.firstName + " " + guide.lastName)
+          .toLowerCase()
+          .includes(searchLower) ||
         guide.expertiseCityRegion.toLowerCase().includes(searchLower) ||
-        guide.language.toLowerCase().includes(searchLower)
-      );
+        guide.language.toLowerCase().includes(searchLower);
 
       const matchesVerified = !filterVerified || guide.verified;
       const matchesVehicle = !filterVehicle || guide.vehicleAvailability;
@@ -88,11 +153,13 @@ const GuidesPage = () => {
     })
     .sort((a, b) => {
       switch (sortBy) {
-        case 'name':
-          return (a.firstName + ' ' + a.lastName).localeCompare(b.firstName + ' ' + b.lastName);
-        case 'rating':
+        case "name":
+          return (a.firstName + " " + a.lastName).localeCompare(
+            b.firstName + " " + b.lastName
+          );
+        case "rating":
           return (guideRatings[b.id] || 0) - (guideRatings[a.id] || 0);
-        case 'location':
+        case "location":
           return a.expertiseCityRegion.localeCompare(b.expertiseCityRegion);
         default:
           return 0;
@@ -106,12 +173,12 @@ const GuidesPage = () => {
           <Star
             key={star}
             size={16}
-            fill={rating >= star ? '#FFD700' : 'none'}
-            color={rating >= star ? '#FFD700' : '#ddd'}
+            fill={rating >= star ? "#FFD700" : "none"}
+            color={rating >= star ? "#FFD700" : "#ddd"}
           />
         ))}
         <span className="text-sm text-gray-600 ml-1">
-          {rating > 0 ? `(${rating.toFixed(1)})` : '(No ratings)'}
+          {rating > 0 ? `(${rating.toFixed(1)})` : "(No ratings)"}
         </span>
       </div>
     );
@@ -125,7 +192,6 @@ const GuidesPage = () => {
           <p className="text-lg text-gray-600">Loading Guides...</p>
         </div>
       </div>
-
     );
   }
 
@@ -154,14 +220,49 @@ const GuidesPage = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 {/* Search Bar */}
                 <div className="lg:col-span-2 relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+                  <Search
+                    className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 z-10"
+                    size={20}
+                  />
                   <input
                     type="text"
                     placeholder="Search by name, region, or language..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    onFocus={() =>
+                      searchTerm.length >= 2 && setShowSuggestions(true)
+                    }
+                    onBlur={() => {
+                      // Delay hiding suggestions to allow for clicks
+                      setTimeout(() => setShowSuggestions(false), 200);
+                    }}
                     className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    autoComplete="off"
                   />
+
+                  {/* Suggestions Dropdown */}
+                  {showSuggestions && suggestions.length > 0 && (
+                    <div className="absolute top-full left-0 right-0 bg-white border border-gray-200 rounded-lg shadow-lg mt-1 z-50 max-h-60 overflow-y-auto">
+                      {suggestions.map((suggestion, index) => (
+                        <div
+                          key={index}
+                          onClick={() => handleSuggestionClick(suggestion)}
+                          onMouseEnter={() => setSelectedSuggestionIndex(index)}
+                          className={`px-4 py-3 cursor-pointer border-b border-gray-100 last:border-b-0 transition-colors ${
+                            index === selectedSuggestionIndex
+                              ? "bg-blue-50 text-blue-600"
+                              : "hover:bg-gray-50"
+                          }`}
+                        >
+                          <div className="flex items-center gap-2">
+                            <Search size={16} className="text-gray-400" />
+                            <span className="text-sm">{suggestion}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 {/* Sort By */}
@@ -183,8 +284,8 @@ const GuidesPage = () => {
                     onClick={() => setFilterVerified(!filterVerified)}
                     className={`flex items-center gap-2 px-4 py-2 rounded-xl border transition-colors ${
                       filterVerified
-                        ? 'bg-blue-500 text-white border-blue-500'
-                        : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                        ? "bg-blue-500 text-white border-blue-500"
+                        : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
                     }`}
                   >
                     <Shield size={16} />
@@ -194,8 +295,8 @@ const GuidesPage = () => {
                     onClick={() => setFilterVehicle(!filterVehicle)}
                     className={`flex items-center gap-2 px-4 py-2 rounded-xl border transition-colors ${
                       filterVehicle
-                        ? 'bg-blue-500 text-white border-blue-500'
-                        : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                        ? "bg-blue-500 text-white border-blue-500"
+                        : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
                     }`}
                   >
                     <Car size={16} />
@@ -210,7 +311,6 @@ const GuidesPage = () => {
               <p className="text-gray-600">
                 {filteredAndSortedGuides.length} guides found
               </p>
-
             </div>
           </div>
         </div>
@@ -222,12 +322,16 @@ const GuidesPage = () => {
               <div className="text-gray-400 mb-4">
                 <Users size={64} className="mx-auto" />
               </div>
-              <h3 className="text-xl font-medium text-gray-900 mb-2">No guides found</h3>
-              <p className="text-gray-500">Try adjusting your search or filters</p>
+              <h3 className="text-xl font-medium text-gray-900 mb-2">
+                No guides found
+              </h3>
+              <p className="text-gray-500">
+                Try adjusting your search or filters
+              </p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {filteredAndSortedGuides.map(guide => (
+              {filteredAndSortedGuides.map((guide) => (
                 <div
                   key={guide.id}
                   onClick={() => setSelectedGuide(guide)}
@@ -236,7 +340,10 @@ const GuidesPage = () => {
                   {/* Guide Image */}
                   <div className="relative">
                     <img
-                      src={guide.profileImageUrl || 'https://via.placeholder.com/300x200?text=No+Image'}
+                      src={
+                        guide.profileImageUrl ||
+                        "https://via.placeholder.com/300x200?text=No+Image"
+                      }
                       alt={`${guide.firstName} ${guide.lastName}`}
                       className="w-full h-48 object-cover"
                     />
@@ -254,7 +361,9 @@ const GuidesPage = () => {
                       <div className="absolute bottom-3 left-3 bg-white/90 backdrop-blur-sm rounded-lg px-2 py-1">
                         <div className="flex items-center gap-1">
                           <Star size={14} fill="#FFD700" color="#FFD700" />
-                          <span className="text-sm font-medium">{guideRatings[guide.id].toFixed(1)}</span>
+                          <span className="text-sm font-medium">
+                            {guideRatings[guide.id].toFixed(1)}
+                          </span>
                         </div>
                       </div>
                     )}
@@ -315,9 +424,7 @@ const GuidesPage = () => {
             guide={selectedGuide}
             onClose={() => setSelectedGuide(null)}
             currentUser={currentUser}
-            
           />
-
         )}
       </div>
     </Layout>

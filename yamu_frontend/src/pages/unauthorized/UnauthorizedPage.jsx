@@ -61,7 +61,7 @@ const UnauthorizedPage = () => {
               href="mailto:support@yourcompany.com" 
               className="text-blue-600 hover:text-blue-700 underline"
             >
-              support@yourcompany.com
+              support@yamutravel.com
             </a>
           </p>
         </div>

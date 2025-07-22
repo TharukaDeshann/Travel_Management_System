@@ -519,7 +519,7 @@ const Analytics = () => {
               </div>
               <div>
                 <p className="text-2xl font-bold text-blue-900">{guidesSummary.totalReservations || 0}</p>
-                <p className="text-sm text-blue-600">Total Reservations</p>
+                <p className="text-sm text-blue-600">Total Guide Reservations</p>
               </div>
               <div>
                 <p className="text-2xl font-bold text-blue-900">{guidesSummary.guidesWithReviews || 0}</p>

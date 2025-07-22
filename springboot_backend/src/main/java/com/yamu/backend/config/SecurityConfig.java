@@ -50,20 +50,17 @@ public class SecurityConfig {
         http
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-
                 .authorizeHttpRequests(auth -> auth
 
                         .requestMatchers(
                                 "/api/auth/login",
-
-
                                 "/api/auth/register",
                                 "/api/auth/refresh-token",
                                 "/api/auth/user",
                                 "/api/auth/me",
                                 "/api/locations/**",
                                 "/api/auth/verify-email",
-
+                                "/api/suggestions",
                                 "/api/auth/resend-verification",
                                 "/api/facebook-events",
                                 "/error" // Explicitly allow error endpoint

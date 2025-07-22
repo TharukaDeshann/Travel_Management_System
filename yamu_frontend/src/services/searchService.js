@@ -15,3 +15,10 @@ export const getSuggestions = async (query) => {
   });
   return response.data;
 };
+
+export const getPublicSuggestions = async (query) => {
+  const response = await apiClient.get(`/api/suggestions`, {
+    params: { query }
+  });
+  return response.data;
+};

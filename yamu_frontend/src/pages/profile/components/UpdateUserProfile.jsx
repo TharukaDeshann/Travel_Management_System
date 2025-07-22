@@ -243,7 +243,6 @@ const UpdateUserProfile = () => {
     <div className="w-full px-4 py-8">
       <div className="max-w-6xl mx-auto bg-white rounded-lg shadow-lg overflow-hidden">
         <div className="p-6 md:p-8">
-          <BackButton/>
           <h1 className="text-2xl md:text-3xl font-bold text-gray-800">Update Profile</h1>
           <p className="text-gray-600 mt-2">Update your account information</p>
           
@@ -482,7 +481,7 @@ const UpdateUserProfile = () => {
             </div>
             
             {/* Submit button */}
-            <div className="mt-6 flex justify-end">
+            <div className="mt-6 flex justify-end gap-4">
               <Button
                 type="primary"
                 htmlType="submit"
@@ -491,6 +490,7 @@ const UpdateUserProfile = () => {
               >
                 {isLoading ? "Updating..." : "Save Changes"}
               </Button>
+              <BackButton/>
             </div>
           </form>
         </div>
@@ -510,7 +510,11 @@ const UpdateUserProfile = () => {
           onClose={() => setShowEmailModal(false)}
         />
       )}
+                
+
+      
     </div>
+    
   );
 };
 
