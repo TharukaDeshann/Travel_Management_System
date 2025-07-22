@@ -60,7 +60,7 @@ public class SecurityConfig {
                                 "/api/auth/me",
                                 "/api/locations/**",
                                 "/api/auth/verify-email",
-
+                                "/api/suggestions",
                                 "/api/auth/resend-verification",
                                 "/api/facebook-events",
                                 "/error" // Explicitly allow error endpoint

@@ -122,7 +122,7 @@ export default function TravelerDashboard({ currentUser: propCurrentUser }) {
       title: "Discover Tour Guides",
       items: guides.slice(0, 5).map(guide => ({
         name: `${guide.firstName} ${guide.lastName}`,
-        image: "/src/images/default-profile.png",
+        image: `${guide.profileImageUrl}`,
         guide: guide
       }))
     },
