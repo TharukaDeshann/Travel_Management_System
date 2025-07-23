@@ -36,4 +36,13 @@ public class DayPlan {
 
     @OneToOne(mappedBy = "dayPlan", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private Route route;
+
+    @OneToMany(mappedBy = "dayPlan", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<HotelBooking> hotelBookings = new ArrayList<>();
+
+    @OneToMany(mappedBy = "dayPlan", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<DriverBooking> driverBookings = new ArrayList<>();
+
+    @OneToMany(mappedBy = "dayPlan", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<GuideReservationByTraveler> guideReservations = new ArrayList<>();
     }

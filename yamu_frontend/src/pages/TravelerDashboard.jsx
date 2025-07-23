@@ -11,6 +11,7 @@ import apiClient from "../services/axiosInstance";
 import GuideModal from "../components/GuideModal";
 import { useUser } from "../context/UserContext";
 import { Layout } from "../components/Layout";
+import { fetchLoggedInUser } from "../services/authService";
 
 const currencies = [
   { code: 'USD', symbol: '$' },
@@ -19,7 +20,7 @@ const currencies = [
   { code: 'CHF', symbol: 'Fr.' }
 ];
 
-export default function TravelerDashboard({ currentUser }) {
+export default function TravelerDashboard({ currentUser: propCurrentUser }) {
   const navigate = useNavigate();
   const location = useLocation();
   const [selectedCurrency, setSelectedCurrency] = useState('LKR');
@@ -37,9 +38,28 @@ export default function TravelerDashboard({ currentUser }) {
   const [relatedPlaces, setRelatedPlaces] = useState([]);
   const [isProcessingImage, setIsProcessingImage] = useState(false);
   const [placesData, setPlacesData] = useState([]);
+  const [currentUser, setCurrentUser] = useState(propCurrentUser);
   
-  const loggedUser = useUser().user;
+
+  const loggedUser = useUser().user || currentUser;
+
   const unreadCount = 0;
+
+  // Fetch logged-in user if not available from props or context
+  useEffect(() => {
+    const loadCurrentUser = async () => {
+      if (!currentUser && !loggedUser) {
+        try {
+          const fetchedUser = await fetchLoggedInUser();
+          setCurrentUser(fetchedUser);
+        } catch (error) {
+          console.error('Error fetching logged-in user:', error);
+        }
+      }
+    };
+
+    loadCurrentUser();
+  }, [currentUser, loggedUser]);
 
   useEffect(() => {
     const fetchPlaces = async () => {
@@ -178,7 +198,8 @@ export default function TravelerDashboard({ currentUser }) {
   };
 
   const handleNavigateToGuides = () => {
-    navigate('/guides-page', { state: { currentUser } });
+    const userToPass = loggedUser || currentUser;
+    navigate('/guides-page', { state: { currentUser: userToPass } });
   };
 
   const handleImageUpload = async (e) => {
@@ -276,12 +297,10 @@ export default function TravelerDashboard({ currentUser }) {
 
   return (
     <Layout 
-      user={loggedUser}
+      user={loggedUser || currentUser}
       unreadCount={unreadCount}
       onCurrencyChange={setSelectedCurrency}
       selectedCurrency={selectedCurrency}
-      navigate={navigate}
-      location={location}
     >
       <div className="main-content">
         <div className="search-container">
@@ -393,17 +412,7 @@ export default function TravelerDashboard({ currentUser }) {
               <h2 className="text-lg font-bold">{section.title}</h2>
               <button 
                 className="text-blue-500"
-                onClick={() => {
-                  if (section.title === "Discover Tour Guides") {
-                    navigate('/guides-page');
-                  } else if (section.title === "Discover Places") {
-                    navigate('/places');
-                  } else if (section.title === "Discover Accommodations") {
-                    navigate('/hotels');
-                  } else if (section.title === "Event & Festival Highlights") {
-                    navigate('/events');
-                  }
-                }}
+                onClick={() => section.title === "Discover Tour Guides" ? handleNavigateToGuides() : null}
               >
                 See more →
               </button>

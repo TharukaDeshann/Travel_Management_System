@@ -105,7 +105,7 @@ public class GuideReservationByTravelerService {
         reservation.setUpdatedAt(LocalDateTime.now());
         return reservationRepository.save(reservation);
     }
-
+    
     // Set the estimated price for a reservation
     @Transactional
     public GuideReservationByTraveler setReservationPrice(Long reservationId, Double estimatedPrice) {
@@ -119,5 +119,9 @@ public class GuideReservationByTravelerService {
 
     public Optional<GuideReservationByTraveler> getByDayPlanId(Long dayPlanId) {
         return reservationRepository.findByDayPlanId(dayPlanId);
+    }
+
+    public boolean hasCompletedReservationWithGuide(Long travelerId, Long guideId) {
+        return reservationRepository.existsCompletedReservationByTravelerAndGuide(travelerId, guideId);
     }
 }

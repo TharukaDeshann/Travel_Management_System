@@ -1,5 +1,24 @@
 # Getting Started with Create React App
 
+## Azure Speech-to-Text Setup (for Voice Features)
+
+1. **Copy the example environment file:**
+   ```sh
+   cp env.example .env
+   ```
+2. **Open `.env` and add your Azure Speech Service credentials:**
+   ```env
+   VITE_AZURE_SPEECH_KEY=7Ri033wgpu75Dc8v00XffBLlaRhC38K9JFJiSAfDjeQKt1FNV5knJQQJ99BAACqBBLyXJ3w3AAAYACOGUSyk
+   VITE_AZURE_SPEECH_REGION=southeastasia
+   ```
+   (You can find these in your Azure portal under your Speech resource.)
+
+3. **Restart your development server** after saving `.env`.
+
+> **Tip:** If these values are set in `.env`, the Speech-to-Text demo page will use them automatically and you won't need to fill in the key/region fields manually.
+
+---
+
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
 ## Available Scripts

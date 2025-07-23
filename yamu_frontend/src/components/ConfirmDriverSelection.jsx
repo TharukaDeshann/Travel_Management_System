@@ -24,17 +24,15 @@ const ConfirmDriverSelection = ({
             <span className="text-3xl text-blue-400"> {/* user icon */} </span>
           )}
         </div>
-        <div className="text-lg font-semibold text-blue-900">
-          {driver.name}
-        </div>
+        <div className="text-lg font-semibold text-blue-900">{driver.name}</div>
         <div className="text-sm text-gray-500 mb-1 flex flex-col items-center text-center">
           <div>
             <span className="mr-2">Rating: {driver.rating}</span>
             <span>| {driver.vehicleType}</span>
           </div>
           <div>
-            <span>Distance: {distanceKm} km </span>
-            <span>| Total Cost: Rs.{totalCost.toFixed(2)}</span>
+            <span>Distance: {distanceKm || 0} km </span>
+            <span>| Total Cost: Rs.{totalCost ? totalCost.toFixed(2) : '0.00'}</span>
           </div>
         </div>
         <div className="flex gap-4 mt-4 w-full">

@@ -16,7 +16,7 @@ import {
   ErrorMessage,
   FlexContainer,
   LinkText,
-  Divider
+  Divider,
 } from "../components/StyledComponents";
 
 const Login = () => {
@@ -29,54 +29,82 @@ const Login = () => {
 
   const validateForm = () => {
     const newErrors = {};
+
+    // Email validation
     if (!formData.email) {
       newErrors.email = "Email is required";
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
       newErrors.email = "Invalid email format";
     }
+
+    // Password validation
     if (!formData.password) {
       newErrors.password = "Password is required";
     }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-    if (errors[name]) setErrors({ ...errors, [name]: "" });
+    setFormData((prevState) => ({
+      ...prevState,
+      [name]: value,
+    }));
+
+    // Clear error when user starts typing
+    if (errors[name]) {
+      setErrors({
+        ...errors,
+        [name]: "",
+      });
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
     if (!validateForm()) return;
-
     setLoading(true);
-    try {
-      await login({ email: formData.email, password: formData.password });
-      showSuccess("Login successful!");
 
+    try {
+      const response = await login({
+        email: formData.email,
+        password: formData.password,
+      });
+
+      // Show success on successful login
+      showSuccess("Login successful! Welcome back.");
+
+      // Fetch user data and navigate
       try {
         const userData = await fetchLoggedInUser();
         setUser(userData);
+        console.log("User data fetched:", userData);
         localStorage.setItem("user", JSON.stringify(userData));
 
+        // Redirect based on role
         if (userData.role === "TRAVELER") {
           navigate("/traveler-dashboard");
         } else if (userData.role === "GUIDE") {
           navigate("/guide-dashboard");
         } else if (userData.role === "ADMIN") {
-          navigate("/admin-dashboard");
+          navigate("/admin-user-management");
         } else {
           navigate("/dashboard");
         }
       } catch (userError) {
-        showError("Login succeeded but failed to fetch user data.");
-        console.error("User fetch error:", userError);
+        showError(
+          "Login successful but couldn't load user data. Please try again."
+        );
+        console.error("Error fetching user data:", userError);
       }
-
     } catch (err) {
       let errorMsg = "Login failed.";
+      console.error("Login error:", err);
+
+      // Handle detailed login errors
       if (err.response) {
         const status = err.response.status;
         if (status === 401) errorMsg = "Invalid email or password.";
@@ -84,10 +112,40 @@ const Login = () => {
         else if (status === 404) errorMsg = "User not found.";
         else if (status === 429) errorMsg = "Too many attempts. Try again.";
         else if (err.response.data?.error) errorMsg = err.response.data.error;
+        const serverError = err.response.data?.error;
+
+        if (status === 401) {
+          // Use server-provided error message or default
+          errorMsg =
+            serverError ||
+            "Invalid email or password. Please check your credentials.";
+        } else if (status === 403) {
+          errorMsg =
+            serverError ||
+            "Your account has been locked. Please contact support.";
+        } else if (status === 404) {
+          errorMsg =
+            serverError ||
+            "Account not found. Please check your email or sign up.";
+        } else if (status === 429) {
+          errorMsg =
+            serverError || "Too many login attempts. Please try again later.";
+        } else if (status >= 500) {
+          errorMsg = "Server error. Please try again later.";
+        } else if (serverError) {
+          // Use any server-provided error message
+          errorMsg = serverError;
+        }
       } else if (err.request) {
         errorMsg = "Network error. Check your internet.";
+        // Network error
+        errorMsg = "Network error. Please check your internet connection.";
+      } else {
+        // Other errors
+        errorMsg = "An unexpected error occurred. Please try again.";
       }
 
+      console.log("Showing error notification:", errorMsg);
       showError(errorMsg);
       console.error("Login error:", err);
     } finally {
@@ -140,7 +198,9 @@ const Login = () => {
         </Button>
       </Form>
 
-      <Divider><span>Don't have an account?</span></Divider>
+      <Divider>
+        <span>Don't have an account?</span>
+      </Divider>
 
       <FlexContainer justifyContent="center">
         <LinkText to="/register">Sign up</LinkText>

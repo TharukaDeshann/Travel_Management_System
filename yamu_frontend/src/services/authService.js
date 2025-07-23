@@ -10,7 +10,6 @@ export const register = async (userData) => {
 
 // Login
 export const login = async (credentials) => {
-  // No need to handle tokens, just let cookies be set
   const response = await axios.post(`${API_URL}/login`, credentials, { withCredentials: true });
   return response.data;
 };

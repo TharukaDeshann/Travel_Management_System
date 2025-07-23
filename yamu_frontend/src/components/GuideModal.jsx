@@ -47,6 +47,7 @@ const GuideModal = ({
   const [showAwaitConfirmation, setShowAwaitConfirmation] = useState(false);
   const [reservationResult, setReservationResult] = useState(null);
 
+
   // Fetch reviews when guide is selected
   useEffect(() => {
     fetchReviews();
@@ -174,18 +175,23 @@ const GuideModal = ({
 
   // --- MODIFIED handleSubmit ---
   const handleSubmit = async () => {
-    if (isLoadingUser) {
-      setError('Please wait while we load your user data');
-      return;
+    let userToUse = currentUser || user;
+    // If we don't have user from props or context, try to fetch it
+    if (!userToUse) {
+      try {
+        userToUse = await fetchLoggedInUser();
+      } catch (error) {
+        console.error('Error fetching logged-in user:', error);
+        setError('Please login to make a reservation');
+        navigate('/login');
+        return;
+      }
     }
-
-    const userToUse = loggedInUser || currentUser;
     if (!userToUse || !userToUse.id) {
       setError('Please login to make a reservation');
       navigate('/login');
       return;
     }
-
     // Validate all fields are filled
     for (let i = 0; i < reservationDetails.length; i++) {
       const detail = reservationDetails[i];
@@ -194,20 +200,16 @@ const GuideModal = ({
         return;
       }
     }
-
     // Validate dates are not in the past and sequential
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-
     for (let i = 0; i < reservationDetails.length; i++) {
       const detail = reservationDetails[i];
       const selectedDate = new Date(detail.date);
-
       if (selectedDate < today) {
         setError(`Date for Day ${i + 1} cannot be in the past`);
         return;
       }
-
       if (i > 0) {
         const previousDate = new Date(reservationDetails[i - 1].date);
         if (selectedDate <= previousDate) {
@@ -216,13 +218,11 @@ const GuideModal = ({
         }
       }
     }
-
     setIsSubmitting(true);
     setError(null);
-
     try {
       const reservationData = {
-        travelerId: travelerId || userToUse.id,
+        travelerId: userToUse.id,
         guideId: guide.id,
         dayDetails: reservationDetails.map((detail, index) => ({
           dayNumber: index + 1,
@@ -232,14 +232,12 @@ const GuideModal = ({
           vehicleRequested: detail.vehicleRequested,
           vehicleDetails: detail.vehicleDetails
         })),
-        dayPlanId: dayPlanId // <-- INCLUDED HERE
+        dayPlanId: dayPlanId
       };
-
       // Create reservation
       const reservationResponse = await apiClient.post('/api/reservations', reservationData);
       const reservation = reservationResponse.data;
       setReservationResult(reservation);
-
       // Show "await confirmation" dialog
       setShowAwaitConfirmation(true);
     } catch (err) {

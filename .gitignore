@@ -1,2 +1,3 @@
 echo ".env" >> .gitignore
 springboot_backend/logs/error.log
+springboot_backend/logs/*.log

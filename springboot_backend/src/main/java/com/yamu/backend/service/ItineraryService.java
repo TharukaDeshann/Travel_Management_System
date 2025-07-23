@@ -14,6 +14,8 @@ import java.util.stream.Collectors;
 import com.yamu.backend.dto.DayPlanDetailResponse;
 import com.yamu.backend.dto.LocationDetailResponse;
 import com.yamu.backend.dto.RouteDetailResponse;
+import com.yamu.backend.dto.ItinerarySummaryResponseDTO;
+import java.util.List;
 
 @Service
 public class ItineraryService {
@@ -51,6 +53,18 @@ public class ItineraryService {
 
     public Optional<Itinerary> getItineraryById(Long id) {
         return itineraryRepository.findById(id);
+    }
+
+    public List<Itinerary> getItinerariesByTravelerId(Long travelerId) {
+        return itineraryRepository.findByTravelerId(travelerId);
+    }
+
+    public List<ItinerarySummaryResponseDTO> getItinerarySummariesByTravelerId(Long travelerId) {
+        return itineraryRepository.findSummariesByTravelerId(travelerId);
+    }
+
+    public void deleteItinerary(Long id) {
+        itineraryRepository.deleteById(id);
     }
 
     public ItineraryDetailResponse mapToDetailResponse(Itinerary itinerary) {

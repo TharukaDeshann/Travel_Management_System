@@ -16,7 +16,11 @@ const DriverDetailsCard = ({ summary, expanded, onExpand, onSelect }) => {
   }, [expanded, summary.id]);
 
   return (
-    <div className={`border rounded-xl p-4 bg-gray-50 shadow-sm transition-all ${expanded ? "ring-2 ring-blue-200" : ""}`}>
+    <div
+      className={`border rounded-xl p-4 bg-gray-50 shadow-sm transition-all ${
+        expanded ? "ring-2 ring-blue-200" : ""
+      }`}
+    >
       <div className="flex items-center">
         {summary.photoBase64 ? (
           <img
@@ -30,7 +34,9 @@ const DriverDetailsCard = ({ summary, expanded, onExpand, onSelect }) => {
           </div>
         )}
         <div>
-          <div className="font-semibold text-lg text-blue-900">{summary.name}</div>
+          <div className="font-semibold text-lg text-blue-900">
+            {summary.name}
+          </div>
           <div className="text-xs text-gray-500">
             <span className="inline-block px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 mr-2">
               {summary.rating} ★
@@ -60,7 +66,9 @@ const DriverDetailsCard = ({ summary, expanded, onExpand, onSelect }) => {
                 <span className="block text-sm text-gray-500 mb-1">
                   Description
                 </span>
-                <span className="block text-gray-700">{details.description}</span>
+                <span className="block text-gray-700">
+                  {details.description}
+                </span>
               </div>
               <div className="mb-2">
                 <span className="block text-sm text-gray-500 mb-1">

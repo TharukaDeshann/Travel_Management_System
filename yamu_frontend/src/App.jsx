@@ -1,6 +1,5 @@
 import "./App.css";
 import logo from "./logo.svg";
-import "./App.css";
 import React from "react";
 
 import Login from "./pages/Login.jsx";
@@ -11,31 +10,33 @@ import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 import Reservations from "./pages/Reservations.jsx";
 import WeatherPage from "./pages/WeatherPage.jsx";
 import Weather from "./components/Weather.jsx";
-import VisitPlanPage from "./pages/VisitPlanPage";
 import TravelerDashboard from "./pages/TravelerDashboard.jsx";
 import GuideDashboard from "./pages/GuideDashboard.jsx";
 import GuideReview from "./pages/GuideReview.jsx";
 import GuideCalendar from "./components/GuideCalendar.jsx";
 import Map from "./components/Map.jsx";
-import GuidesPage from "./pages/GuidesPage.jsx";         
+import GuidesPage from "./pages/GuidesPage.jsx";
 import WeatherCard from "./components/WeatherCard.jsx";
 import ItineraryPlanner from "./pages/ItineraryPlanner.jsx";
-
-import FinalizeItinerary from "./pages/FinalizeItinerary.jsx"; 
-import Inbox from "./pages/Inbox.jsx";// Import FinalizeItinerary
+import FinalizeItinerary from "./pages/FinalizeItinerary.jsx";
+import Inbox from "./pages/Inbox.jsx";
 import TravelerUpcomingTrips from "./pages/TravelerUpcomingTrips";
-
 import VerifyEmail from "./pages/VerifyEmail.jsx";
 import VerifyEmailPending from "./pages/VerifyEmailPending.jsx";
 import UserProfile from "./pages/profile/UserProfile.jsx";
 import UpdateUserProfile from "./pages/profile/components/UpdateUserProfile.jsx";
 import ProfileView from "./pages/ProfileView.jsx";
-import AdminDashboard from "./pages/AdminDashboard.jsx";
 import UsersSocialPage from "./pages/UsersSocialPage.jsx";
 import SpeechToTextDemo from "./pages/SpeechToTextDemo.jsx";
-import UserSearch from "./components/UserSearch.jsx";
 import EmergencyContacts from "./pages/EmergencyContacts.jsx";
-
+import ChatBotPage from "./pages/ChatBotPage.jsx";
+// Admin dashboard imports
+import UserManagement from "./pages/admin_dashboard/UserManagement.jsx";
+import GuideManagement from "./pages/admin_dashboard/GuideManagement.jsx";
+import TravelerManagement from "./pages/admin_dashboard/TravelerManagement.jsx";
+import Analytics from "./pages/admin_dashboard/Analytics.jsx";
+import RoleProtectedRoute from "./components/RoleProtectedRoute.jsx";
+import UnauthorizedPage from "./pages/unauthorized/UnauthorizedPage.jsx";
 
 const App = () => {
   return (
@@ -46,56 +47,109 @@ const App = () => {
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
-
-          {/* ai search */}
-          <Route path="/user-search" element={<UserSearch />} />
           <Route path="/weather" element={<WeatherPage />} />
           <Route path="/weather-details" element={<Weather />} />
           <Route path="/weather-card" element={<WeatherCard />} />
           <Route path="/finalize-itinerary" element={<FinalizeItinerary />} />
           <Route path="/speech-demo" element={<SpeechToTextDemo />} />
-          <Route path="/" element={<Login />} />
-          
-          {/* Email verification pending */}
-          <Route
-            path="/verify-email-pending"
-            element={<VerifyEmailPending />}
-          />
-          {/* Email verification */}
+          {/* Email Verification Routes */}
+          <Route path="/verify-email-pending" element={<VerifyEmailPending />}/>
           <Route path="/verify-email" element={<VerifyEmail />} />
           <Route path="/emergency-contacts" element={<EmergencyContacts />} />
 
           {/* Protected Routes */}
           <Route element={<ProtectedRoute />}>
-            <Route path="/inbox" element={<Inbox />} />
-            <Route path="/home" element={<Home />} />
-            <Route path="/traveler-dashboard" element={<TravelerDashboard />} />
-            <Route path="/guide-dashboard" element={<GuideDashboard />} />
-            <Route path="/admin-dashboard" element={<AdminDashboard />} />
-            <Route path="/guide-reviews" element={<GuideReview />} />
-            <Route path="/guide-calendar" element={<GuideCalendar />} />
-            <Route path="/visit-plan" element={<VisitPlanPage />} />
-            <Route path="/guides-page" element={<GuidesPage />} />
-            <Route path="/users/users-by-role" element={<UsersSocialPage />} />
+            {/* Admin Protected Routes */}
+            <Route path="/admin-user-management" element={
+              <RoleProtectedRoute allowedRoles={['ADMIN']}>
+                <UserManagement />
+              </RoleProtectedRoute>
+            } />
+            <Route path="/admin-guide-management" element={
+              <RoleProtectedRoute allowedRoles={['ADMIN']}>
+                <GuideManagement />
+              </RoleProtectedRoute>
+            } />
+            <Route path="/admin-traveler-management" element={
+              <RoleProtectedRoute allowedRoles={['ADMIN']}>
+                <TravelerManagement />
+              </RoleProtectedRoute>
+            } />
+            <Route path="/admin-analytics" element={
+              <RoleProtectedRoute allowedRoles={['ADMIN']}>
+                <Analytics />
+              </RoleProtectedRoute>
+            } />
+
+            {/* Traveler/Guide Management Routes */}
+            <Route path="/inbox" element={
+              <RoleProtectedRoute allowedRoles={['TRAVELER', 'GUIDE']}>
+                <Inbox />
+              </RoleProtectedRoute>
+            } />
+            <Route path="/traveler-dashboard" element={
+              <RoleProtectedRoute allowedRoles={['TRAVELER']}>
+                <TravelerDashboard />
+              </RoleProtectedRoute>
+            } />
+            <Route path="/guide-dashboard" element={
+              <RoleProtectedRoute allowedRoles={['GUIDE']}>
+                <GuideDashboard />
+              </RoleProtectedRoute>
+            } />
+            <Route path="/guide-reviews" element={
+              <RoleProtectedRoute allowedRoles={['GUIDE']}>
+                <GuideReview />
+              </RoleProtectedRoute>
+            } />
+            <Route path="/guide-calendar" element={
+              <RoleProtectedRoute allowedRoles={['GUIDE']}>
+                <GuideCalendar />
+              </RoleProtectedRoute>
+            } />
+            <Route path="/guides-page" element={
+              <RoleProtectedRoute allowedRoles={['TRAVELER', 'GUIDE']}>
+                <GuidesPage />
+              </RoleProtectedRoute>
+            } />
             <Route path="/map" element={<Map />} />
-            <Route path="/itinerary-planner" element={<ItineraryPlanner />} />
-            <Route path="/reservations" element={<Reservations></Reservations>}></Route>
-          
-        
-
-            
-
+            <Route path="/itinerary-planner" element={
+              <RoleProtectedRoute allowedRoles={['TRAVELER']}>
+                <ItineraryPlanner />
+              </RoleProtectedRoute>
+            } />
+            <Route path="/reservations" element={
+              <RoleProtectedRoute allowedRoles={['TRAVELER']}>
+                <Reservations />
+              </RoleProtectedRoute>
+            } />
+            <Route path="/traveler-upcoming-trips" element={
+              <RoleProtectedRoute allowedRoles={['TRAVELER']}>
+                <TravelerUpcomingTrips />
+              </RoleProtectedRoute>
+            } />
+            <Route path="/finalize-itinerary" element={
+              <RoleProtectedRoute allowedRoles={['TRAVELER']}>
+                <FinalizeItinerary />
+              </RoleProtectedRoute>
+            } />
+            <Route path="/users/users-by-role" element={<UsersSocialPage />} />
+            {/* Chatbot Route - NEW ADDITION */}
+            <Route path="/chatbot" element={
+              <RoleProtectedRoute allowedRoles={['TRAVELER', 'GUIDE', 'ADMIN']}>
+                <ChatBotPage />
+              </RoleProtectedRoute>
+            } />
             {/* Profile Routes */}
-            {/* <Route path="/users/profile/" */}
             <Route path="/profile" element={<UserProfile />} />
             <Route path="/profile/update-profile" element={<UpdateUserProfile />} />
             <Route path="/users/profile/:userId" element={<ProfileView />} />
           </Route>
 
-          
-
           {/* Fallback Route */}
           <Route path="*" element={<div>404 Not Found</div>} />
+          {/* Unauthorized Route */}
+          <Route path="/unauthorized" element={<UnauthorizedPage />} />
         </Routes>
       </Router>
     </React.Fragment>

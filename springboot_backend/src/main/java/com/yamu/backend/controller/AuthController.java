@@ -142,20 +142,26 @@ public class AuthController {
 
     @PostMapping("/login")
     public ResponseEntity<Map<String, Object>> login(@Valid @RequestBody UserLoginRequest loginRequest) {
+        try {
+            User authenticatedUser = authService.authenticate(loginRequest.getEmail(), loginRequest.getPassword());
 
-        User authenticatedUser = authService.authenticate(loginRequest.getEmail(), loginRequest.getPassword());
+            if (authenticatedUser == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(Map.of("error", "Invalid email or password"));
+            }
 
-        if (!authenticatedUser.isVerified()) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Please verify your email to login");
-        }
+            if (!authenticatedUser.isVerified()) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(Map.of("error", "Please verify your email before logging in"));
+            }
 
-        if (authenticatedUser != null) {
+            // Generate tokens and create cookies (your existing code)
             String accessToken = jwtUtil.generateAccessToken(authenticatedUser.getEmail());
             String refreshToken = jwtUtil.generateRefreshToken(authenticatedUser.getEmail());
 
             ResponseCookie accessTokenCookie = ResponseCookie.from("accessToken", accessToken)
                     .httpOnly(true)
-                    .secure(false) // set to true in production with HTTPS
+                    .secure(true)
                     .path("/")
                     .maxAge(900)
                     .sameSite("Strict")
@@ -178,9 +184,13 @@ public class AuthController {
                     .header("Set-Cookie", accessTokenCookie.toString())
                     .header("Set-Cookie", refreshTokenCookie.toString())
                     .body(response);
-        }
 
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Invalid credentials"));
+        } catch (Exception e) {
+            // Log the actual error for debugging
+            System.err.println("Login error: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "An unexpected error occurred. Please try again."));
+        }
     }
 
     @PostMapping("/refresh-token")

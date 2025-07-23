@@ -17,7 +17,6 @@ import com.yamu.backend.service.AzureSearchService;
 
 @RestController
 @RequestMapping("/api/search")
-@CrossOrigin(origins = "*") // For testing - restrict this in production
 public class SearchController {
     
     @Autowired
@@ -52,6 +51,7 @@ public class SearchController {
             @RequestParam(required = false, defaultValue = "false") boolean verified,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
+                
         
         try {
             List<String> filters = new ArrayList<>();

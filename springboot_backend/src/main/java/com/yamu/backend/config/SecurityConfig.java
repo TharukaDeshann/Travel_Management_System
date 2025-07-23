@@ -51,51 +51,44 @@ public class SecurityConfig {
             .csrf(AbstractHttpConfigurer::disable)
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .authorizeHttpRequests(auth -> auth
-                // Public endpoints (your workload)
-                .requestMatchers("/api/itineraries/**").permitAll()  // Itineraries public
-                .requestMatchers("/api/day-plans/**").permitAll()     // Day-plans public
-
-                // Public endpoints (from GitHub)
-                .requestMatchers("/api/drivers/**").permitAll()
-                .requestMatchers("/api/weather/**").permitAll()
-                .requestMatchers("/api/hotels/**").permitAll()
-                .requestMatchers("/api/hotels/bookings/**").permitAll()
-                .requestMatchers("/h2-console/**").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/reviews/**").permitAll()
-                .requestMatchers("/ws/**", "/app/**", "/topic/**", "/queue/**", "/user/**").permitAll()
-                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                .requestMatchers(
-                    "/api/auth/login", 
-                    "/api/auth/register",
-                    "/api/auth/refresh-token", 
-                    "/api/auth/user", 
-                    "/api/auth/me", 
-                    "/api/locations/**", 
-                    "/api/auth/verify-email", 
-                    "/api/auth/resend-verification"
-                ).permitAll()
-
-                // Protected endpoints (from GitHub)
-                .requestMatchers(HttpMethod.POST, "/api/reviews/**").authenticated()
-                .requestMatchers(HttpMethod.DELETE, "/api/reviews/**").authenticated()
-                .requestMatchers(HttpMethod.PUT, "/api/users/{id}").authenticated()
-                .requestMatchers(HttpMethod.PUT, "/api/users/{id}/update-email").authenticated()
-                .requestMatchers(HttpMethod.PUT, "/api/users/{id}/update-password").authenticated()
-                .requestMatchers("/api/admin/**", "/api/admin/travelers/**","/api/search/**").hasRole("ADMIN")
-                .requestMatchers("/api/guide/**").hasAnyRole("GUIDE", "ADMIN", "TRAVELER")
-                .requestMatchers("/api/traveler/**").hasRole("TRAVELER")
-                .requestMatchers("/api/users/**").hasAnyRole("ADMIN", "GUIDE", "TRAVELER")
-
-                // Default to authenticated
-                .anyRequest().authenticated()
-            )
+                    .requestMatchers("/api/drivers/**").permitAll()
+                    .requestMatchers("/api/weather/**").permitAll()
+                    .requestMatchers("/api/hotels/**").permitAll()
+                    .requestMatchers("/api/hotels/bookings/**").permitAll()
+                    .requestMatchers("/h2-console/**").permitAll()
+                    .requestMatchers(HttpMethod.GET, "/api/reviews/**").permitAll()
+                    .requestMatchers("/ws/**", "/app/**", "/topic/**", "/queue/**", "/user/**").permitAll()
+                    .requestMatchers(
+                            "/api/auth/login",
+                            "/api/auth/register",
+                            "/api/auth/refresh-token",
+                            "/api/auth/user",
+                            "/api/auth/me",
+                            "/api/locations/**",
+                            "/api/auth/verify-email",
+                            "/api/auth/resend-verification")
+                    .permitAll()
+                    .requestMatchers("/api/itineraries/**").permitAll()
+                    .requestMatchers("/api/day-plans/**").permitAll()
+                    .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                    .requestMatchers(HttpMethod.POST, "/api/reviews/**").authenticated()
+                    .requestMatchers(HttpMethod.DELETE, "/api/reviews/**").authenticated()
+                    .requestMatchers(HttpMethod.PUT, "/api/users/{id}").authenticated()
+                    .requestMatchers(HttpMethod.PUT, "/api/users/{id}/update-email").authenticated()
+                    .requestMatchers(HttpMethod.PUT, "/api/users/{id}/update-password").authenticated()
+                    .requestMatchers("/api/guide/reservations/**").hasRole("GUIDE")
+                    .requestMatchers("/api/guide/vehicles/**").hasAnyRole("GUIDE", "TRAVELER")
+                    .requestMatchers("/api/guide/**").hasAnyRole("GUIDE", "ADMIN", "TRAVELER")
+                    .requestMatchers("/api/users/**").hasAnyRole("ADMIN", "GUIDE", "TRAVELER")
+                    .requestMatchers("/api/admin/**", "/api/admin/travelers/**", "/api/search/**").hasRole("ADMIN")
+                    .requestMatchers("/api/traveler/**").hasRole("TRAVELER")
+                    .anyRequest().authenticated())
             .exceptionHandling(ex -> ex
-                .authenticationEntryPoint((req, res, ex2) -> res.sendError(
-                    HttpServletResponse.SC_UNAUTHORIZED,
-                    "Authentication required"))
-            )
+                    .authenticationEntryPoint((req, res, ex2) -> res.sendError(
+                            HttpServletResponse.SC_UNAUTHORIZED,
+                            "Authentication required")))
             .sessionManagement(sess -> sess
-                .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                    .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
             .headers(headers -> headers.frameOptions().disable());
 

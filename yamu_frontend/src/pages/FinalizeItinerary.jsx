@@ -29,6 +29,7 @@ const FinalizeItinerary = () => {
   const [guideReservations, setGuideReservations] = useState({});
   const [pdfLoading, setPdfLoading] = useState(false);
   const [dropLoading, setDropLoading] = useState(false);
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -223,7 +224,11 @@ const FinalizeItinerary = () => {
 
   const handleDropItinerary = async () => {
     if (!itineraryId) return;
-    if (!window.confirm("Are you sure you want to delete this itinerary? This action cannot be undone.")) return;
+    setShowConfirmDialog(true);
+  };
+
+  const confirmDropItinerary = async () => {
+    setShowConfirmDialog(false);
     setDropLoading(true);
     try {
       await apiClient.delete(`/api/itineraries/${itineraryId}`);
@@ -233,6 +238,10 @@ const FinalizeItinerary = () => {
       window.alert("Failed to delete itinerary. Please try again.");
       setDropLoading(false);
     }
+  };
+
+  const cancelDropItinerary = () => {
+    setShowConfirmDialog(false);
   };
 
   if (loading) {
@@ -620,8 +629,8 @@ const FinalizeItinerary = () => {
               <h3 className="font-bold text-yellow-800 mb-2">Important Notes</h3>
               <ul className="text-sm text-yellow-800 space-y-1">
                 <li>• Some tour guide bookings are pending confirmation. Final cost may vary.</li>
-                <li>• Prices shown are based on current selections from booking APIs.</li>
-                <li>• Please check your email for booking confirmations and receipts.</li>
+                
+                <li>• Please check reservations to reger your trip history.</li>
               </ul>
         </div>
       </div>
@@ -664,9 +673,9 @@ const FinalizeItinerary = () => {
           </button>
           <button
             className="flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg shadow-md hover:from-green-600 hover:to-green-700 transition-all transform hover:scale-105"
-            onClick={() => navigate("/traveler-upcoming-trips")}
+            onClick={() => navigate("/reservations", { state: { activeTab: 'itineraries' } })}
           >
-            Go to Upcoming Trips
+            Go to Trip History
         </button>
           <button
             onClick={() => navigate("/")}
@@ -682,6 +691,33 @@ const FinalizeItinerary = () => {
           <div className="text-xs text-gray-500">Safe travels and enjoy your adventure! ✈️🌍</div>
         </div>
       </div>
+      {showConfirmDialog && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
+          <div className="bg-white rounded-xl shadow-2xl p-8 max-w-md w-full text-center border border-red-200">
+            <h2 className="text-xl font-bold text-red-700 mb-4">Delete Itinerary?</h2>
+            <p className="mb-6 text-gray-700">
+              Are you sure you want to delete this itinerary? <br />
+              <span className='font-semibold'>This action cannot be undone.</span>
+            </p>
+            <div className="flex gap-4 justify-center">
+              <button
+                className="px-6 py-2 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700 transition"
+                onClick={confirmDropItinerary}
+                disabled={dropLoading}
+              >
+                {dropLoading ? "Deleting..." : "Yes, Delete"}
+              </button>
+              <button
+                className="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg font-semibold hover:bg-gray-300 transition"
+                onClick={cancelDropItinerary}
+                disabled={dropLoading}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

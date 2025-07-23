@@ -38,13 +38,27 @@ const Header = ({
         { name: 'Reviews', path: '/guide-reviews' },
         { name: 'Emergency Contacts', path: '/emergency-contacts' }
       ];
-    } else {
+    } else if (user?.role === 'TRAVELER') {
       return [
         { name: 'Dashboard', path: '/traveler-dashboard' },
         { name: 'Reservations', path: '/reservations' },
         { name: 'Guides', path: '/guides-page' },
         { name: 'Places', path: '/places' },
         { name: 'Emergency Contacts', path: '/emergency-contacts'}
+      ];
+    } else if (user?.role === 'ADMIN') {
+      return [
+        { name: 'User Management', path: '/admin-user-management' },
+        { name: 'Guide Management', path: '/admin-guide-management' },
+        { name: 'Traveler Management', path: '/admin-traveler-management' },
+        { name: 'Analytics', path: '/admin-analytics' },
+        { name: 'Emergency Contacts', path: '/emergency-contacts' }
+      ];
+    } else{
+      return [
+        { name: 'Home', path: '/' },
+        { name: 'Places', path: '/places' },
+        { name: 'Emergency Contacts', path: '/emergency-contacts' }
       ];
     }
   };
@@ -228,7 +242,7 @@ const ProfileDropdown = () => (
                                 {user?.role === 'ADMIN'
                                     ? 'Admin'
                                     : user?.role === 'GUIDE'
-                                    ? 'Tour Guide'
+                                    ? 'Guide'
                                     : 'Traveler'}
                             </span>
                         </div>
@@ -309,16 +323,16 @@ const ProfileDropdown = () => (
             {/* Action buttons group */}
             <div className="flex items-center bg-gray-50 rounded-2xl p-2 gap-1">
               {/* Currency Selector (only for travelers) */}
-              {user?.role !== 'GUIDE' && <CurrencySelector />}
+              {user?.role !== 'GUIDE' || user?.role !== 'ADMIN' && <CurrencySelector />}
               
               {/* Divider */}
-              {user?.role !== 'GUIDE' && (
+              {user?.role !== 'GUIDE' || user?.role !== 'ADMIN' && (
                 <div className="w-px h-8 bg-gray-300 mx-1"></div>
               )}
               
               {/* Messages */}
-              <MessagesIcon />
-              
+              {user?.role === 'TRAVELER' || user?.role === 'GUIDE' ? <MessagesIcon /> : null}
+
               {/* Notifications */}
               <NotificationCenter />
             </div>
@@ -391,15 +405,6 @@ const Footer = ({ navigate }) => {
         { name: 'Careers', path: '/careers' },
         { name: 'Press', path: '/press' },
         { name: 'Blog', path: '/blog' }
-      ]
-    },
-    {
-      title: 'Legal',
-      links: [
-        { name: 'Privacy Policy', path: '/privacy' },
-        { name: 'Terms of Service', path: '/terms' },
-        { name: 'Cookie Policy', path: '/cookies' },
-        { name: 'Disclaimer', path: '/disclaimer' }
       ]
     }
   ];
