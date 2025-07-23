@@ -362,4 +362,207 @@
     position: relative;
     margin: 2px;
 }
+
+/* Add these styles to your TravelerDashboard.css file */
+
+/* Enhanced search bar styles */
+.search-bar {
+  position: relative;
+  flex: 1;
+  margin-right: 1rem;
+}
+
+.search-input {
+  width: 100%;
+  padding: 12px 16px;
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
+  font-size: 16px;
+  transition: all 0.2s ease;
+  background-color: #f8fafc;
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  background-color: white;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.search-input::placeholder {
+  color: #64748b;
+}
+
+/* Search results dropdown */
+.search-results-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  margin-top: 4px;
+  max-height: 400px;
+  overflow-y: auto;
+  z-index: 50;
+}
+
+.search-results-section {
+  padding: 12px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.search-results-section:last-child {
+  border-bottom: none;
+}
+
+.search-results-header {
+  font-size: 14px;
+  font-weight: 600;
+  color: #64748b;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+}
+
+.search-result-item {
+  display: flex;
+  align-items: center;
+  padding: 8px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.search-result-item:hover {
+  background-color: #f8fafc;
+}
+
+.search-result-image {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin-right: 12px;
+  flex-shrink: 0;
+}
+
+.search-result-image.package-image {
+  border-radius: 6px;
+}
+
+.search-result-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.search-result-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: #1f2937;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.search-result-subtitle {
+  font-size: 12px;
+  color: #6b7280;
+  margin: 2px 0 0 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.search-result-meta {
+  display: flex;
+  align-items: center;
+  font-size: 12px;
+  color: #6b7280;
+  gap: 12px;
+}
+
+.search-no-results {
+  padding: 16px;
+  text-align: center;
+  color: #6b7280;
+}
+
+.search-no-results p {
+  margin: 0;
+}
+
+.search-no-results p:first-child {
+  font-size: 14px;
+  margin-bottom: 4px;
+}
+
+.search-no-results p:last-child {
+  font-size: 12px;
+}
+
+/* Loading spinner */
+.search-loading {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.loading-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid #e2e8f0;
+  border-top: 2px solid #3b82f6;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .search-container {
+    flex-direction: column;
+    gap: 12px;
+  }
   
+  .search-bar {
+    margin-right: 0;
+  }
+  
+  .buttons-container {
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .search-results-dropdown {
+    left: -8px;
+    right: -8px;
+  }
+  
+  .search-result-item {
+    padding: 12px 8px;
+  }
+}
+
+/* High contrast for better accessibility */
+@media (prefers-contrast: high) {
+  .search-input {
+    border-color: #374151;
+  }
+  
+  .search-input:focus {
+    border-color: #1f2937;
+  }
+  
+  .search-results-dropdown {
+    border-color: #374151;
+  }
+}
