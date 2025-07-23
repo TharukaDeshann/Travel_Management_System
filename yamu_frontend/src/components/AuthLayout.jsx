@@ -17,7 +17,7 @@ export const AuthLayout = ({ title, subtitle, children }) => (
         maxWidth: "650px", // Increased from 450px to 650px
         width: "100%", 
         borderRadius: "12px",
-        boxShadow: "0 4px 12px rgba(0, 0, 0, 0.08)"
+        boxShadow: "0 4px 12px rgba(0, 0, 0, 0.08)",
       }}
     >
       <div style={{ textAlign: "center", marginBottom: "24px" }}>

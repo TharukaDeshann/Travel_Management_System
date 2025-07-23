@@ -110,7 +110,8 @@ const VerifyEmailPage = () => {
   };
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: '#5B1B15' }}>
+    // #5B1B15
+    <div className="min-h-screen" style={{ backgroundColor: '#f0f2f5' }}>
       <div className="flex items-center justify-center min-h-screen px-4">
         <div className="max-w-md w-full bg-white rounded-2xl shadow-2xl overflow-hidden">
           {/* Header with dynamic gradient */}
@@ -211,7 +212,7 @@ const VerifyEmailPage = () => {
                       className="font-semibold hover:underline"
                       style={{ color: '#D59C29' }}
                     >
-                      support@yourcompany.com
+                      support@yamutravel.com
                     </a>
                   </p>
                 </div>
