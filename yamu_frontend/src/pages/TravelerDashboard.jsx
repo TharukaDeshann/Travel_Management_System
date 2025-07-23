@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { ChevronRight, Mail, Calendar, Users, DollarSign, MapPin, Clock } from "lucide-react";
+import { ChevronRight, Mail, Calendar, Users, DollarSign, MapPin, Clock, Search, User, Package } from "lucide-react";
 import '../styles/TravelerDashboard.css';
 import WeatherCard from "../components/WeatherCard";
 import yamuLogo from '../images/yamu-logo.png';
@@ -36,6 +36,17 @@ export default function TravelerDashboard({ currentUser: propCurrentUser }) {
     specialRequests: ''
   });
   const [isSubmittingApplication, setIsSubmittingApplication] = useState(false);
+  
+  // Search functionality states
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState({
+    guides: [],
+    events: [],
+    packages: []
+  });
+  const [showSearchResults, setShowSearchResults] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
+  const searchRef = useRef(null);
   
   // Use the currency converter hook
   const { convertPackages, selectedCurrency, getCurrencySymbol } = useCurrencyConverter();
@@ -96,6 +107,95 @@ export default function TravelerDashboard({ currentUser: propCurrentUser }) {
     fetchEvents();
     fetchPackages();
   }, []);
+
+  // Search functionality
+  const performSearch = async (query) => {
+    if (!query.trim()) {
+      setSearchResults({ guides: [], events: [], packages: [] });
+      setShowSearchResults(false);
+      return;
+    }
+
+    setIsSearching(true);
+    
+    try {
+      const searchLower = query.toLowerCase();
+      
+      // Filter guides
+      const filteredGuides = guides.filter(guide => 
+        `${guide.firstName} ${guide.lastName}`.toLowerCase().includes(searchLower) ||
+        guide.expertiseCityRegion?.toLowerCase().includes(searchLower) ||
+        guide.language?.toLowerCase().includes(searchLower)
+      );
+
+      // Filter events
+      const filteredEvents = events.filter(event =>
+        event.name?.toLowerCase().includes(searchLower) ||
+        event.description?.toLowerCase().includes(searchLower)
+      );
+
+      // Filter packages
+      const filteredPackages = packages.filter(pkg =>
+        pkg.packageName?.toLowerCase().includes(searchLower) ||
+        pkg.description?.toLowerCase().includes(searchLower) ||
+        pkg.selectedGuide?.firstName?.toLowerCase().includes(searchLower) ||
+        pkg.selectedGuide?.lastName?.toLowerCase().includes(searchLower)
+      );
+
+      setSearchResults({
+        guides: filteredGuides.slice(0, 5), // Limit to 5 results each
+        events: filteredEvents.slice(0, 5),
+        packages: filteredPackages.slice(0, 5)
+      });
+      setShowSearchResults(true);
+    } catch (error) {
+      console.error('Search error:', error);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  // Debounced search
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (searchQuery) {
+        performSearch(searchQuery);
+      } else {
+        setShowSearchResults(false);
+      }
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery, guides, events, packages]);
+
+  // Close search results when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (searchRef.current && !searchRef.current.contains(event.target)) {
+        setShowSearchResults(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleSearchInputChange = (e) => {
+    setSearchQuery(e.target.value);
+  };
+
+  const handleSearchResultClick = (type, item) => {
+    setShowSearchResults(false);
+    setSearchQuery('');
+    
+    if (type === 'guide') {
+      setSelectedGuide(item);
+    } else if (type === 'event') {
+      setSelectedEvent(item);
+    } else if (type === 'package') {
+      handlePackageClick(item);
+    }
+  };
 
   const sections = [
     {
@@ -228,12 +328,136 @@ export default function TravelerDashboard({ currentUser: propCurrentUser }) {
     >
       <div className="main-content">
         <div className="search-container">
-          <div className="search-bar">
-            <input 
-              type="text" 
-              placeholder="Search destinations, hotels, or events..." 
-              className="search-input"
-            />
+          <div className="search-bar" ref={searchRef}>
+            <div className="relative">
+              <div className="relative flex items-center">
+                <Search className="absolute left-3 w-5 h-5 text-gray-400" />
+                <input 
+                  type="text" 
+                  placeholder="Search guides, events, or packages..." 
+                  className="search-input pl-10"
+                  value={searchQuery}
+                  onChange={handleSearchInputChange}
+                  onFocus={() => searchQuery && setShowSearchResults(true)}
+                />
+                {isSearching && (
+                  <div className="absolute right-3">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500"></div>
+                  </div>
+                )}
+              </div>
+              
+              {/* Search Results Dropdown */}
+              {showSearchResults && (
+                <div className="absolute top-full left-0 right-0 bg-white border border-gray-200 rounded-lg shadow-lg mt-1 max-h-96 overflow-y-auto z-50">
+                  {/* Guides Results */}
+                  {searchResults.guides.length > 0 && (
+                    <div className="p-3 border-b border-gray-100">
+                      <h3 className="text-sm font-semibold text-gray-600 mb-2 flex items-center">
+                        <User className="w-4 h-4 mr-1" />
+                        Tour Guides
+                      </h3>
+                      {searchResults.guides.map((guide) => (
+                        <div
+                          key={guide.id}
+                          className="flex items-center p-2 hover:bg-gray-50 rounded-md cursor-pointer"
+                          onClick={() => handleSearchResultClick('guide', guide)}
+                        >
+                          <img
+                            src={guide.profileImageUrl}
+                            alt={`${guide.firstName} ${guide.lastName}`}
+                            className="w-10 h-10 rounded-full object-cover mr-3"
+                          />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-gray-900 truncate">
+                              {guide.firstName} {guide.lastName}
+                            </p>
+                            <p className="text-xs text-gray-500 truncate">
+                              {guide.expertiseCityRegion} • {guide.language}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Events Results */}
+                  {searchResults.events.length > 0 && (
+                    <div className="p-3 border-b border-gray-100">
+                      <h3 className="text-sm font-semibold text-gray-600 mb-2 flex items-center">
+                        <Calendar className="w-4 h-4 mr-1" />
+                        Events
+                      </h3>
+                      {searchResults.events.map((event) => (
+                        <div
+                          key={event.id}
+                          className="flex items-center p-2 hover:bg-gray-50 rounded-md cursor-pointer"
+                          onClick={() => handleSearchResultClick('event', event)}
+                        >
+                          <img
+                            src={event.image_url}
+                            alt={event.name}
+                            className="w-10 h-10 rounded object-cover mr-3"
+                          />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-gray-900 truncate">
+                              {event.name}
+                            </p>
+                            <p className="text-xs text-gray-500 truncate">
+                              {event.formatted_date} at {event.formatted_time}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Packages Results */}
+                  {searchResults.packages.length > 0 && (
+                    <div className="p-3">
+                      <h3 className="text-sm font-semibold text-gray-600 mb-2 flex items-center">
+                        <Package className="w-4 h-4 mr-1" />
+                        Packages
+                      </h3>
+                      {searchResults.packages.map((pkg) => (
+                        <div
+                          key={pkg.id}
+                          className="flex items-center p-2 hover:bg-gray-50 rounded-md cursor-pointer"
+                          onClick={() => handleSearchResultClick('package', pkg)}
+                        >
+                          <img
+                            src="/src/images/sigiriya.jpg"
+                            alt={pkg.packageName}
+                            className="w-10 h-10 rounded object-cover mr-3"
+                          />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-gray-900 truncate">
+                              {pkg.packageName}
+                            </p>
+                            <div className="flex items-center text-xs text-gray-500">
+                              <Clock className="w-3 h-3 mr-1" />
+                              <span className="mr-3">{pkg.durationDays} days</span>
+                              <DollarSign className="w-3 h-3 mr-1" />
+                              <span>LKR {pkg.budgetPerPerson?.toLocaleString()}</span>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* No Results */}
+                  {searchResults.guides.length === 0 && 
+                   searchResults.events.length === 0 && 
+                   searchResults.packages.length === 0 && (
+                    <div className="p-4 text-center text-gray-500">
+                      <p className="text-sm">No results found for "{searchQuery}"</p>
+                      <p className="text-xs mt-1">Try searching for guides, events, or packages</p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
           <div className="buttons-container">
             <button 
