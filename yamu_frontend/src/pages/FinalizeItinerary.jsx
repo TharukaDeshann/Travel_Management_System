@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { FaHotel, FaCar, FaUserCheck, FaFilePdf } from "react-icons/fa";
+import { fetchWeatherData, getWeatherIcon, formatTemperature } from "../services/weatherService";
 
 const FinalizeItinerary = () => {
   const tripData = {
@@ -11,6 +12,45 @@ const FinalizeItinerary = () => {
   };
 
   const [days, setDays] = useState([]);
+  const [weatherData, setWeatherData] = useState({});
+  const [loadingWeather, setLoadingWeather] = useState(false);
+
+  // Function to fetch weather data for all locations
+  const fetchWeatherForLocations = async (daysArray) => {
+    setLoadingWeather(true);
+    const weatherPromises = [];
+    const weatherKeys = [];
+
+    daysArray.forEach(day => {
+      day.locations.forEach(location => {
+        const key = `${location}-${day.date}`;
+        weatherKeys.push(key);
+        weatherPromises.push(
+          fetchWeatherData(location, day.date).catch(error => {
+            console.error(`Failed to fetch weather for ${location} on ${day.date}:`, error);
+            return null;
+          })
+        );
+      });
+    });
+
+    try {
+      const weatherResults = await Promise.all(weatherPromises);
+      const weatherMap = {};
+      
+      weatherResults.forEach((weather, index) => {
+        if (weather) {
+          weatherMap[weatherKeys[index]] = weather;
+        }
+      });
+      
+      setWeatherData(weatherMap);
+    } catch (error) {
+      console.error('Error fetching weather data:', error);
+    } finally {
+      setLoadingWeather(false);
+    }
+  };
 
   useEffect(() => {
     const generateDays = (start, end) => {
@@ -58,7 +98,11 @@ const FinalizeItinerary = () => {
       return daysArray;
     };
 
-    setDays(generateDays(tripData.start, tripData.end));
+    const generatedDays = generateDays(tripData.start, tripData.end);
+    setDays(generatedDays);
+    
+    // Fetch weather data for all locations
+    fetchWeatherForLocations(generatedDays);
   }, [tripData.start, tripData.end]);
 
   return (
@@ -101,12 +145,49 @@ const FinalizeItinerary = () => {
             {/* Locations */}
             <div className="border-l-4 border-yellow-200 pl-4">
               <h3 className="font-semibold mb-2">📍 Places to Visit</h3>
-              <ul className="list-disc pl-5 space-y-2">
-                {day.locations.map((location, locIndex) => (
-                  <li key={locIndex} className="text-sm">
-                    {location}
-                  </li>
-                ))}
+              {loadingWeather && (
+                <div className="text-sm text-blue-600 mb-2">
+                  🌤️ Loading weather information...
+                </div>
+              )}
+              <ul className="space-y-3">
+                {day.locations.map((location, locIndex) => {
+                  const weatherKey = `${location}-${day.date}`;
+                  const weather = weatherData[weatherKey];
+                  
+                  return (
+                    <li key={locIndex} className="bg-white p-3 rounded-lg border shadow-sm">
+                      <div className="flex justify-between items-start">
+                        <div className="flex-1">
+                          <h4 className="font-medium text-gray-800">{location}</h4>
+                          {weather && (
+                            <div className="mt-2 flex items-center gap-4 text-sm text-gray-600">
+                              <div className="flex items-center gap-1">
+                                <span className="text-lg">{getWeatherIcon(weather.condition)}</span>
+                                <span>{weather.condition}</span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <span className="font-medium text-blue-600">
+                                  {formatTemperature(weather.temperature)}
+                                </span>
+                                {weather.humidity && (
+                                  <span className="text-xs">
+                                    💧 {weather.humidity}%
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          )}
+                          {!weather && !loadingWeather && (
+                            <div className="mt-1 text-xs text-gray-400">
+                              Weather data unavailable
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </li>
+                  );
+                })}
               </ul>
             </div>
 
