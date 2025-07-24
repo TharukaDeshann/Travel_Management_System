@@ -424,17 +424,17 @@ const UserManagement = () => {
               >
                 Next
               </Button>
-
-              {/* User Details Modal*/}
-              <UserDetailsModal
-                isOpen={showUserDetailsModal}
-                onClose={() => setShowUserDetailsModal(false)}
-                userId={selectedUserId}
-              />
             </div>
           </div>
         )}
       </div>
+
+      {/* User Details Modal - Moved outside of nested divs */}
+      <UserDetailsModal
+        isOpen={showUserDetailsModal}
+        onClose={() => setShowUserDetailsModal(false)}
+        userId={selectedUserId}
+      />
     </AdminLayout>
   );
 };
