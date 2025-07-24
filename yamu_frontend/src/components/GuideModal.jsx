@@ -30,6 +30,8 @@ const GuideModal = ({ guide, onClose, currentUser }) => {
   const { user } = useUser();
   const loggedUser = currentUser || user;
 
+  // Check if user is a traveler
+  const isTraveler = loggedUser?.role === 'TRAVELER';
 
   // Fetch reviews when guide is selected
   useEffect(() => {
@@ -119,8 +121,6 @@ const GuideModal = ({ guide, onClose, currentUser }) => {
   };
 
   const handleSubmit = async () => {
-
-
     let userToUse = currentUser || user;
     
     // If we don't have user from props or context, try to fetch it
@@ -181,6 +181,8 @@ const GuideModal = ({ guide, onClose, currentUser }) => {
     }
   };
 
+  console.log("currentUser: ", currentUser?.role);
+
   const renderStars = (rating) => {
     return (
       <div className="flex items-center gap-1">
@@ -235,32 +237,36 @@ const GuideModal = ({ guide, onClose, currentUser }) => {
             >
               Guide Details
             </button>
-            {currentUser.role == 'TRAVELER' && (<button
-              className={`px-6 py-3 font-medium text-sm transition-colors ${
-                activeTab === 'reviews' 
-                  ? 'text-blue-600 border-b-2 border-blue-600' 
-                  : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
-              }`}
-              onClick={() => {
-                setActiveTab('reviews');
-                setReviewToEdit(null);
-              }}
-            >
-              Reviews {averageRating && `(${averageRating.toFixed(1)})`}
-            </button>)}
-            {currentUser.role == 'TRAVELER' && (<button
-              className={`px-6 py-3 font-medium text-sm transition-colors ${
-                activeTab === 'reservation' 
-                  ? 'text-blue-600 border-b-2 border-blue-600' 
-                  : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
-              }`}
-              onClick={() => {
-                setActiveTab('reservation');
-                setReviewToEdit(null);
-              }}
-            >
-              Make Reservation
-            </button>)}
+            {isTraveler && (
+              <button
+                className={`px-6 py-3 font-medium text-sm transition-colors ${
+                  activeTab === 'reviews' 
+                    ? 'text-blue-600 border-b-2 border-blue-600' 
+                    : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
+                }`}
+                onClick={() => {
+                  setActiveTab('reviews');
+                  setReviewToEdit(null);
+                }}
+              >
+                Reviews {averageRating && `(${averageRating.toFixed(1)})`}
+              </button>
+            )}
+            {isTraveler && (
+              <button
+                className={`px-6 py-3 font-medium text-sm transition-colors ${
+                  activeTab === 'reservation' 
+                    ? 'text-blue-600 border-b-2 border-blue-600' 
+                    : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
+                }`}
+                onClick={() => {
+                  setActiveTab('reservation');
+                  setReviewToEdit(null);
+                }}
+              >
+                Make Reservation
+              </button>
+            )}
           </div>
         </div>
         
@@ -352,20 +358,21 @@ const GuideModal = ({ guide, onClose, currentUser }) => {
                     </p>
                   </div>
                   
-                  {currentUser.role == 'TRAVELER' && (<div className="pt-4 flex justify-end gap-3">
-                    <button
-                      onClick={() => setActiveTab('reviews')}
-                      className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-lg font-medium transition-colors"
-                    >
-                      See Reviews
-                    </button>
-                    <button
-                      onClick={() => setActiveTab('reservation')}
-                      className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
-                    >
-                      Make Reservation
-                    </button>
-                  </div>
+                  {isTraveler && (
+                    <div className="pt-4 flex justify-end gap-3">
+                      <button
+                        onClick={() => setActiveTab('reviews')}
+                        className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-lg font-medium transition-colors"
+                      >
+                        See Reviews
+                      </button>
+                      <button
+                        onClick={() => setActiveTab('reservation')}
+                        className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
+                      >
+                        Make Reservation
+                      </button>
+                    </div>
                   )}
                 </div>
               </div>
@@ -373,7 +380,7 @@ const GuideModal = ({ guide, onClose, currentUser }) => {
           )}
           
           {/* Reviews Tab */}
-          {activeTab === 'reviews' && !reviewToEdit && currentUser.role == 'TRAVELER' &&(
+          {activeTab === 'reviews' && !reviewToEdit && isTraveler && (
             <div className="p-6">
               {/* Success message */}
               {reviewSuccess && (
@@ -498,7 +505,7 @@ const GuideModal = ({ guide, onClose, currentUser }) => {
           )}
           
           {/* Review Form */}
-          {activeTab === 'reviews' && reviewToEdit && currentUser.role == 'TRAVELER' &&(
+          {activeTab === 'reviews' && reviewToEdit && isTraveler && (
             <div className="p-6">
               <div className="flex items-center justify-between mb-6">
                 <h3 className="text-xl font-semibold text-gray-800">
@@ -572,7 +579,7 @@ const GuideModal = ({ guide, onClose, currentUser }) => {
           )}
           
           {/* Reservation Tab */}
-          {activeTab === 'reservation' && currentUser.role == 'TRAVELER' &&(
+          {activeTab === 'reservation' && isTraveler && (
             <div className="p-6">
               <h3 className="text-xl font-semibold text-gray-800 mb-4">Create Reservation</h3>
               <p className="text-gray-600 mb-6">
