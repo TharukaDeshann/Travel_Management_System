@@ -441,14 +441,14 @@ export default function TravelerDashboard({ currentUser: propCurrentUser }) {
                         <Package className="w-4 h-4 mr-1" />
                         Packages
                       </h3>
-                      {searchResults.packages.map((pkg) => (
+                      {searchResults.packages.map((pkg,index) => (
                         <div
                           key={pkg.id}
                           className="flex items-center p-2 hover:bg-gray-50 rounded-md cursor-pointer"
                           onClick={() => handleSearchResultClick('package', pkg)}
                         >
                           <img
-                            src="/src/images/sigiriya.jpg"
+                            src={`/src/images/${index+1}.jpg`}
                             alt={pkg.packageName}
                             className="w-10 h-10 rounded object-cover mr-3"
                           />
