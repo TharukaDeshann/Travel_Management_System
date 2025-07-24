@@ -13,6 +13,7 @@ const ChatBotPage = () => {
       setIsScrolled(scrollTop > 100);
     };
 
+    // Add scroll event listener to the chat container
     const chatContainer = document.querySelector('.chat-container');
     if (chatContainer) {
       chatContainer.addEventListener('scroll', handleScroll);
@@ -41,9 +42,9 @@ const ChatBotPage = () => {
               viewBox="0 0 24 24" 
               stroke="currentColor"
             >
-              <path 
-                strokeLinecap="round" 
-                strokeLinejoin="round" 
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
                 strokeWidth={2} 
                 d="M10 19l-7-7m0 0l7-7m-7 7h18" 
               />
@@ -59,7 +60,7 @@ const ChatBotPage = () => {
 
       {/* Main Content */}
       <div className="container mx-auto px-4 pb-10 flex flex-col h-[calc(100vh-64px)]">
-        {/* Welcome Section */}
+        {/* Welcome Section - Centered */}
         <div className="flex flex-col items-center justify-center py-6 px-4 bg-white shadow-sm mb-4 rounded-lg">
           <img
             src={botImage}
@@ -74,7 +75,7 @@ const ChatBotPage = () => {
           </div>
         </div>
 
-        {/* Chat Container */}
+        {/* Chat Container - Maximized */}
         <div className="flex-1 bg-white rounded-lg shadow-lg overflow-hidden">
           <BotChat />
         </div>
