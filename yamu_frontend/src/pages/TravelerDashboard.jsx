@@ -604,14 +604,14 @@ export default function TravelerDashboard({ currentUser: propCurrentUser }) {
               onScroll={(e) => handleScroll(e, 'Discover Packages')}
             >
               {convertedPackages.length > 0 ? (
-                convertedPackages.slice(0, 6).map((pkg) => (
+                convertedPackages.slice(0, 6).map((pkg,index) => (
                   <div 
                     key={pkg.id} 
                     className="card-container hover:cursor-pointer"
                     onClick={() => handlePackageClick(pkg)}
                   >
                     <img 
-                      src="/src/images/sigiriya.jpg" 
+                      src={`/src/images/${index+1}.jpg`} 
                       alt={pkg.packageName} 
                       className="card-image" 
                     />
