@@ -290,7 +290,9 @@ public class HotelService {
             List<Hotel> allHotels = hotelRepository.findAll();
             
             debugInfo.put("totalHotels", allHotels.size());
-            debugInfo.put("hotels", allHotels.stream().map(hotel -> {
+            debugInfo.put("hotels", allHotels.stream()
+                    .limit(10) // Limit to first 10 hotels
+                    .map(hotel -> {
                 Map<String, Object> hotelInfo = new HashMap<>();
                 hotelInfo.put("id", hotel.getId());
                 hotelInfo.put("name", hotel.getName());
@@ -301,7 +303,7 @@ public class HotelService {
                 return hotelInfo;
             }).collect(Collectors.toList()));
             
-            log.info("🔍 DEBUG: Total {} hotels in database", allHotels.size());
+            log.info("🔍 DEBUG: Total {} hotels in database, showing first 10", allHotels.size());
             
         } catch (Exception e) {
             log.error("Error getting all hotels: ", e);

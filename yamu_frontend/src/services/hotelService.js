@@ -44,6 +44,7 @@ export const getHotelDetails = async (hotelId) => {
   }
 };
 
+
 // Get Room Availability
 export const getHotelAvailability = async (hotelId, checkIn, checkOut) => {
   try {
