@@ -1,10 +1,10 @@
-import React from 'react';
-import { Select, Spin } from 'antd';
-import InputField from '../components/InputField';
+import React from "react";
+import { Select, Spin } from "antd";
+import InputField from "../components/InputField";
 
 const { Option } = Select;
 
-const GuideSection = ({ 
+const GuideSection = ({
   formData,
   errors,
   countries,
@@ -17,22 +17,27 @@ const GuideSection = ({
   handleChange,
   handleSelectChange,
   handleLanguageChange,
-  getSelectedLanguages
+  getSelectedLanguages,
 }) => {
   return (
     <div className="border-b border-gray-200 py-6">
-      <h2 className="text-xl font-semibold text-gray-800 mb-4">Guide Details</h2>
-      
+      <h2 className="text-xl font-semibold text-gray-800 mb-4">
+        Guide Details
+      </h2>
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Country Selection */}
         <div className="space-y-2">
-          <label htmlFor="nationality" className="block text-sm font-medium text-gray-700">
+          <label
+            htmlFor="nationality"
+            className="block text-sm font-medium text-gray-700"
+          >
             Country
           </label>
           <Select
             id="nationality"
             value={formData.nationality || undefined}
-            onChange={(value) => handleSelectChange('nationality', value)}
+            onChange={(value) => handleSelectChange("nationality", value)}
             placeholder="Select your country"
             className="w-full"
             showSearch
@@ -40,26 +45,35 @@ const GuideSection = ({
               option.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }
             loading={loadingCountries}
-            notFoundContent={loadingCountries ? <Spin size="small" /> : 'No countries found'}
+            notFoundContent={
+              loadingCountries ? <Spin size="small" /> : "No countries found"
+            }
           >
-            {countries.map(country => (
+            {countries.map((country) => (
               <Option key={country.code} value={country.name}>
                 {country.name}
               </Option>
             ))}
           </Select>
-          {errors.nationality && <p className="text-sm text-red-500">{errors.nationality}</p>}
+          {errors.nationality && (
+            <p className="text-sm text-red-500">{errors.nationality}</p>
+          )}
         </div>
-        
+
         {/* Region Selection */}
         <div className="space-y-2">
-          <label htmlFor="expertiseCityRegion" className="block text-sm font-medium text-gray-700">
+          <label
+            htmlFor="expertiseCityRegion"
+            className="block text-sm font-medium text-gray-700"
+          >
             Expertise City/Region
           </label>
           <Select
             id="expertiseCityRegion"
             value={formData.expertiseCityRegion || undefined}
-            onChange={(value) => handleSelectChange('expertiseCityRegion', value)}
+            onChange={(value) =>
+              handleSelectChange("expertiseCityRegion", value)
+            }
             placeholder="Select city/region of expertise"
             className="w-full"
             showSearch
@@ -69,26 +83,33 @@ const GuideSection = ({
             loading={loadingRegions}
             disabled={!selectedCountry}
             notFoundContent={
-              loadingRegions 
-                ? <Spin size="small" /> 
-                : selectedCountry 
-                  ? 'No regions found' 
-                  : 'Please select a country first'
+              loadingRegions ? (
+                <Spin size="small" />
+              ) : selectedCountry ? (
+                "No regions found"
+              ) : (
+                "Please select a country first"
+              )
             }
           >
-            {regions.map(region => (
+            {regions.map((region) => (
               <Option key={region.id} value={region.name}>
                 {region.name}
               </Option>
             ))}
           </Select>
-          {errors.expertiseCityRegion && <p className="text-sm text-red-500">{errors.expertiseCityRegion}</p>}
+          {errors.expertiseCityRegion && (
+            <p className="text-sm text-red-500">{errors.expertiseCityRegion}</p>
+          )}
         </div>
       </div>
-      
+
       {/* Languages Selection */}
       <div className="mt-6 space-y-2">
-        <label htmlFor="language" className="block text-sm font-medium text-gray-700">
+        <label
+          htmlFor="language"
+          className="block text-sm font-medium text-gray-700"
+        >
           Languages
         </label>
         <Select
@@ -103,17 +124,21 @@ const GuideSection = ({
             option.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
           }
           loading={loadingLanguages}
-          notFoundContent={loadingLanguages ? <Spin size="small" /> : 'No languages found'}
+          notFoundContent={
+            loadingLanguages ? <Spin size="small" /> : "No languages found"
+          }
         >
-          {languages.map(language => (
+          {languages.map((language) => (
             <Option key={language.code} value={language.name}>
               {language.name}
             </Option>
           ))}
         </Select>
-        {errors.language && <p className="text-sm text-red-500">{errors.language}</p>}
+        {errors.language && (
+          <p className="text-sm text-red-500">{errors.language}</p>
+        )}
       </div>
-      
+
       {/* About Section */}
       <div className="mt-6">
         <InputField

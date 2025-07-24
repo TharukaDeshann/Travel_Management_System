@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
-import { 
-  getTravelerBookingCounts, 
-  getAllTravelerBookings 
+import {
+  getTravelerBookingCounts,
+  getAllTravelerBookings,
 } from "../../services/travelerManagementService";
 
 // Skeleton Components
@@ -12,12 +12,12 @@ const StatCardSkeleton = () => (
   </div>
 );
 
-const TravelerDetailsModal = ({ 
-  traveler, 
-  isOpen, 
-  onClose, 
+const TravelerDetailsModal = ({
+  traveler,
+  isOpen,
+  onClose,
   onProfileClick,
-  onError 
+  onError,
 }) => {
   const [bookingDetails, setBookingDetails] = useState(null);
   const [bookingCounts, setBookingCounts] = useState({});
@@ -52,7 +52,10 @@ const TravelerDetailsModal = ({
       setBookingCounts(counts);
       setBookingDetails(allBookings);
     } catch (err) {
-      const errorMessage = err.response?.data?.message || err.message || "Failed to fetch booking details";
+      const errorMessage =
+        err.response?.data?.message ||
+        err.message ||
+        "Failed to fetch booking details";
       if (onError) {
         onError(errorMessage, "Failed to Load Booking Details");
       }
@@ -212,8 +215,8 @@ const TravelerDetailsModal = ({
                         : "border-transparent text-gray-500 hover:text-gray-700"
                     }`}
                   >
-                    Hotel Bookings (
-                    {bookingDetails?.hotelBookings?.length || 0})
+                    Hotel Bookings ({bookingDetails?.hotelBookings?.length || 0}
+                    )
                   </button>
                   <button
                     onClick={() => setActiveTab("driver")}
@@ -247,7 +250,9 @@ const TravelerDetailsModal = ({
                               <p className="text-sm text-gray-600">
                                 Guide:
                                 <button
-                                  onClick={() => handleProfileClick(reservation.guideId)}
+                                  onClick={() =>
+                                    handleProfileClick(reservation.guideId)
+                                  }
                                   className="text-blue-600 hover:text-blue-800 ml-1"
                                 >
                                   {reservation.guideName}
@@ -265,7 +270,8 @@ const TravelerDetailsModal = ({
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                             <div>
                               <p>
-                                <strong>Days:</strong> {reservation.numberOfDays}
+                                <strong>Days:</strong>{" "}
+                                {reservation.numberOfDays}
                               </p>
                               <p>
                                 <strong>Guide Contact:</strong>{" "}
@@ -372,8 +378,7 @@ const TravelerDetailsModal = ({
                                 <strong>Room Type:</strong> {booking.roomType}
                               </p>
                               <p>
-                                <strong>Rooms:</strong>{" "}
-                                {booking.numberOfRooms}
+                                <strong>Rooms:</strong> {booking.numberOfRooms}
                               </p>
                             </div>
                             <div>
@@ -390,8 +395,7 @@ const TravelerDetailsModal = ({
                                 {booking.paymentStatus}
                               </p>
                               <p>
-                                <strong>Method:</strong>{" "}
-                                {booking.paymentMethod}
+                                <strong>Method:</strong> {booking.paymentMethod}
                               </p>
                             </div>
                           </div>
@@ -481,8 +485,7 @@ const TravelerDetailsModal = ({
                                 {booking.startLocationName}
                               </p>
                               <p>
-                                <strong>To:</strong>{" "}
-                                {booking.endLocationName}
+                                <strong>To:</strong> {booking.endLocationName}
                               </p>
                             </div>
                           </div>

@@ -1,11 +1,13 @@
-import React from 'react';
-import InputField from '../components/InputField';
+import React from "react";
+import InputField from "../components/InputField";
 
 const BasicInformationSection = ({ formData, errors, handleChange }) => {
   return (
     <div className="border-b border-gray-200 pb-6">
-      <h2 className="text-xl font-semibold text-gray-800 mb-4">Basic Information</h2>
-      
+      <h2 className="text-xl font-semibold text-gray-800 mb-4">
+        Basic Information
+      </h2>
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <InputField
           id="firstName"
@@ -16,7 +18,7 @@ const BasicInformationSection = ({ formData, errors, handleChange }) => {
           error={errors.firstName}
           placeholder="First Name"
         />
-        
+
         <InputField
           id="lastName"
           name="lastName"
@@ -27,7 +29,7 @@ const BasicInformationSection = ({ formData, errors, handleChange }) => {
           placeholder="Last Name"
         />
       </div>
-      
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
         <InputField
           id="contactNumber"
@@ -38,7 +40,7 @@ const BasicInformationSection = ({ formData, errors, handleChange }) => {
           error={errors.contactNumber}
           placeholder="Contact Number"
         />
-        
+
         <InputField
           id="address"
           name="address"

@@ -235,7 +235,7 @@ const GuideModal = ({ guide, onClose, currentUser }) => {
             >
               Guide Details
             </button>
-            <button
+            {currentUser.role == 'TRAVELER' && (<button
               className={`px-6 py-3 font-medium text-sm transition-colors ${
                 activeTab === 'reviews' 
                   ? 'text-blue-600 border-b-2 border-blue-600' 
@@ -247,8 +247,8 @@ const GuideModal = ({ guide, onClose, currentUser }) => {
               }}
             >
               Reviews {averageRating && `(${averageRating.toFixed(1)})`}
-            </button>
-            <button
+            </button>)}
+            {currentUser.role == 'TRAVELER' && (<button
               className={`px-6 py-3 font-medium text-sm transition-colors ${
                 activeTab === 'reservation' 
                   ? 'text-blue-600 border-b-2 border-blue-600' 
@@ -260,7 +260,7 @@ const GuideModal = ({ guide, onClose, currentUser }) => {
               }}
             >
               Make Reservation
-            </button>
+            </button>)}
           </div>
         </div>
         
@@ -352,7 +352,7 @@ const GuideModal = ({ guide, onClose, currentUser }) => {
                     </p>
                   </div>
                   
-                  <div className="pt-4 flex justify-end gap-3">
+                  {currentUser.role == 'TRAVELER' && (<div className="pt-4 flex justify-end gap-3">
                     <button
                       onClick={() => setActiveTab('reviews')}
                       className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-lg font-medium transition-colors"
@@ -366,13 +366,14 @@ const GuideModal = ({ guide, onClose, currentUser }) => {
                       Make Reservation
                     </button>
                   </div>
+                  )}
                 </div>
               </div>
             </div>
           )}
           
           {/* Reviews Tab */}
-          {activeTab === 'reviews' && !reviewToEdit && (
+          {activeTab === 'reviews' && !reviewToEdit && currentUser.role == 'TRAVELER' &&(
             <div className="p-6">
               {/* Success message */}
               {reviewSuccess && (
@@ -497,7 +498,7 @@ const GuideModal = ({ guide, onClose, currentUser }) => {
           )}
           
           {/* Review Form */}
-          {activeTab === 'reviews' && reviewToEdit && (
+          {activeTab === 'reviews' && reviewToEdit && currentUser.role == 'TRAVELER' &&(
             <div className="p-6">
               <div className="flex items-center justify-between mb-6">
                 <h3 className="text-xl font-semibold text-gray-800">
@@ -571,7 +572,7 @@ const GuideModal = ({ guide, onClose, currentUser }) => {
           )}
           
           {/* Reservation Tab */}
-          {activeTab === 'reservation' && (
+          {activeTab === 'reservation' && currentUser.role == 'TRAVELER' &&(
             <div className="p-6">
               <h3 className="text-xl font-semibold text-gray-800 mb-4">Create Reservation</h3>
               <p className="text-gray-600 mb-6">

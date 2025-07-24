@@ -1,18 +1,18 @@
-import { ShieldX, Home, ArrowLeft } from 'lucide-react';
-import { useUser } from '../../context/UserContext';
-import { useNavigate } from 'react-router-dom';
+import { ShieldX, Home, ArrowLeft } from "lucide-react";
+import { useUser } from "../../context/UserContext";
+import { useNavigate } from "react-router-dom";
 const UnauthorizedPage = () => {
   const currentUser = useUser().user;
   const navigate = useNavigate();
   const handleGoHome = () => {
-    if(currentUser.role === 'ADMIN') {
-        navigate('/admin-user-management');
-    } else if(currentUser.role === 'TRAVELER') {
-        navigate('/traveler-dashboard');
-    } else if(currentUser.role === 'GUIDE') {
-        navigate('/guide-dashboard');
+    if (currentUser.role === "ADMIN") {
+      navigate("/admin-user-management");
+    } else if (currentUser.role === "TRAVELER") {
+      navigate("/traveler-dashboard");
+    } else if (currentUser.role === "GUIDE") {
+      navigate("/guide-dashboard");
     } else {
-        navigate('/');
+      navigate("/");
     }
   };
 
@@ -28,14 +28,14 @@ const UnauthorizedPage = () => {
             <ShieldX className="w-16 h-16 text-red-500" />
           </div>
         </div>
-        
+
         <h1 className="text-3xl font-bold text-gray-900 mb-4">Access Denied</h1>
-        
+
         <p className="text-gray-600 mb-8 leading-relaxed">
-          You don't have permission to access this page. Please contact your administrator 
-          if you believe this is an error.
+          You don't have permission to access this page. Please contact your
+          administrator if you believe this is an error.
         </p>
-        
+
         <div className="space-y-3">
           <button
             onClick={handleGoHome}
@@ -44,7 +44,7 @@ const UnauthorizedPage = () => {
             <Home className="w-5 h-5" />
             Go to Home
           </button>
-          
+
           <button
             onClick={handleGoBack}
             className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-3 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center gap-2"
@@ -53,12 +53,12 @@ const UnauthorizedPage = () => {
             Go Back
           </button>
         </div>
-        
+
         <div className="mt-8 pt-6 border-t border-gray-200">
           <p className="text-sm text-gray-500">
-            Need help? Contact support at{' '}
-            <a 
-              href="mailto:support@yourcompany.com" 
+            Need help? Contact support at{" "}
+            <a
+              href="mailto:support@yourcompany.com"
               className="text-blue-600 hover:text-blue-700 underline"
             >
               support@yamutravel.com

@@ -1,21 +1,21 @@
-import React from 'react';
+import React from "react";
 
-const InputField = ({ 
-  id, 
-  name, 
-  label, 
-  value, 
-  onChange, 
-  error, 
-  placeholder, 
+const InputField = ({
+  id,
+  name,
+  label,
+  value,
+  onChange,
+  error,
+  placeholder,
   type = "text",
   required = false,
   disabled = false,
-  rows = null // for textarea
+  rows = null, // for textarea
 }) => {
   const inputClasses = `w-full px-3 py-2 border rounded-md ${
-    error ? 'border-red-500' : 'border-gray-300'
-  } ${disabled ? 'bg-gray-100 cursor-not-allowed' : ''}`;
+    error ? "border-red-500" : "border-gray-300"
+  } ${disabled ? "bg-gray-100 cursor-not-allowed" : ""}`;
 
   return (
     <div className="space-y-2">
@@ -23,7 +23,7 @@ const InputField = ({
         {label}
         {required && <span className="text-red-500 ml-1">*</span>}
       </label>
-      
+
       {rows ? (
         <textarea
           id={id}
@@ -47,7 +47,7 @@ const InputField = ({
           disabled={disabled}
         />
       )}
-      
+
       {error && <p className="text-sm text-red-500">{error}</p>}
     </div>
   );

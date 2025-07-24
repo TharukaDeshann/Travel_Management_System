@@ -82,7 +82,10 @@ const TravelerManagement = () => {
       const data = await getAllTravelers();
       setTravelers(data);
     } catch (err) {
-      const errorMessage = err.response?.data?.message || err.message || "Failed to fetch travelers";
+      const errorMessage =
+        err.response?.data?.message ||
+        err.message ||
+        "Failed to fetch travelers";
       setError(errorMessage);
       showError(errorMessage, "Failed to Load Travelers");
       console.error("Error fetching travelers:", err);
@@ -91,7 +94,7 @@ const TravelerManagement = () => {
     }
   };
 
-   const handleViewDetails = (traveler) => {
+  const handleViewDetails = (traveler) => {
     setSelectedTraveler(traveler);
   };
 
@@ -103,18 +106,21 @@ const TravelerManagement = () => {
       await deleteTraveler(travelerToDelete.id);
       setTravelers(travelers.filter((t) => t.id !== travelerToDelete.id));
       setShowDeleteModal(false);
-      
+
       const travelerName = `${travelerToDelete.firstName} ${travelerToDelete.lastName}`;
       showSuccess(`${travelerName} has been successfully deleted`);
-      
+
       // Close details modal if the deleted traveler was selected
       if (selectedTraveler && selectedTraveler.id === travelerToDelete.id) {
         setSelectedTraveler(null);
       }
-      
+
       setTravelerToDelete(null);
     } catch (err) {
-      const errorMessage = err.response?.data?.message || err.message || "Failed to delete traveler";
+      const errorMessage =
+        err.response?.data?.message ||
+        err.message ||
+        "Failed to delete traveler";
       showError(errorMessage, "Delete Failed");
       console.error("Error deleting traveler:", err);
     } finally {
@@ -176,7 +182,7 @@ const TravelerManagement = () => {
     fetchTravelers();
   };
 
-   const handleModalError = (errorMessage, title) => {
+  const handleModalError = (errorMessage, title) => {
     showError(errorMessage, title);
   };
 
@@ -315,7 +321,6 @@ const TravelerManagement = () => {
                             </button>
                             <button
                               onClick={() => {
-                                
                                 setTravelerToDelete(traveler);
                                 setShowDeleteModal(true);
                               }}
