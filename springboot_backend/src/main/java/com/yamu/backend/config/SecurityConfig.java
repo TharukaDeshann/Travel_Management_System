@@ -65,13 +65,9 @@ public class SecurityConfig {
                                 "/api/facebook-events",
                                 "/error" // Explicitly allow error endpoint
                         ).permitAll()
-                        .requestMatchers("/api/drivers/**").permitAll()
                         .requestMatchers("/api/weather/**").permitAll()
-                        .requestMatchers("/api/hotels/**").permitAll()
-                        .requestMatchers("/api/hotels/bookings/**").permitAll()
                         .requestMatchers("/api/packages/active").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/packages/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/reviews/**").permitAll()
                         .requestMatchers("/h2-console/**").permitAll()
                         .requestMatchers("/ws/**", "/app/**", "/topic/**", "/queue/**", "/user/**").permitAll()
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()

@@ -175,13 +175,17 @@ public class UserController {
     // Delete user (soft delete)
     @DeleteMapping("/{id}")
     public ResponseEntity<String> deleteUser(@PathVariable Long id) {
-        User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        if (user.getId() != id && user.getRole() != UserRole.ADMIN) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You are not authorized to delete this user");
-        }
+        User user = getCurrentUser();
+
+        
+
         userService.deleteUser(id);
         return ResponseEntity.ok("User deleted successfully");
     }
+
+    
+
+    
 
     public User getCurrentUser() {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
