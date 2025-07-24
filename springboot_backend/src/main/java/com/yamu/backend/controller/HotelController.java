@@ -218,7 +218,7 @@ public class HotelController {
         }
     }
     
-    @GetMapping("/debug/all-hotels")
+    @GetMapping("/dashboard-hotels")
     public ResponseEntity<Map<String, Object>> debugAllHotels() {
         try {
             Map<String, Object> debugInfo = hotelService.debugAllHotels();

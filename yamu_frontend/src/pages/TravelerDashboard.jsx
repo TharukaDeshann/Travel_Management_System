@@ -29,6 +29,7 @@ export default function TravelerDashboard({ currentUser: propCurrentUser }) {
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [packages, setPackages] = useState([]);
   const [selectedPackage, setSelectedPackage] = useState(null);
+  const [hotels, setHotels] = useState([]);
   const [showApplicationModal, setShowApplicationModal] = useState(false);
   const [applicationForm, setApplicationForm] = useState({
     groupMemberCount: 1,
@@ -102,10 +103,31 @@ export default function TravelerDashboard({ currentUser: propCurrentUser }) {
         console.error("Error fetching packages:", error);
       }
     };
+    const fetchHotels = async ()=>{
+      try {
+        const response=await apiClient.get('/api/hotels/dashboard-hotels');
+        console.log('🏨 Hotels fetched:', response.data);
+        
+        // Ensure we're setting an array
+        if (Array.isArray(response.data)) {
+          setHotels(response.data);
+        } else if (response.data && Array.isArray(response.data.hotels)) {
+          // In case the response has a nested hotels array
+          setHotels(response.data.hotels);
+        } else {
+          console.warn('Hotels API response is not an array:', response.data);
+          setHotels([]);
+        }
+      } catch (error) {
+        console.error("Error fetching hotels:", error);
+        setHotels([]); // Set empty array on error
+      }
+    }
 
     fetchGuides();
     fetchEvents();
     fetchPackages();
+    fetchHotels();
   }, []);
 
   // Search functionality
@@ -210,13 +232,13 @@ export default function TravelerDashboard({ currentUser: propCurrentUser }) {
     },
     {
       title: "Discover Accommodations",
-      items: [
-        { name: "Wild Coast Tented Lodge", image: "/src/images/wild_coast.jpg" },
-        { name: "98 Acre Resort & Spa", image: "/src/images/98_acre.jpg" },
-        { name: "Anantara Resort & Spa", image: "/src/images/anantaya.jpg" },
-        { name: "Jetwing Colombo Seven", image: "/src/images/jetwing.jpg" },
-        { name: "The Lake Forest Hotel", image: "/src/images/lake_forest.jpg" }
-      ]
+      items: Array.isArray(hotels) ? hotels.slice(0, 10).map((hotel, index) => ({
+        name: hotel.name,
+        image: `/hotels/${index + 1}.webp`,
+        hotel: hotel,
+        rating: hotel.rating,
+        address: hotel.address
+      })) : []
     },
     {
       title: "Discover Tour Guides",
@@ -519,6 +541,16 @@ export default function TravelerDashboard({ currentUser: propCurrentUser }) {
                       <h3 className="card-title">{item.name}</h3>
                       {section.title === "Discover Tour Guides" && (
                         <p style={{ color: 'white', fontSize: '14px' }}>{item.guide.expertiseCityRegion}</p>
+                      )}
+                      {section.title === "Discover Accommodations" && item.hotel && (
+                        <>
+                          <div className="flex items-center" style={{ color: 'white', fontSize: '14px', marginTop: '4px' }}>
+                            <span>⭐ {item.rating}</span>
+                          </div>
+                          <p style={{ color: 'white', fontSize: '12px', marginTop: '2px' }}>
+                            {item.address}
+                          </p>
+                        </>
                       )}
                       {section.title === "Event & Festival Highlights" && item.event && (
                         <>
