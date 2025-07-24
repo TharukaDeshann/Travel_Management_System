@@ -158,7 +158,7 @@ const UserProfile = () => {
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-cyan-50">
       {/* Enhanced Header Section */}
       <div className="bg-white/80 backdrop-blur-sm shadow-lg border-b border-gray-100">
-        <div className="max-w-6xl mx-auto px-6 py-10">
+        <div className="max-w-7xl mx-auto px-6 py-10">
           <div className="flex flex-col lg:flex-row items-center justify-between space-y-6 lg:space-y-0">
             <div className="flex flex-col lg:flex-row items-center space-y-4 lg:space-y-0 lg:space-x-8">
               {/* Enhanced Profile Image */}
@@ -247,7 +247,7 @@ const UserProfile = () => {
 
       {/* Enhanced Image Upload Section */}
       {selectedImage && (
-        <div className="max-w-6xl mx-auto px-6 mt-6">
+        <div className="max-w-7xl mx-auto px-6 mt-6">
           <div className="bg-gradient-to-r from-indigo-50 to-cyan-50 border border-indigo-200 rounded-2xl p-6 shadow-lg">
             <div className="flex items-center justify-between">
               <div className="flex items-center">
@@ -285,11 +285,12 @@ const UserProfile = () => {
       )}
 
       {/* Enhanced Main Content */}
-      <div className="max-w-6xl mx-auto px-6 py-10">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="max-w-7xl mx-auto px-6 py-10">
+        {/* Two Column Layout for Contact Info and About Me */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
           {/* Enhanced Left Column - Contact Info */}
           <div className="lg:col-span-1">
-            <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl p-8 mb-8 border border-gray-100">
+            <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl p-8 border border-gray-100">
               <div className="flex items-center space-x-3 mb-6">
                 <div className="w-10 h-10 bg-gradient-to-r from-indigo-500 to-cyan-500 rounded-full flex items-center justify-center">
                   <Mail className="w-5 h-5 text-white" />
@@ -341,10 +342,11 @@ const UserProfile = () => {
               </div>
             </div>
           </div>
-          {/* Enhanced Right Column - Detailed Information */}
+
+          {/* Enhanced Right Column - About Me and Profile Details */}
           <div className="lg:col-span-2">
             {user.role === "GUIDE" && (
-              <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl p-8 mb-8 border border-gray-100">
+              <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl p-8 border border-gray-100">
                 <div className="flex items-center space-x-3 mb-6">
                   <div className="w-10 h-10 bg-gradient-to-r from-indigo-500 to-cyan-500 rounded-full flex items-center justify-center">
                     <User className="w-5 h-5 text-white" />
@@ -425,7 +427,7 @@ const UserProfile = () => {
             )}
 
             {user.role === "TRAVELER" && (
-              <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl p-8 mb-8 border border-gray-100">
+              <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl p-8 border border-gray-100">
                 <div className="flex items-center space-x-3 mb-6">
                   <div className="w-10 h-10 bg-gradient-to-r from-indigo-500 to-cyan-500 rounded-full flex items-center justify-center">
                     <Globe className="w-5 h-5 text-white" />
@@ -451,55 +453,31 @@ const UserProfile = () => {
                 </div>
               </div>
             )}
+          </div>
+        </div>
 
-            {/* Enhanced Vehicle Management Section for Guides */}
-            {user.role === "GUIDE" && (
-              <div className="bg-gradient-to-r from-indigo-50 via-white to-cyan-50 rounded-2xl shadow-xl p-8 border border-gray-100">
-                <div className="flex items-center justify-between mb-8">
-                  <div className="flex items-center space-x-4">
-                    <div className="w-12 h-12 bg-gradient-to-r from-indigo-500 to-cyan-500 rounded-full flex items-center justify-center">
-                      <Car className="w-6 h-6 text-white" />
-                    </div>
-                    <div>
-                      <h2 className="text-3xl font-bold text-gray-900">
-                        Vehicle Management
-                      </h2>
-                      <p className="text-gray-600 text-lg">
-                        Manage your fleet of vehicles
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Award className="w-5 h-5 text-indigo-600" />
-                    <span className="px-4 py-2 bg-gradient-to-r from-indigo-100 to-cyan-100 text-indigo-800 rounded-full text-sm font-semibold">
-                      Professional Fleet
-                    </span>
-                  </div>
-                </div>
-                <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
-                  <VehicleManagement guideId={user.id} isOwner={true} />
-                </div>
-                <div className="mt-6 p-4 bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl">
-                  <div className="flex items-center text-gray-600">
-                    <FileText className="w-5 h-5 mr-3 text-indigo-600" />
-                    <p className="text-sm">
-                      Add, edit, or remove vehicles to help travelers plan their
-                      trips better. Keep your fleet information up to date for
-                      the best booking experience.
-                    </p>
-                  </div>
+        {/* Full Width Vehicle Management Section for Guides */}
+        {user.role === "GUIDE" && (
+          <div className="bg-gradient-to-r from-indigo-50 via-white to-cyan-50 rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
+            <div className="p-8">
+              <VehicleManagement guideId={user.id} isOwner={true} />
+            </div>
+            <div className="px-8 pb-8">
+              <div className="p-4 bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl">
+                <div className="flex items-center text-gray-600">
+                  <FileText className="w-5 h-5 mr-3 text-indigo-600" />
+                  <p className="text-sm">
+                    Keep your fleet information up to date for the best booking experience.
+                  </p>
                 </div>
               </div>
-            )}
-
-            {/* Footer */}
-
-            <div className="flex justify-end">
-              <button>
-                <BackButton />
-              </button>
             </div>
           </div>
+        )}
+
+        {/* Footer */}
+        <div className="flex justify-end mt-8">
+          <BackButton />
         </div>
       </div>
     </div>
