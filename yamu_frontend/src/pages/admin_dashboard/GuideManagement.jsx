@@ -1,14 +1,14 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import AdminLayout from '../../components/AdminLayout';
-import GuideDetailsModal from '../../components/admindashboardcomponents/GuideDetailsModal';
-import UserDetailsModal from '../../components/UserDetailsModal';
-import { 
-  getAllGuides, 
-  deleteUser, 
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import AdminLayout from "../../components/AdminLayout";
+import GuideDetailsModal from "../../components/admindashboardcomponents/GuideDetailsModal";
+import UserDetailsModal from "../../components/UserDetailsModal";
+import {
+  getAllGuides,
+  deleteUser,
   getGuideAnalytics,
-  getAllGuidesAnalytics 
-} from '../../services/guideAnalyticsService';
+  getAllGuidesAnalytics,
+} from "../../services/guideAnalyticsService";
 
 // Skeleton loader component
 const TableRowSkeleton = () => (
@@ -48,15 +48,15 @@ const GuideManagement = () => {
   const [guides, setGuides] = useState([]);
   const [guidesAnalytics, setGuidesAnalytics] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
   const [selectedGuide, setSelectedGuide] = useState(null);
   const [guideToDelete, setGuideToDelete] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showUserDetailsModal, setShowUserDetailsModal] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState(null);
-  const [filterStatus, setFilterStatus] = useState('all'); // all, verified, unverified, underperforming
-  const [error, setError] = useState('');
-  
+  const [filterStatus, setFilterStatus] = useState("all"); // all, verified, unverified, underperforming
+  const [error, setError] = useState("");
+
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -66,19 +66,19 @@ const GuideManagement = () => {
   const fetchGuidesData = async () => {
     try {
       setLoading(true);
-      setError('');
-      
+      setError("");
+
       // Fetch both guides and their analytics
       const [guidesData, analyticsData] = await Promise.all([
         getAllGuides(),
-        getAllGuidesAnalytics()
+        getAllGuidesAnalytics(),
       ]);
-      
+
       setGuides(guidesData);
       setGuidesAnalytics(analyticsData);
     } catch (error) {
-      console.error('Error fetching guides data:', error);
-      setError('Failed to load guides data. Please try again.');
+      console.error("Error fetching guides data:", error);
+      setError("Failed to load guides data. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -88,8 +88,8 @@ const GuideManagement = () => {
     try {
       setSelectedGuide(guide);
     } catch (error) {
-      console.error('Error opening guide details:', error);
-      setError('Failed to load guide details.');
+      console.error("Error opening guide details:", error);
+      setError("Failed to load guide details.");
     }
   };
 
@@ -107,8 +107,8 @@ const GuideManagement = () => {
       setShowDeleteModal(false);
       setGuideToDelete(null);
     } catch (error) {
-      console.error('Error deleting guide:', error);
-      setError('Failed to delete guide. Please try again.');
+      console.error("Error deleting guide:", error);
+      setError("Failed to delete guide. Please try again.");
       setShowDeleteModal(false);
     }
   };
@@ -119,22 +119,28 @@ const GuideManagement = () => {
 
   // Enhanced filtering logic
   const filteredGuides = guidesAnalytics.filter((guide) => {
-    const matchesSearch = 
+    const matchesSearch =
       guide.firstName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       guide.lastName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       guide.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      guide.expertiseCityRegion?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      guide.expertiseCityRegion
+        ?.toLowerCase()
+        .includes(searchTerm.toLowerCase()) ||
       guide.language?.toLowerCase().includes(searchTerm.toLowerCase());
 
     const matchesFilter = (() => {
       switch (filterStatus) {
-        case 'verified':
+        case "verified":
           return guide.isVerified === true;
-        case 'unverified':
+        case "unverified":
           return guide.isVerified === false;
-        case 'underperforming':
-          return guide.averageRating !== null && guide.averageRating < 3.0 && guide.totalReviews > 0;
-        case 'all':
+        case "underperforming":
+          return (
+            guide.averageRating !== null &&
+            guide.averageRating < 3.0 &&
+            guide.totalReviews > 0
+          );
+        case "all":
         default:
           return true;
       }
@@ -145,45 +151,69 @@ const GuideManagement = () => {
 
   const getStatusBadge = (guide) => {
     if (!guide.isVerified) {
-      return <span className="px-2 py-1 text-xs font-semibold bg-yellow-100 text-yellow-800 rounded-full">Unverified</span>;
+      return (
+        <span className="px-2 py-1 text-xs font-semibold bg-yellow-100 text-yellow-800 rounded-full">
+          Unverified
+        </span>
+      );
     }
-    
-    if (guide.averageRating !== null && guide.averageRating < 3.0 && guide.totalReviews > 0) {
-      return <span className="px-2 py-1 text-xs font-semibold bg-red-100 text-red-800 rounded-full">Underperforming</span>;
+
+    if (
+      guide.averageRating !== null &&
+      guide.averageRating < 3.0 &&
+      guide.totalReviews > 0
+    ) {
+      return (
+        <span className="px-2 py-1 text-xs font-semibold bg-red-100 text-red-800 rounded-full">
+          Underperforming
+        </span>
+      );
     }
-    
+
     if (guide.averageRating !== null && guide.averageRating >= 4.5) {
-      return <span className="px-2 py-1 text-xs font-semibold bg-green-100 text-green-800 rounded-full">Top Rated</span>;
+      return (
+        <span className="px-2 py-1 text-xs font-semibold bg-green-100 text-green-800 rounded-full">
+          Top Rated
+        </span>
+      );
     }
-    
-    return <span className="px-2 py-1 text-xs font-semibold bg-blue-100 text-blue-800 rounded-full">Verified</span>;
+
+    return (
+      <span className="px-2 py-1 text-xs font-semibold bg-blue-100 text-blue-800 rounded-full">
+        Verified
+      </span>
+    );
   };
 
   const getRatingDisplay = (guide) => {
     if (guide.averageRating === null) {
       return <span className="text-gray-400">No ratings</span>;
     }
-    
+
     const rating = guide.averageRating;
-    const stars = '★'.repeat(Math.floor(rating)) + '☆'.repeat(5 - Math.floor(rating));
-    
+    const stars =
+      "★".repeat(Math.floor(rating)) + "☆".repeat(5 - Math.floor(rating));
+
     return (
       <div className="flex items-center">
         <span className="text-yellow-400 mr-1">{stars}</span>
         <span className="text-sm font-medium">{rating.toFixed(1)}</span>
-        <span className="text-xs text-gray-500 ml-1">({guide.totalReviews})</span>
+        <span className="text-xs text-gray-500 ml-1">
+          ({guide.totalReviews})
+        </span>
       </div>
     );
   };
 
   // Summary statistics
   const totalGuides = filteredGuides.length;
-  const verifiedGuides = filteredGuides.filter(g => g.isVerified).length;
-  const underperformingGuides = filteredGuides.filter(g => 
-    g.averageRating !== null && g.averageRating < 3.0 && g.totalReviews > 0
+  const verifiedGuides = filteredGuides.filter((g) => g.isVerified).length;
+  const underperformingGuides = filteredGuides.filter(
+    (g) =>
+      g.averageRating !== null && g.averageRating < 3.0 && g.totalReviews > 0
   ).length;
-  const topRatedGuides = filteredGuides.filter(g => 
-    g.averageRating !== null && g.averageRating >= 4.5
+  const topRatedGuides = filteredGuides.filter(
+    (g) => g.averageRating !== null && g.averageRating >= 4.5
   ).length;
 
   return (
@@ -241,34 +271,42 @@ const GuideManagement = () => {
               {loading ? (
                 <div className="w-8 h-6 bg-gray-200 rounded animate-pulse"></div>
               ) : (
-                <div className="text-xl font-semibold text-blue-800">{totalGuides}</div>
+                <div className="text-xl font-semibold text-blue-800">
+                  {totalGuides}
+                </div>
               )}
             </div>
-            
+
             <div className="bg-green-50 px-4 py-3 rounded-lg">
               <div className="text-sm text-green-600">Verified</div>
               {loading ? (
                 <div className="w-8 h-6 bg-gray-200 rounded animate-pulse"></div>
               ) : (
-                <div className="text-xl font-semibold text-green-800">{verifiedGuides}</div>
+                <div className="text-xl font-semibold text-green-800">
+                  {verifiedGuides}
+                </div>
               )}
             </div>
-            
+
             <div className="bg-yellow-50 px-4 py-3 rounded-lg">
               <div className="text-sm text-yellow-600">Top Rated</div>
               {loading ? (
                 <div className="w-8 h-6 bg-gray-200 rounded animate-pulse"></div>
               ) : (
-                <div className="text-xl font-semibold text-yellow-800">{topRatedGuides}</div>
+                <div className="text-xl font-semibold text-yellow-800">
+                  {topRatedGuides}
+                </div>
               )}
             </div>
-            
+
             <div className="bg-red-50 px-4 py-3 rounded-lg">
               <div className="text-sm text-red-600">Underperforming</div>
               {loading ? (
                 <div className="w-8 h-6 bg-gray-200 rounded animate-pulse"></div>
               ) : (
-                <div className="text-xl font-semibold text-red-800">{underperformingGuides}</div>
+                <div className="text-xl font-semibold text-red-800">
+                  {underperformingGuides}
+                </div>
               )}
             </div>
           </div>
@@ -319,7 +357,8 @@ const GuideManagement = () => {
                               ) : (
                                 <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center">
                                   <span className="text-gray-500 font-medium">
-                                    {guide.firstName?.[0]}{guide.lastName?.[0]}
+                                    {guide.firstName?.[0]}
+                                    {guide.lastName?.[0]}
                                   </span>
                                 </div>
                               )}
@@ -384,13 +423,13 @@ const GuideManagement = () => {
               </tbody>
             </table>
           </div>
-          
+
           {!loading && filteredGuides.length === 0 && (
             <div className="text-center py-12">
               <div className="text-gray-500">
-                {searchTerm || filterStatus !== 'all' 
-                  ? 'No guides found matching your criteria.' 
-                  : 'No guides found.'}
+                {searchTerm || filterStatus !== "all"
+                  ? "No guides found matching your criteria."
+                  : "No guides found."}
               </div>
             </div>
           )}
@@ -414,7 +453,8 @@ const GuideManagement = () => {
               </h3>
               <p className="text-gray-600 mb-6">
                 Are you sure you want to delete {guideToDelete?.firstName}{" "}
-                {guideToDelete?.lastName}? This action will remove the guide and all associated data including reservations and reviews.
+                {guideToDelete?.lastName}? This action will remove the guide and
+                all associated data including reservations and reviews.
               </p>
               <div className="flex justify-end space-x-4">
                 <button

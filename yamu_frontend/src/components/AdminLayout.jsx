@@ -1,22 +1,22 @@
-import React, { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { 
-  Menu, 
-  X, 
-  LayoutDashboard, 
-  Users, 
-  MapPin, 
+import React, { useState, useEffect } from "react";
+import { Link, useLocation } from "react-router-dom";
+import {
+  Menu,
+  X,
+  LayoutDashboard,
+  Users,
+  MapPin,
   BarChart3,
   Search,
   Bell,
   Settings,
   LogOut,
-  ChevronDown
-} from 'lucide-react';
-import { Layout } from './Layout';
-import { useUser } from '../context/UserContext';
+  ChevronDown,
+} from "lucide-react";
+import { Layout } from "./Layout";
+import { useUser } from "../context/UserContext";
 
-const AdminLayout = ({ children, currentPage = 'User Management' }) => {
+const AdminLayout = ({ children, currentPage = "User Management" }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -24,14 +24,14 @@ const AdminLayout = ({ children, currentPage = 'User Management' }) => {
 
   const loggedUser = useUser().user;
   const unreadCount = loggedUser?.unreadCount || 0;
-  const [selectedCurrency, setSelectedCurrency] = useState('LKR');
+  const [selectedCurrency, setSelectedCurrency] = useState("LKR");
 
   // Handle responsive behavior
   useEffect(() => {
     const handleResize = () => {
       const mobile = window.innerWidth < 1024;
       setIsMobile(mobile);
-      
+
       // Close sidebar on mobile when window resizes
       if (mobile) {
         setSidebarOpen(false);
@@ -39,8 +39,8 @@ const AdminLayout = ({ children, currentPage = 'User Management' }) => {
     };
 
     handleResize();
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
   }, []);
 
   // Close sidebar when route changes (mobile)
@@ -52,36 +52,36 @@ const AdminLayout = ({ children, currentPage = 'User Management' }) => {
 
   // Navigation items with proper route paths
   const navigationItems = [
-    { 
-      id: 'user-management', 
-      label: 'User Management', 
-      icon: Users, 
-      path: '/admin-user-management' 
+    {
+      id: "user-management",
+      label: "User Management",
+      icon: Users,
+      path: "/admin-user-management",
     },
-    { 
-      id: 'guide-management', 
-      label: 'Guide Management', 
-      icon: MapPin, 
-      path: '/admin-guide-management' 
+    {
+      id: "guide-management",
+      label: "Guide Management",
+      icon: MapPin,
+      path: "/admin-guide-management",
     },
-    { 
-      id: 'traveler-management', 
-      label: 'Traveler Management', 
-      icon: Users, 
-      path: '/admin-traveler-management' 
+    {
+      id: "traveler-management",
+      label: "Traveler Management",
+      icon: Users,
+      path: "/admin-traveler-management",
     },
-    { 
-      id: 'package-management', 
-      label: 'Package Management', 
-      icon: LayoutDashboard, 
-      path: '/admin-package-management' 
+    {
+      id: "package-management",
+      label: "Package Management",
+      icon: LayoutDashboard,
+      path: "/admin-package-management",
     },
-    { 
-      id: 'analytics', 
-      label: 'Analytics', 
-      icon: BarChart3, 
-      path: '/admin-analytics' 
-    }
+    {
+      id: "analytics",
+      label: "Analytics",
+      icon: BarChart3,
+      path: "/admin-analytics",
+    },
   ];
 
   // Function to determine if a navigation item is active
@@ -92,14 +92,14 @@ const AdminLayout = ({ children, currentPage = 'User Management' }) => {
   const NavItem = ({ item }) => {
     const Icon = item.icon;
     const isActive = isActiveRoute(item.path);
-    
+
     return (
       <Link
         to={item.path}
         className={`flex items-center px-4 lg:px-6 py-3 text-sm font-medium transition-colors duration-200 ${
           isActive
-            ? 'bg-blue-50 text-blue-600 border-r-4 border-blue-600'
-            : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+            ? "bg-blue-50 text-blue-600 border-r-4 border-blue-600"
+            : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
         }`}
         onClick={() => setSidebarOpen(false)}
       >
@@ -121,7 +121,7 @@ const AdminLayout = ({ children, currentPage = 'User Management' }) => {
           className={`
             fixed z-30 inset-y-0 left-0 w-64 sm:w-72 lg:w-64 bg-white border-r border-gray-200 shadow-lg transform
             transition-transform duration-300 ease-in-out
-            ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} 
+            ${sidebarOpen ? "translate-x-0" : "-translate-x-full"} 
             lg:translate-x-0 lg:static lg:shadow-none
           `}
         >
@@ -142,10 +142,7 @@ const AdminLayout = ({ children, currentPage = 'User Management' }) => {
           <nav className="mt-6 flex-1 overflow-y-auto">
             <div className="space-y-1 px-2 lg:px-0">
               {navigationItems.map((item) => (
-                <NavItem
-                  key={item.id}
-                  item={item}
-                />
+                <NavItem key={item.id} item={item} />
               ))}
             </div>
           </nav>
@@ -153,7 +150,7 @@ const AdminLayout = ({ children, currentPage = 'User Management' }) => {
 
         {/* Mobile overlay */}
         {sidebarOpen && (
-          <div 
+          <div
             className="fixed inset-0 z-20 bg-black bg-opacity-50 lg:hidden transition-opacity"
             onClick={() => setSidebarOpen(false)}
           />
@@ -186,7 +183,7 @@ const AdminLayout = ({ children, currentPage = 'User Management' }) => {
                 <div className="sm:hidden">
                   <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
                     <span className="text-white text-sm font-medium">
-                      {loggedUser?.name?.charAt(0) || 'A'}
+                      {loggedUser?.name?.charAt(0) || "A"}
                     </span>
                   </div>
                 </div>
@@ -196,9 +193,7 @@ const AdminLayout = ({ children, currentPage = 'User Management' }) => {
 
           {/* Page content */}
           <main className="flex-1 p-4 sm:p-6 lg:p-8 w-full max-w-full overflow-x-auto">
-            <div className="max-w-7xl mx-auto">
-              {children}
-            </div>
+            <div className="max-w-7xl mx-auto">{children}</div>
           </main>
         </div>
       </div>
@@ -207,8 +202,10 @@ const AdminLayout = ({ children, currentPage = 'User Management' }) => {
 
   // Helper function to get current page title based on pathname
   function getCurrentPageTitle() {
-    const currentItem = navigationItems.find(item => item.path === location.pathname);
-    return currentItem ? currentItem.label : 'Admin Dashboard';
+    const currentItem = navigationItems.find(
+      (item) => item.path === location.pathname
+    );
+    return currentItem ? currentItem.label : "Admin Dashboard";
   }
 };
 

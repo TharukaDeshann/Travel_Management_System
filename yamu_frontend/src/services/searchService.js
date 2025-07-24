@@ -1,8 +1,5 @@
-
-import axios from 'axios';
-import apiClient from './axiosInstance';
-
-
+import axios from "axios";
+import apiClient from "./axiosInstance";
 
 export const searchUsers = async (params) => {
   const response = await apiClient.get(`/api/search/users`, { params });
@@ -11,14 +8,14 @@ export const searchUsers = async (params) => {
 
 export const getSuggestions = async (query) => {
   const response = await apiClient.get(`/api/search/suggestions`, {
-    params: { query }
+    params: { query },
   });
   return response.data;
 };
 
 export const getPublicSuggestions = async (query) => {
   const response = await apiClient.get(`/api/suggestions`, {
-    params: { query }
+    params: { query },
   });
   return response.data;
 };

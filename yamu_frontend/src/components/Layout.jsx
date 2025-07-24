@@ -70,9 +70,7 @@ const Header = ({
       ];
     } else if (user?.role === "ADMIN") {
       return [
-        { name: "User Management", path: "/admin-user-management" },
-        { name: "Guide Management", path: "/admin-guide-management" },
-        { name: "Traveler Management", path: "/admin-traveler-management" },
+        { name: "Users", path: "/users/users-by-role" },
         { name: "Analytics", path: "/admin-analytics" },
         { name: "Emergency Contacts", path: "/emergency-contacts" },
       ];
@@ -327,10 +325,7 @@ const Header = ({
             <div className="flex items-center bg-gray-50 rounded-2xl p-2 gap-1">
               {/* Currency Selector */}
               {shouldShowCurrencySelector() && (
-                <CurrencySelector 
-                  variant="minimal" 
-                  size="default"
-                />
+                <CurrencySelector variant="minimal" size="default" />
               )}
 
               {/* Divider */}
@@ -513,11 +508,7 @@ const Footer = ({ navigate }) => {
 };
 
 // Main Layout Component
-const Layout = ({
-  children,
-  user,
-  unreadCount,
-}) => {
+const Layout = ({ children, user, unreadCount }) => {
   const navigate = useNavigate();
   const location = useLocation();
 

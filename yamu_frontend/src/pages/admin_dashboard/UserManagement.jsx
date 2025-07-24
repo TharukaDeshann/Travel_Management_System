@@ -1,18 +1,29 @@
-import React, { useEffect, useState } from 'react';
-import { searchUsers, getSuggestions } from '../../services/searchService';
-import AdminLayout from '../../components/AdminLayout';
-import { Input } from 'antd';
-import { Button } from 'antd';
-import { Loader2, User, Mail, Phone, MapPin, Shield, CheckCircle, XCircle, Eye } from 'lucide-react';
-import { motion } from 'framer-motion';
+import React, { useEffect, useState } from "react";
+import { searchUsers, getSuggestions } from "../../services/searchService";
+import AdminLayout from "../../components/AdminLayout";
+import { Input } from "antd";
+import { Button } from "antd";
+import {
+  Loader2,
+  User,
+  Mail,
+  Phone,
+  MapPin,
+  Shield,
+  CheckCircle,
+  XCircle,
+  Eye,
+} from "lucide-react";
+import { motion } from "framer-motion";
+import UserDetailsModal from "../../components/UserDetailsModal";
 
-const roles = ['ADMIN', 'GUIDE', 'TRAVELER'];
-const languages = ['English', 'Sinhala', 'Tamil'];
-const cities = ['Colombo', 'Kandy', 'Galle'];
-const nationalities = ['Sri Lankan', 'Indian', 'British'];
+const roles = ["ADMIN", "GUIDE", "TRAVELER"];
+const languages = ["English", "Sinhala", "Tamil"];
+const cities = ["Colombo", "Kandy", "Galle"];
+const nationalities = ["Sri Lankan", "Indian", "British"];
 
 const UserManagement = () => {
-  const [query, setQuery] = useState('');
+  const [query, setQuery] = useState("");
   const [suggestions, setSuggestions] = useState([]);
   const [selectedRoles, setSelectedRoles] = useState([]);
   const [selectedLanguages, setSelectedLanguages] = useState([]);
@@ -23,19 +34,24 @@ const UserManagement = () => {
   const [size] = useState(12);
   const [totalCount, setTotalCount] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [showUserDetailsModal, setShowUserDetailsModal] = useState(false);
+  const [selectedUserId, setSelectedUserId] = useState(null);
 
   const handleFilterToggle = (filter, value) => {
     const filterMap = {
       role: { current: selectedRoles, setter: setSelectedRoles },
       language: { current: selectedLanguages, setter: setSelectedLanguages },
       city: { current: selectedCities, setter: setSelectedCities },
-      nationality: { current: selectedNationalities, setter: setSelectedNationalities }
+      nationality: {
+        current: selectedNationalities,
+        setter: setSelectedNationalities,
+      },
     };
 
     const { current, setter } = filterMap[filter];
-    
+
     if (current.includes(value)) {
-      setter(current.filter(v => v !== value));
+      setter(current.filter((v) => v !== value));
     } else {
       setter([...current, value]);
     }
@@ -45,7 +61,7 @@ const UserManagement = () => {
     setLoading(true);
     try {
       const response = await searchUsers({
-        query: query || '*',
+        query: query || "*",
         role: selectedRoles,
         language: selectedLanguages,
         city: selectedCities,
@@ -56,7 +72,7 @@ const UserManagement = () => {
       setUsers(response.results || []);
       setTotalCount(response.totalCount || 0);
     } catch (err) {
-      console.error('Search failed', err);
+      console.error("Search failed", err);
       setUsers([]);
       setTotalCount(0);
     }
@@ -70,7 +86,7 @@ const UserManagement = () => {
         const res = await getSuggestions(text);
         setSuggestions(res || []);
       } catch (err) {
-        console.error('Suggestions failed', err);
+        console.error("Suggestions failed", err);
         setSuggestions([]);
       }
     } else {
@@ -79,15 +95,20 @@ const UserManagement = () => {
   };
 
   const handleViewProfile = (userId) => {
-    window.location.href = `/users/profile/${userId}`;
+    setSelectedUserId(userId);
+    setShowUserDetailsModal(true);
   };
 
   const getRoleColor = (role) => {
     switch (role) {
-      case 'ADMIN': return 'bg-red-100 text-red-800';
-      case 'GUIDE': return 'bg-blue-100 text-blue-800';
-      case 'TRAVELER': return 'bg-green-100 text-green-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case "ADMIN":
+        return "bg-red-100 text-red-800";
+      case "GUIDE":
+        return "bg-blue-100 text-blue-800";
+      case "TRAVELER":
+        return "bg-green-100 text-green-800";
+      default:
+        return "bg-gray-100 text-gray-800";
     }
   };
 
@@ -100,10 +121,19 @@ const UserManagement = () => {
 
   useEffect(() => {
     handleSearch();
-  }, [page, selectedRoles, selectedCities, selectedLanguages, selectedNationalities]);
+  }, [
+    page,
+    selectedRoles,
+    selectedCities,
+    selectedLanguages,
+    selectedNationalities,
+  ]);
 
-  const hasActiveFilters = selectedRoles.length > 0 || selectedLanguages.length > 0 || 
-                          selectedCities.length > 0 || selectedNationalities.length > 0;
+  const hasActiveFilters =
+    selectedRoles.length > 0 ||
+    selectedLanguages.length > 0 ||
+    selectedCities.length > 0 ||
+    selectedNationalities.length > 0;
 
   return (
     <AdminLayout currentPage="user-management">
@@ -111,8 +141,12 @@ const UserManagement = () => {
         {/* Header */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">User Management</h1>
-            <p className="text-gray-600">Search and manage user accounts across the platform</p>
+            <h1 className="text-2xl font-bold text-gray-900">
+              User Management
+            </h1>
+            <p className="text-gray-600">
+              Search and manage user accounts across the platform
+            </p>
           </div>
           <div className="text-sm text-gray-500">
             Total Users: {totalCount.toLocaleString()}
@@ -150,14 +184,14 @@ const UserManagement = () => {
               </motion.ul>
             )}
           </div>
-          <Button 
-            onClick={handleSearch} 
+          <Button
+            onClick={handleSearch}
             disabled={loading}
             size="large"
             type="primary"
             className="min-w-[100px]"
           >
-            {loading ? <Loader2 className="animate-spin h-4 w-4" /> : 'Search'}
+            {loading ? <Loader2 className="animate-spin h-4 w-4" /> : "Search"}
           </Button>
         </div>
 
@@ -166,22 +200,38 @@ const UserManagement = () => {
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4">
             <h3 className="text-lg font-semibold text-gray-900">Filters</h3>
             {hasActiveFilters && (
-              <Button 
-                onClick={clearAllFilters}
-                variant="outline"
-                size="sm"
-              >
+              <Button onClick={clearAllFilters} variant="outline" size="sm">
                 Clear All
               </Button>
             )}
           </div>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {[
-              { title: 'Role', values: roles, key: 'role', selected: selectedRoles },
-              { title: 'Language', values: languages, key: 'language', selected: selectedLanguages },
-              { title: 'City', values: cities, key: 'city', selected: selectedCities },
-              { title: 'Nationality', values: nationalities, key: 'nationality', selected: selectedNationalities }
+              {
+                title: "Role",
+                values: roles,
+                key: "role",
+                selected: selectedRoles,
+              },
+              {
+                title: "Language",
+                values: languages,
+                key: "language",
+                selected: selectedLanguages,
+              },
+              {
+                title: "City",
+                values: cities,
+                key: "city",
+                selected: selectedCities,
+              },
+              {
+                title: "Nationality",
+                values: nationalities,
+                key: "nationality",
+                selected: selectedNationalities,
+              },
             ].map(({ title, values, key, selected }) => (
               <div key={key}>
                 <p className="font-semibold text-gray-700 mb-3">{title}</p>
@@ -189,7 +239,7 @@ const UserManagement = () => {
                   {values.map((val) => (
                     <Button
                       key={val}
-                      type={selected.includes(val) ? 'primary' : 'default'}
+                      type={selected.includes(val) ? "primary" : "default"}
                       size="sm"
                       onClick={() => handleFilterToggle(key, val)}
                       className="text-xs"
@@ -215,7 +265,9 @@ const UserManagement = () => {
               <div className="text-center py-12">
                 <User className="mx-auto h-12 w-12 text-gray-400 mb-4" />
                 <p className="text-gray-500 text-lg">No users found</p>
-                <p className="text-gray-400 text-sm">Try adjusting your search criteria</p>
+                <p className="text-gray-400 text-sm">
+                  Try adjusting your search criteria
+                </p>
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -234,7 +286,10 @@ const UserManagement = () => {
                           {user.profile_image_url ? (
                             <img
                               src={user.profile_image_url}
-                              alt={user.fullName || `${user.first_name} ${user.last_name}`}
+                              alt={
+                                user.fullName ||
+                                `${user.first_name} ${user.last_name}`
+                              }
                               className="w-12 h-12 rounded-full object-cover border-2 border-gray-200"
                             />
                           ) : (
@@ -244,9 +299,14 @@ const UserManagement = () => {
                           )}
                           <div>
                             <h3 className="font-semibold text-gray-900">
-                              {user.fullName || `${user.first_name} ${user.last_name}`}
+                              {user.fullName ||
+                                `${user.first_name} ${user.last_name}`}
                             </h3>
-                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getRoleColor(user.role)}`}>
+                            <span
+                              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getRoleColor(
+                                user.role
+                              )}`}
+                            >
                               {user.role}
                             </span>
                           </div>
@@ -266,7 +326,7 @@ const UserManagement = () => {
                           <Mail className="w-4 h-4 mr-2" />
                           <span className="truncate">{user.email}</span>
                         </div>
-                        
+
                         {user.contact_number && (
                           <div className="flex items-center text-sm text-gray-600">
                             <Phone className="w-4 h-4 mr-2" />
@@ -297,7 +357,9 @@ const UserManagement = () => {
 
                         {user.guide_language && (
                           <div className="flex items-center text-sm text-gray-600">
-                            <span className="font-medium">Languages: {user.guide_language}</span>
+                            <span className="font-medium">
+                              Languages: {user.guide_language}
+                            </span>
                           </div>
                         )}
                       </div>
@@ -305,7 +367,9 @@ const UserManagement = () => {
                       {/* Guide About */}
                       {user.guide_about && (
                         <div className="mb-4">
-                          <p className="text-sm text-gray-600 line-clamp-2">{user.guide_about}</p>
+                          <p className="text-sm text-gray-600 line-clamp-2">
+                            {user.guide_about}
+                          </p>
                         </div>
                       )}
 
@@ -316,7 +380,9 @@ const UserManagement = () => {
                         </div>
                         <Button
                           size="sm"
-                          onClick={() => handleViewProfile(user.user_id || user.id)}
+                          onClick={() =>
+                            handleViewProfile(user.user_id || user.id)
+                          }
                           className="flex items-center gap-1"
                         >
                           <Eye className="w-4 h-4" />
@@ -335,7 +401,8 @@ const UserManagement = () => {
         {totalCount > 0 && (
           <div className="flex flex-col md:flex-row justify-between items-center pt-6 border-t border-gray-200">
             <div className="text-sm text-gray-600 mb-4 md:mb-0">
-              Showing {page * size + 1} to {Math.min((page + 1) * size, totalCount)} of {totalCount} users
+              Showing {page * size + 1} to{" "}
+              {Math.min((page + 1) * size, totalCount)} of {totalCount} users
             </div>
             <div className="flex items-center gap-2">
               <Button
@@ -357,6 +424,13 @@ const UserManagement = () => {
               >
                 Next
               </Button>
+
+              {/* User Details Modal*/}
+              <UserDetailsModal
+                isOpen={showUserDetailsModal}
+                onClose={() => setShowUserDetailsModal(false)}
+                userId={selectedUserId}
+              />
             </div>
           </div>
         )}

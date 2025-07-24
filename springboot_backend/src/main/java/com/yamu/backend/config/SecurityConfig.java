@@ -71,7 +71,7 @@ public class SecurityConfig {
                         .requestMatchers("/h2-console/**").permitAll()
                         .requestMatchers("/ws/**", "/app/**", "/topic/**", "/queue/**", "/user/**").permitAll()
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                        
+
                         // Authenticated endpoints
 
                         .requestMatchers(HttpMethod.PUT, "/api/users/{id}").authenticated()
@@ -79,7 +79,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.PUT, "/api/users/{id}/update-password").authenticated()
                         .requestMatchers(HttpMethod.POST, "/api/reviews/**").authenticated()
                         .requestMatchers(HttpMethod.DELETE, "/api/reviews/**").authenticated()
-                        
+
                         // Admin role specific endpoints
                         .requestMatchers(HttpMethod.POST, "/api/packages").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/api/packages/**").hasRole("ADMIN")
@@ -87,12 +87,12 @@ public class SecurityConfig {
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .requestMatchers("/api/admin/travelers/**").hasRole("ADMIN")
                         .requestMatchers("/api/search/**").hasRole("ADMIN")
-                        
+
                         // Traveler role specific endpoints
                         .requestMatchers("/api/packages/{packageId}/apply").hasRole("TRAVELER")
                         .requestMatchers("/api/traveler/**").hasRole("TRAVELER")
                         .requestMatchers("/api/itineraries/**").hasRole("TRAVELER")
-                        
+
                         // Guide role specific endpoints
                         .requestMatchers("/api/guide/reservations/**").hasRole("GUIDE")
 
@@ -110,9 +110,6 @@ public class SecurityConfig {
                         .requestMatchers("/api/itineraries/**").hasRole("TRAVELER") // Restrict itineraries to TRAVELER
                         .anyRequest().authenticated())
 
-
-                        
-                       
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint((req, res, ex2) -> res.sendError(
                                 HttpServletResponse.SC_UNAUTHORIZED,
@@ -123,7 +120,7 @@ public class SecurityConfig {
                 .headers(headers -> headers.frameOptions().disable());
         return http.build();
     }
-    
+
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();

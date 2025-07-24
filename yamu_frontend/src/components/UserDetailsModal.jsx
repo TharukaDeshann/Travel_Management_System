@@ -1,8 +1,20 @@
-import React, { useState, useEffect } from 'react';
-import { X, User, Mail, Phone, MapPin, Globe, Languages, FileText, Shield, Users, Plane } from 'lucide-react';
+import React, { useState, useEffect } from "react";
+import {
+  X,
+  User,
+  Mail,
+  Phone,
+  MapPin,
+  Globe,
+  Languages,
+  FileText,
+  Shield,
+  Users,
+  Plane,
+} from "lucide-react";
 
-import { fetchUserById } from '../services/userService';
-  
+import { fetchUserById } from "../services/userService";
+
 const UserDetailsModal = ({ isOpen, onClose, userId }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -17,8 +29,8 @@ const UserDetailsModal = ({ isOpen, onClose, userId }) => {
           const userData = await fetchUserById(userId);
           setUser(userData);
         } catch (err) {
-          console.error('Failed to fetch user profile:', err);
-          setError('Failed to load user profile. Please try again later.');
+          console.error("Failed to fetch user profile:", err);
+          setError("Failed to load user profile. Please try again later.");
         } finally {
           setLoading(false);
         }
@@ -27,16 +39,15 @@ const UserDetailsModal = ({ isOpen, onClose, userId }) => {
       loadUserProfile();
     }
   }, [isOpen, userId]);
-  console.log("user : ", user); 
-
+  console.log("user : ", user);
 
   const getRoleIcon = (role) => {
     switch (role) {
-      case 'admin':
+      case "admin":
         return <Shield className="w-5 h-5 text-yellow-500" />;
-      case 'guide':
+      case "guide":
         return <Users className="w-5 h-5 text-yellow-500" />;
-      case 'traveler':
+      case "traveler":
         return <Plane className="w-5 h-5 text-yellow-500" />;
       default:
         return <User className="w-5 h-5 text-yellow-500" />;
@@ -45,14 +56,14 @@ const UserDetailsModal = ({ isOpen, onClose, userId }) => {
 
   const getRoleColor = (role) => {
     switch (role) {
-      case 'admin':
-        return 'bg-red-100 text-red-800 border-red-200';
-      case 'guide':
-        return 'bg-green-100 text-green-800 border-green-200';
-      case 'traveler':
-        return 'bg-blue-100 text-blue-800 border-blue-200';
+      case "admin":
+        return "bg-red-100 text-red-800 border-red-200";
+      case "guide":
+        return "bg-green-100 text-green-800 border-green-200";
+      case "traveler":
+        return "bg-blue-100 text-blue-800 border-blue-200";
       default:
-        return 'bg-gray-100 text-gray-800 border-gray-200';
+        return "bg-gray-100 text-gray-800 border-gray-200";
     }
   };
 
@@ -82,7 +93,9 @@ const UserDetailsModal = ({ isOpen, onClose, userId }) => {
           {loading && (
             <div className="flex items-center justify-center py-8">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-500"></div>
-              <span className="ml-3 text-gray-600">Loading user details...</span>
+              <span className="ml-3 text-gray-600">
+                Loading user details...
+              </span>
             </div>
           )}
 
@@ -106,14 +119,14 @@ const UserDetailsModal = ({ isOpen, onClose, userId }) => {
                 <div className="w-16 h-16 bg-gradient-to-br from-amber-400 to-yellow-500 rounded-full flex items-center justify-center">
                   <span className="text-white font-bold text-xl">
                     {user.profileImageUrl ? (
-                        <img 
-                          src={user.profileImageUrl} 
-                          alt="Profile" 
-                          className="w-full h-full rounded-full object-cover"
-                        />
-                      ) : (
-                        getUserInitials()
-                      )}
+                      <img
+                        src={user.profileImageUrl}
+                        alt="Profile"
+                        className="w-full h-full rounded-full object-cover"
+                      />
+                    ) : (
+                      getUserInitials()
+                    )}
                   </span>
                 </div>
                 <div>
@@ -122,7 +135,11 @@ const UserDetailsModal = ({ isOpen, onClose, userId }) => {
                   </h3>
                   <div className="flex items-center gap-2 mt-1">
                     {getRoleIcon(user.role)}
-                    <span className={`px-3 py-1 rounded-full text-sm font-medium border ${getRoleColor(user.role)}`}>
+                    <span
+                      className={`px-3 py-1 rounded-full text-sm font-medium border ${getRoleColor(
+                        user.role
+                      )}`}
+                    >
                       {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
                     </span>
                   </div>
@@ -143,7 +160,9 @@ const UserDetailsModal = ({ isOpen, onClose, userId }) => {
                   <Phone className="w-5 h-5 text-gray-500" />
                   <div>
                     <p className="text-sm text-gray-500">Contact Number</p>
-                    <p className="font-medium text-gray-900">{user.contactNumber}</p>
+                    <p className="font-medium text-gray-900">
+                      {user.contactNumber}
+                    </p>
                   </div>
                 </div>
 
@@ -157,16 +176,18 @@ const UserDetailsModal = ({ isOpen, onClose, userId }) => {
               </div>
 
               {/* Role-specific Attributes */}
-              {user.role === 'GUIDE' && (
+              {user.role === "GUIDE" && (
                 <div className="space-y-4">
-                  
-                  
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="flex items-center gap-3 p-3 bg-amber-50 rounded-lg">
                       <MapPin className="w-5 h-5 text-amber-600" />
                       <div>
-                        <p className="text-sm text-amber-700">Expertise Region</p>
-                        <p className="font-medium text-gray-900">{user.expertiseCityRegion}</p>
+                        <p className="text-sm text-amber-700">
+                          Expertise Region
+                        </p>
+                        <p className="font-medium text-gray-900">
+                          {user.expertiseCityRegion}
+                        </p>
                       </div>
                     </div>
 
@@ -174,7 +195,9 @@ const UserDetailsModal = ({ isOpen, onClose, userId }) => {
                       <Languages className="w-5 h-5 text-amber-600" />
                       <div>
                         <p className="text-sm text-amber-700">Languages</p>
-                        <p className="font-medium text-gray-900">{user.language}</p>
+                        <p className="font-medium text-gray-900">
+                          {user.language}
+                        </p>
                       </div>
                     </div>
                   </div>
@@ -189,33 +212,36 @@ const UserDetailsModal = ({ isOpen, onClose, userId }) => {
                 </div>
               )}
 
-              {user.role === 'TRAVELER' && (
+              {user.role === "TRAVELER" && (
                 <div className="space-y-4">
                   {/* <h4 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
                     <Plane className="w-5 h-5 text-blue-500" />
                     Traveler Information
                   </h4> */}
-                  
+
                   <div className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg">
                     <Globe className="w-5 h-5 text-blue-600" />
                     <div>
                       <p className="text-sm text-blue-700">Nationality</p>
-                      <p className="font-medium text-gray-900">{user.nationality}</p>
+                      <p className="font-medium text-gray-900">
+                        {user.nationality}
+                      </p>
                     </div>
                   </div>
                 </div>
               )}
 
-              {user.role === 'ADMIN' && (
+              {user.role === "ADMIN" && (
                 <div className="space-y-4">
                   <h4 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
                     <Shield className="w-5 h-5 text-red-500" />
                     Administrator
                   </h4>
-                  
+
                   <div className="p-4 bg-red-50 rounded-lg border border-red-200">
                     <p className="text-sm text-red-700">
-                      This user has full administrative privileges in the Yamu Travel Management System.
+                      This user has full administrative privileges in the Yamu
+                      Travel Management System.
                     </p>
                   </div>
                 </div>
