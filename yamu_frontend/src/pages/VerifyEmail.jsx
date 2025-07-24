@@ -14,57 +14,72 @@ const VerifyEmailPage = () => {
   const { showSuccess, showError, showWarning, showInfo } = useNotification();
   const token = new URLSearchParams(location.search).get('token');
 
- useEffect(() => {
-    if (token) {
-        // Optional: Add a small delay for UX
-        setTimeout(() => {
-            axios
-                .get(`http://localhost:8080/api/auth/verify-email?token=${token}`)
-                .then((response) => {
-                    // ✅ Success - no random logic needed
-                    setStatus('success');
-                    setMessage('Email verified successfully! Redirecting to login...');
-                    showSuccess('✅ Email verified successfully!');
-                    
-                    // Start countdown
-                    const countdownInterval = setInterval(() => {
-                        setCountdown(prev => {
-                            if (prev <= 1) {
-                                clearInterval(countdownInterval);
-                                navigate('/login');
-                                return 0;
-                            }
-                            return prev - 1;
-                        });
-                    }, 1000);
-                })
-                .catch((error) => {
-                    console.error('Verification error:', error);
-                    setStatus('error');
-                    setShowResend(true);
-                    
-                    // Better error messaging
-                    if (error.response?.status === 400) {
-                        setMessage('Invalid or expired verification token.');
-                        showError('❌ Invalid or expired verification token.');
-                    } else if (error.response?.status === 404) {
-                        setMessage('Verification service not available.');
-                        showError('❌ Verification service not available.');
-                    } else if (error.response?.data?.message) {
-                        setMessage(error.response.data.message);
-                        showError(`❌ ${error.response.data.message}`);
-                    } else {
-                        setMessage('Unable to verify email. Please try again.');
-                        showError('❌ Unable to verify email. Please try again.');
-                    }
-                });
-        }, 500); // Reduced delay
-    } else {
-        setStatus('error');
-        setMessage('No verification token provided in the URL.');
-        showError('❌ No verification token found.');
+useEffect(() => {
+    // Prevent multiple API calls
+    if (!token || status !== 'loading') {
+        if (!token) {
+            setStatus('error');
+            setMessage('No verification token provided in the URL.');
+            showError('❌ No verification token found.');
+        }
+        return;
     }
-}, [token, navigate, showSuccess, showError]);
+
+    let countdownInterval;
+    let timeoutId;
+
+    timeoutId = setTimeout(() => {
+        axios
+            .get(`http://localhost:8080/api/auth/verify-email?token=${token}`)
+            .then((response) => {
+                setStatus('success');
+                setMessage('Email verified successfully! Redirecting to login...');
+                showSuccess('✅ Email verified successfully!');
+                
+                // Start countdown
+                countdownInterval = setInterval(() => {
+                    setCountdown(prev => {
+                        if (prev <= 1) {
+                            clearInterval(countdownInterval);
+                            navigate('/login');
+                            return 0;
+                        }
+                        return prev - 1;
+                    });
+                }, 1000);
+            })
+            .catch((error) => {
+                console.error('Verification error:', error);
+                setStatus('error');
+                setShowResend(true);
+                
+                // Better error messaging
+                if (error.response?.status === 400) {
+                    setMessage('Invalid or expired verification token.');
+                    showError('❌ Invalid or expired verification token.');
+                } else if (error.response?.status === 404) {
+                    setMessage('Verification service not available.');
+                    showError('❌ Verification service not available.');
+                } else if (error.response?.data?.message) {
+                    setMessage(error.response.data.message);
+                    showError(`❌ ${error.response.data.message}`);
+                } else {
+                    setMessage('Unable to verify email. Please try again.');
+                    showError('❌ Unable to verify email. Please try again.');
+                }
+            });
+    }, 500);
+
+    // Cleanup function
+    return () => {
+        if (timeoutId) {
+            clearTimeout(timeoutId);
+        }
+        if (countdownInterval) {
+            clearInterval(countdownInterval);
+        }
+    };
+}, [token]);
 
   
   const handleResendEmail = () => {
@@ -110,7 +125,8 @@ const VerifyEmailPage = () => {
   };
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: '#5B1B15' }}>
+    // #5B1B15
+    <div className="min-h-screen" style={{ backgroundColor: '#f0f2f5' }}>
       <div className="flex items-center justify-center min-h-screen px-4">
         <div className="max-w-md w-full bg-white rounded-2xl shadow-2xl overflow-hidden">
           {/* Header with dynamic gradient */}
@@ -211,7 +227,7 @@ const VerifyEmailPage = () => {
                       className="font-semibold hover:underline"
                       style={{ color: '#D59C29' }}
                     >
-                      support@yourcompany.com
+                      support@yamutravel.com
                     </a>
                   </p>
                 </div>
