@@ -71,6 +71,16 @@ export const fetchTravelersAndGuides = async () => {
   }
 };
 
+export const deleteUser = async (userId) => {
+  try{
+    const response = await apiClient.delete(`/api/users/${userId}`);
+    return response.data;
+  } catch(error) {
+    console.log("Error deleting user : ", error);
+    throw error;
+  }
+}
+
 
 
 
@@ -82,4 +92,5 @@ export default {
   updatePassword,
   fetchUsersByRole,
   fetchUserById,
+  deleteUser,
 };

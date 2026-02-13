@@ -5,7 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.List;
+
 
 @Entity
 @Data
@@ -20,6 +20,7 @@ public class Driver {
     private String description;
     private double rating;
     private int phone;
+    private Double ratePerLng; // Rate per hour in cents
 
     @Lob
     private byte[] photo; // Blob for image

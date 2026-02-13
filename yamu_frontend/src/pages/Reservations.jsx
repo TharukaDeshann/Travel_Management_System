@@ -12,11 +12,16 @@ import ConfirmDriverSelection from '../components/ConfirmDriverSelection';
 import LocationSelector from '../components/LocationSelector';
 import useNotification from '../hooks/useNotification';
 import { fetchLoggedInUser } from '../services/authService';
+import apiClient from "../services/axiosInstance";
+import { useCurrency } from '../context/CurrencyContext';
+import PriceDisplay from '../components/PriceDisplay';
+
 const Reservations = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [loggedUser,setLoggedUser]=useState(null) 
   const { showSuccess, showError, showWarning } = useNotification();
+  const { formatAmount, convertAmount } = useCurrency();
   
   useEffect(() => {
     const  loadUser=async() => {
@@ -37,8 +42,8 @@ const Reservations = () => {
     console.log('🏨 Loaded logged in user:', loggedUser);
 
   },[])
+  
   // Layout states
-  const [selectedCurrency, setSelectedCurrency] = useState('LKR');
   const [unreadCount, setUnreadCount] = useState(0);
   
   
@@ -49,6 +54,12 @@ const Reservations = () => {
   const [hotelBookings, setHotelBookings] = useState([]);
   const [loadingBookings, setLoadingBookings] = useState(false);
   const [bookingsError, setBookingsError] = useState(null);
+  
+  // Guide reservations states
+  const [guideReservations, setGuideReservations] = useState([]);
+  const [loadingGuideReservations, setLoadingGuideReservations] = useState(false);
+  const [guideReservationsError, setGuideReservationsError] = useState(null);
+  const [guideReservationFilter, setGuideReservationFilter] = useState('all'); // 'all', 'pending', 'confirmed', 'declined', 'completed'
   
   // Location and nearby hotels states
   const [userLocation, setUserLocation] = useState(null);
@@ -86,6 +97,7 @@ const Reservations = () => {
   const [startLocation, setStartLocation] = useState({ name: '', latitude: 0, longitude: 0 });
   const [endLocation, setEndLocation] = useState({ name: '', latitude: 0, longitude: 0 });
   const [bookingDriverId, setBookingDriverId] = useState(null);
+  const [routeInfo, setRouteInfo] = useState(null); // Store route distance and duration
   
   // Transport booking cancel states
   const [showTransportCancelModal, setShowTransportCancelModal] = useState(false);
@@ -104,6 +116,8 @@ const Reservations = () => {
       getCurrentLocation();
     } else if (activeTab === 'transportation') {
       loadTransportBookings();
+    } else if (activeTab === 'guides') {
+      loadGuideReservations();
     }
   }, [activeTab]);
 
@@ -128,6 +142,27 @@ const Reservations = () => {
     }
   };
 
+  const loadGuideReservations = async () => {
+    if (!loggedUser?.id) {
+      setGuideReservationsError('User not loaded');
+      return;
+    }
+
+    setLoadingGuideReservations(true);
+    setGuideReservationsError(null);
+    
+    try {
+      const reservations = await apiClient.get(`/api/reservations/traveler/${loggedUser.id}`);
+      console.log('🧭 Loaded guide reservations:', reservations.data);
+      setGuideReservations(reservations.data);
+    } catch (error) {
+      console.error('Failed to load guide reservations:', error);
+      setGuideReservationsError('Failed to load your guide reservations');
+    } finally {
+      setLoadingGuideReservations(false);
+    }
+  };
+
   const loadTransportBookings = async () => {
     if (!loggedUser?.id) {
       setTransportBookingsError('User not loaded');
@@ -146,6 +181,35 @@ const Reservations = () => {
       setTransportBookingsError('Failed to load your transportation bookings');
     } finally {
       setLoadingTransportBookings(false);
+    }
+  };
+
+  const handleGuideReservationAction = async (reservationId, action) => {
+    try {
+      let endpoint;
+      switch (action) {
+        case 'cancel':
+          endpoint = `/api/reservations/${reservationId}/decline`;
+          break;
+        default:
+          return;
+      }
+
+      await apiClient.put(endpoint);
+      
+      // Update the reservation status in the local state
+      setGuideReservations(prevReservations => 
+        prevReservations.map(res => 
+          res.id === reservationId 
+            ? { ...res, status: action === 'cancel' ? 'DECLINED' : res.status }
+            : res
+        )
+      );
+
+      showSuccess(`Reservation ${action}led successfully!`, 'Action Completed');
+    } catch (error) {
+      console.error(`Failed to ${action} reservation:`, error);
+      showError(`Failed to ${action} reservation. Please try again.`);
     }
   };
 
@@ -272,8 +336,36 @@ const Reservations = () => {
     }
   };
 
+  // Calculate total cost based on distance and driver's rate
+  const calculateTotalCost = (driver, distanceKm) => {
+    if (!driver || !distanceKm) return 0;
+    
+    // Use driver's rate per km if available, otherwise use a default rate
+    const ratePerKm = driver.ratePerKm || driver.rate || 50; // Default 50 LKR per km
+    const baseFare = 200; // Base fare in LKR
+    
+    return baseFare + (distanceKm * ratePerKm);
+  };
+
+  // Transport cost display component
+  const TransportCostDisplay = ({ cost, className = "" }) => {
+    return (
+      <PriceDisplay 
+        price={cost} 
+        fromCurrency="LKR"
+        className={className}
+      />
+    );
+  };
+
   // Transportation related functions
   const handleBookTransport = () => {
+    // Check if both locations are selected
+    if (!startLocation.name || !endLocation.name) {
+      showError('Please select both pickup and drop-off locations');
+      return;
+    }
+
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
     setSelectedDate(tomorrow.toISOString().split('T')[0]);
@@ -283,6 +375,7 @@ const Reservations = () => {
   const handleDriverSelect = async (driverId, driverSummary) => {
     try {
       const driverDetails = await transportationService.getDriverDetails(driverId);
+      console.log(driverDetails)
       setSelectedDriver(driverDetails);
       setBookingDriverId(driverId);
       setShowDriverSelection(false);
@@ -458,14 +551,31 @@ const Reservations = () => {
     return filtered;
   };
 
+  // Function to filter and sort guide reservations
+  const getFilteredAndSortedGuideReservations = () => {
+    let filtered = guideReservations;
+    
+    // Filter by status
+    if (guideReservationFilter !== 'all') {
+      filtered = guideReservations.filter(reservation => 
+        reservation.status.toLowerCase() === guideReservationFilter.toLowerCase()
+      );
+    }
+    
+    // Sort by creation date (newest first)
+    filtered.sort((a, b) => {
+      const dateA = new Date(a.createdAt);
+      const dateB = new Date(b.createdAt);
+      return dateB - dateA;
+    });
+    
+    return filtered;
+  };
+
   return (
     <Layout
       user={loggedUser}
       unreadCount={unreadCount}
-      onCurrencyChange={setSelectedCurrency}
-      selectedCurrency={selectedCurrency}
-      navigate={navigate}
-      location={location}
     >
       <div className="min-h-screen bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -499,12 +609,252 @@ const Reservations = () => {
                 >
                   🚗 Transportation
                 </button>
+                <button
+                  onClick={() => setActiveTab('guides')}
+                  className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                    activeTab === 'guides'
+                      ? 'border-blue-500 text-blue-600'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  }`}
+                >
+                  🧭 Guide Reservations
+                </button>
               </nav>
             </div>
           </div>
 
           {/* Tab Content */}
+          {activeTab === 'guides' && (
+            <div className="space-y-6">
+              {/* Guide Reservations Section */}
+              <div className="bg-white rounded-lg shadow-sm">
+                <div className="p-6 border-b border-gray-200">
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                    <div>
+                      <h2 className="text-xl font-semibold text-gray-900">Your Guide Reservations</h2>
+                      <p className="text-sm text-gray-600 mt-1">
+                        {(() => {
+                          const statusCounts = guideReservations.reduce((acc, res) => {
+                            acc[res.status] = (acc[res.status] || 0) + 1;
+                            return acc;
+                          }, {});
+                          
+                          const statusTexts = Object.entries(statusCounts).map(([status, count]) => 
+                            `${count} ${status.toLowerCase()}`
+                          );
+                          
+                          return statusTexts.join(', ') || 'No reservations';
+                        })()}
+                      </p>
+                    </div>
+                    
+                    <div className="flex flex-col sm:flex-row gap-3">
+                      {/* Filter Buttons */}
+                      <div className="flex bg-gray-100 rounded-lg p-1 flex-wrap">
+                        {['all', 'pending', 'confirmed', 'declined', 'completed'].map((filterStatus) => (
+                          <button
+                            key={filterStatus}
+                            onClick={() => setGuideReservationFilter(filterStatus)}
+                            className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
+                              guideReservationFilter === filterStatus
+                                ? 'bg-white text-blue-600 shadow-sm'
+                                : 'text-gray-600 hover:text-gray-900'
+                            }`}
+                          >
+                            {filterStatus.charAt(0).toUpperCase() + filterStatus.slice(1)}
+                          </button>
+                        ))}
+                      </div>
+                      
+                      {/* Refresh Button */}
+                      <button
+                        onClick={loadGuideReservations}
+                        disabled={loadingGuideReservations}
+                        className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:bg-gray-400 text-sm"
+                      >
+                        {loadingGuideReservations ? 'Refreshing...' : 'Refresh'}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="p-6">
+                  {loadingGuideReservations && (
+                    <div className="text-center py-8">
+                      <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                      <p className="mt-2 text-gray-600">Loading your guide reservations...</p>
+                    </div>
+                  )}
+
+                  {guideReservationsError && (
+                    <div className="text-center py-8">
+                      <div className="text-red-600 text-lg">⚠️ {guideReservationsError}</div>
+                      <button
+                        onClick={loadGuideReservations}
+                        className="mt-4 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+                      >
+                        Try Again
+                      </button>
+                    </div>
+                  )}
+
+                  {!loadingGuideReservations && !guideReservationsError && guideReservations.length === 0 && (
+                    <div className="text-center py-8">
+                      <div className="text-gray-500 text-lg">🧭 No guide reservations found</div>
+                      <p className="text-sm text-gray-400 mt-2">Book your first guide to get started!</p>
+                      <button
+                        onClick={() => navigate('/guides-page', { state: { currentUser: loggedUser } })}
+                        className="mt-4 bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700"
+                      >
+                        Find Guides
+                      </button>
+                    </div>
+                  )}
+
+                  {!loadingGuideReservations && !guideReservationsError && guideReservations.length > 0 && (() => {
+                    const filteredReservations = getFilteredAndSortedGuideReservations();
+                    
+                    if (filteredReservations.length === 0) {
+                      return (
+                        <div className="text-center py-8">
+                          <div className="text-gray-500 text-lg">
+                            📅 No {guideReservationFilter === 'all' ? '' : guideReservationFilter} guide reservations found
+                          </div>
+                          <p className="text-sm text-gray-400 mt-2">
+                            {guideReservationFilter === 'all' 
+                              ? 'You have no guide reservations' 
+                              : `You have no ${guideReservationFilter} guide reservations`
+                            }
+                          </p>
+                        </div>
+                      );
+                    }
+                    
+                    return (
+                      <>
+                        {/* Results Summary */}
+                        <div className="mb-4 text-sm text-gray-600">
+                          Showing {filteredReservations.length} {guideReservationFilter === 'all' ? '' : guideReservationFilter} guide reservation{filteredReservations.length !== 1 ? 's' : ''} 
+                          (sorted by creation date)
+                        </div>
+                        
+                        <div className="grid gap-6">
+                          {filteredReservations.map((reservation) => (
+                            <div key={reservation.id} className="border rounded-lg overflow-hidden hover:shadow-lg transition-shadow">
+                              <div className="p-6">
+                                <div className="flex justify-between items-start mb-4">
+                                  <div className="flex-1">
+                                    <div className="flex items-start justify-between">
+                                      <div>
+                                        <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                                          Reservation #{reservation.id}
+                                        </h3>
+                                        <div className="space-y-1 text-sm text-gray-600">
+                                          <div><strong>Guide:</strong> {reservation.guideName || 'Not available'}</div>
+                                          <div><strong>Contact:</strong> {reservation.guideContact || 'Not available'}</div>
+                                          <div><strong>Days:</strong> {reservation.numberOfDays}</div>
+                                          <div><strong>Created:</strong> {formatDate(reservation.createdAt)}</div>
+                                          {reservation.updatedAt && (
+                                            <div><strong>Last Updated:</strong> {formatDate(reservation.updatedAt)}</div>
+                                          )}
+                                        </div>
+                                      </div>
+                                      
+                                      {/* Status Badge */}
+                                      <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${
+                                        reservation.status === 'CONFIRMED' ? 'bg-green-100 text-green-800' :
+                                        reservation.status === 'PENDING' ? 'bg-yellow-100 text-yellow-800' :
+                                        reservation.status === 'DECLINED' ? 'bg-red-100 text-red-800' :
+                                        reservation.status === 'COMPLETED' ? 'bg-blue-100 text-blue-800' :
+                                        'bg-gray-100 text-gray-800'
+                                      }`}>
+                                        {reservation.status}
+                                      </span>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                {/* Day Details */}
+                                {reservation.dayDetails && reservation.dayDetails.length > 0 && (
+                                  <div className="mb-4">
+                                    <h4 className="text-sm font-medium text-gray-900 mb-2">Itinerary Details:</h4>
+                                    <div className="space-y-2">
+                                      {reservation.dayDetails.map((day, index) => (
+                                        <div key={index} className="bg-gray-50 rounded-lg p-3">
+                                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2 text-sm">
+                                            <div>
+                                              <span className="text-gray-500">Day {day.dayNumber}:</span>
+                                              <p className="font-medium">{day.places}</p>
+                                            </div>
+                                            <div>
+                                              <span className="text-gray-500">Date:</span>
+                                              <p className="font-medium">{formatDate(day.date)}</p>
+                                            </div>
+                                            <div>
+                                              <span className="text-gray-500">Travelers:</span>
+                                              <p className="font-medium">{day.numberOfTravelers}</p>
+                                            </div>
+                                            <div>
+                                              <span className="text-gray-500">Vehicle:</span>
+                                              <p className="font-medium">
+                                                {day.vehicleRequested 
+                                                  ? (day.vehicleDetails || 'Requested') 
+                                                  : 'Not requested'
+                                                }
+                                              </p>
+                                            </div>
+                                          </div>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+
+                                {/* Action Buttons */}
+                                <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
+                                  {reservation.status === 'PENDING' && (
+                                    <button
+                                      onClick={() => handleGuideReservationAction(reservation.id, 'cancel')}
+                                      className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm font-medium"
+                                    >
+                                      Cancel Reservation
+                                    </button>
+                                  )}
+                                  
+                                  {reservation.guideId && (
+                                    <button
+                                      onClick={() => navigate(`/inbox?select=${reservation.guideId}`)}
+                                      className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 text-sm font-medium flex items-center gap-2"
+                                    >
+                                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                                      </svg>
+                                      Message Guide
+                                    </button>
+                                  )}
+                                  
+                                  <button
+                                    onClick={() => navigate('/traveler-upcoming-trips')}
+                                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium"
+                                  >
+                                    View Trip Details
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </>
+                    );
+                  })()}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Existing Hotel and Transportation tabs content remains the same */}
           {activeTab === 'hotels' && (
+            // ... existing hotel tab content ...
             <div className="space-y-6">
               {/* Hotel Bookings Section */}
               <div className="bg-white rounded-lg shadow-sm">
@@ -711,11 +1061,15 @@ const Reservations = () => {
                                         </div>
                                         <div>
                                           <span className="text-gray-500">Total:</span>
-                                          <p className={`font-medium text-lg ${
+                                          <div className={`font-medium text-lg ${
                                             booking.bookingStatus === 'CANCELLED' ? 'text-gray-500 line-through' : 'text-green-600'
                                           }`}>
-                                            LKR {booking.totalPrice?.toLocaleString()}
-                                          </p>
+                                            <PriceDisplay 
+                                              price={booking.totalPrice} 
+                                              fromCurrency="LKR"
+                                              className={booking.bookingStatus === 'CANCELLED' ? 'text-gray-500' : 'text-green-600'}
+                                            />
+                                          </div>
                                         </div>
                                       </div>
                                       
@@ -1073,9 +1427,47 @@ const Reservations = () => {
                         setEndLocation(location);
                       }
                     }}
+                    onRouteChange={(routeData) => {
+                      setRouteInfo(routeData);
+                    }}
                     title="Select Pick-up and Drop-off Locations"
                     height="400px"
                   />
+
+                  {/* Route Information Display */}
+                  {/* {routeInfo && startLocation.name && endLocation.name && (
+                    <div className="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                      <h4 className="text-sm font-medium text-blue-900 mb-2">Route Information</h4>
+                      <div className="flex items-center gap-4 text-sm">
+                        <div className="flex items-center gap-1">
+                          <span className="text-blue-600">📏</span>
+                          <span className="font-medium">Distance:</span>
+                          <span className="text-blue-600 font-semibold">{routeInfo.distance} km</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <span className="text-orange-600">⏱️</span>
+                          <span className="font-medium">Est. Time:</span>
+                          <span className="text-orange-600 font-semibold">
+                            {routeInfo.duration < 60 
+                              ? `${routeInfo.duration} min` 
+                              : `${Math.floor(routeInfo.duration / 60)}h ${routeInfo.duration % 60}m`
+                            }
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <span className="text-green-600">💰</span>
+                          <span className="font-medium">Est. Cost:</span>
+                          <span className="text-green-600 font-semibold">
+                            <PriceDisplay 
+                              price={(200 + (routeInfo.distance * 50))} 
+                              fromCurrency="LKR" 
+                              inline 
+                            />
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  )} */}
 
                   <div className="text-center mt-6">
                     <button
@@ -1124,6 +1516,8 @@ const Reservations = () => {
         {selectedDriver && (
           <ConfirmDriverSelection
             driver={selectedDriver}
+            totalCost={calculateTotalCost(selectedDriver, routeInfo?.distance || 0)}
+            distanceKm={routeInfo?.distance || 0}
             onConfirm={handleConfirmDriverBooking}
             onCancel={() => {
               setShowDriverConfirmation(false);
@@ -1160,7 +1554,14 @@ const Reservations = () => {
                     <div><strong>Check-in:</strong> {formatDate(bookingToCancel.checkInDate)}</div>
                     <div><strong>Check-out:</strong> {formatDate(bookingToCancel.checkOutDate)}</div>
                     <div><strong>Guests:</strong> {bookingToCancel.numberOfGuests}</div>
-                    <div><strong>Total:</strong> LKR {bookingToCancel.totalPrice?.toLocaleString()}</div>
+                    <div className="flex items-center gap-2">
+                      <strong>Total:</strong> 
+                      <PriceDisplay 
+                        price={bookingToCancel.totalPrice} 
+                        fromCurrency="LKR"
+                        size="small"
+                      />
+                    </div>
                     <div><strong>Ref:</strong> {bookingToCancel.bookingReference}</div>
                   </div>
                 </div>

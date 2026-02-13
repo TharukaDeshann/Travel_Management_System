@@ -44,6 +44,7 @@ export const getHotelDetails = async (hotelId) => {
   }
 };
 
+
 // Get Room Availability
 export const getHotelAvailability = async (hotelId, checkIn, checkOut) => {
   try {
@@ -63,14 +64,25 @@ export const getHotelAvailability = async (hotelId, checkIn, checkOut) => {
       checkInDate: response.data.checkInDate,
       checkOutDate: response.data.checkOutDate,
       hotelId: hotelId,
-      availableRooms: response.data.availableRooms.map(room => ({
-        roomType: formatRoomTypeName(room.roomType),
-        capacity: room.maxOccupancy,
-        pricePerNight: parseFloat(room.pricePerNight),
-        availableCount: room.availableRooms,
-        totalCount: room.availableRooms + Math.floor(Math.random() * 5) + 1, // Mock total count
-        amenities: room.amenities || []
-      }))
+      availableRooms: response.data.availableRooms.map(room => {
+        const pricePerNight = parseFloat(room.pricePerNight);
+        
+        console.log('🏨 Room price parsing:', {
+          roomType: room.roomType,
+          originalPrice: room.pricePerNight,
+          parsedPrice: pricePerNight,
+          isNaN: isNaN(pricePerNight)
+        });
+        
+        return {
+          roomType: formatRoomTypeName(room.roomType),
+          capacity: room.maxOccupancy,
+          pricePerNight: isNaN(pricePerNight) ? 0 : pricePerNight,
+          availableCount: room.availableRooms,
+          totalCount: room.availableRooms + Math.floor(Math.random() * 5) + 1, // Mock total count
+          amenities: room.amenities || []
+        };
+      })
     };
     
     console.log('🏨 Transformed room availability:', transformedData);

@@ -15,6 +15,9 @@ import org.springframework.web.bind.annotation.*;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.stream.Collectors;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+
 
 @RestController
 @RequestMapping("/api/drivers")
@@ -45,7 +48,14 @@ public class DriverController {
         Driver driver = driverRepository.findById(id).orElseThrow();
         return DriverDetailsDTO.fromDriver(driver);
     }
-
+    @GetMapping("/all")
+    public List<DriverDetailsDTO> getDrivers() {
+        List<Driver> drivers = driverRepository.findAll();
+        return drivers.stream()
+                .map(DriverDetailsDTO::fromDriver)
+                .collect(Collectors.toList());
+    }
+    
     // Book a driver for a date
 // Book a driver for a date
     @PostMapping("/book")
@@ -59,6 +69,8 @@ public class DriverController {
         booking.setBookingDate(bookingDate);
         booking.setTravelerId(req.travelerId());
         booking.setStatus("BOOKED");
+        booking.setTravelCost(req.travelCost());
+        booking.setTravelLength(req.travelLength());
 
         // Set start and end location details
         if (req.startLocation() != null) {

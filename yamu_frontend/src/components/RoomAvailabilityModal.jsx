@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { getHotelAvailability } from '../services/hotelService';
+import PriceDisplay from './PriceDisplay';
 
 const RoomAvailabilityModal = ({ isOpen, onClose, hotel, checkInDate, checkOutDate, onRoomSelect }) => {
   const [availability, setAvailability] = useState(null);
@@ -43,11 +44,31 @@ const RoomAvailabilityModal = ({ isOpen, onClose, hotel, checkInDate, checkOutDa
   const calculateNights = () => {
     const checkIn = new Date(checkInDate);
     const checkOut = new Date(checkOutDate);
-    return Math.ceil((checkOut - checkIn) / (1000 * 60 * 60 * 24));
+    const nights = Math.ceil((checkOut - checkIn) / (1000 * 60 * 60 * 24));
+    
+    console.log('🗓️ RoomAvailabilityModal - Date calculations:', {
+      checkInDate,
+      checkOutDate,
+      checkIn,
+      checkOut,
+      nights,
+      isValidNights: !isNaN(nights) && nights > 0
+    });
+    
+    return isNaN(nights) || nights <= 0 ? 1 : nights;
   };
 
   const calculateTotalPrice = (pricePerNight) => {
-    return pricePerNight * calculateNights();
+    const nights = calculateNights();
+    const total = pricePerNight * nights;
+    
+    console.log('🧮 RoomAvailabilityModal - Price calculations:', {
+      pricePerNight,
+      nights,
+      total
+    });
+    
+    return total;
   };
 
   if (!isOpen) return null;
@@ -165,11 +186,11 @@ const RoomAvailabilityModal = ({ isOpen, onClose, hotel, checkInDate, checkOutDa
                     {/* Pricing */}
                     <div className="text-right ml-4">
                       <div className="text-2xl font-bold text-blue-600">
-                        LKR {room.pricePerNight.toLocaleString()}
+                        <PriceDisplay amount={room.pricePerNight} size="lg" />
                       </div>
                       <div className="text-sm text-gray-600">per night</div>
                       <div className="text-lg font-semibold text-gray-900 mt-1">
-                        Total: LKR {calculateTotalPrice(room.pricePerNight).toLocaleString()}
+                        Total: <PriceDisplay amount={calculateTotalPrice(room.pricePerNight)} />
                       </div>
                       <div className="text-xs text-gray-500">for {calculateNights()} night(s)</div>
                     </div>
@@ -203,7 +224,7 @@ const RoomAvailabilityModal = ({ isOpen, onClose, hotel, checkInDate, checkOutDa
             <div className="text-sm text-gray-600">
               {selectedRoom && (
                 <span>
-                  Selected: {selectedRoom.roomType} - LKR {calculateTotalPrice(selectedRoom.pricePerNight).toLocaleString()} total
+                  Selected: {selectedRoom.roomType} - <PriceDisplay amount={calculateTotalPrice(selectedRoom.pricePerNight)} inline /> total
                 </span>
               )}
             </div>

@@ -4,8 +4,6 @@ import com.yamu.backend.dto.UserLoginRequest;
 import com.yamu.backend.dto.UserRegistrationRequest;
 import com.yamu.backend.dto.UserResponseDTO;
 import com.yamu.backend.enums.UserRole;
-import com.yamu.backend.model.Guide;
-import com.yamu.backend.model.Traveler;
 import com.yamu.backend.model.User;
 import com.yamu.backend.repository.UserRepository;
 import com.yamu.backend.service.EmailService;
@@ -21,7 +19,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.server.ResponseStatusException;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolation;
@@ -157,23 +154,28 @@ public class AuthController {
 
     @PostMapping("/login")
     public ResponseEntity<Map<String, Object>> login(@Valid @RequestBody UserLoginRequest loginRequest) {
+        try {
+            User authenticatedUser = authService.authenticate(loginRequest.getEmail(), loginRequest.getPassword());
 
-        User authenticatedUser = authService.authenticate(loginRequest.getEmail(), loginRequest.getPassword());
+            if (authenticatedUser == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(Map.of("error", "Invalid email or password"));
+            }
 
-        if (!authenticatedUser.isVerified()) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Please verify your email to login");
-        }
+            if (!authenticatedUser.isVerified()) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(Map.of("error", "Please verify your email before logging in"));
+            }
 
-        if (authenticatedUser != null) {
+            // Generate tokens and create cookies (your existing code)
             String accessToken = jwtUtil.generateAccessToken(authenticatedUser.getEmail());
             String refreshToken = jwtUtil.generateRefreshToken(authenticatedUser.getEmail());
 
-            // Create HTTP-only cookies
             ResponseCookie accessTokenCookie = ResponseCookie.from("accessToken", accessToken)
                     .httpOnly(true)
-                    .secure(true) // Set to true in production (requires HTTPS)
+                    .secure(true)
                     .path("/")
-                    .maxAge(60) // 1 minutes for access token
+                    .maxAge(900)
                     .sameSite("Strict")
                     .build();
 
@@ -181,7 +183,7 @@ public class AuthController {
                     .httpOnly(true)
                     .secure(true)
                     .path("/")
-                    .maxAge(604800) // 7 days for refresh token
+                    .maxAge(604800)
                     .sameSite("Strict")
                     .build();
 
@@ -193,9 +195,13 @@ public class AuthController {
                     .header("Set-Cookie", accessTokenCookie.toString())
                     .header("Set-Cookie", refreshTokenCookie.toString())
                     .body(response);
-        }
 
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Invalid credentials"));
+        } catch (Exception e) {
+            // Log the actual error for debugging
+            System.err.println("Login error: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "An unexpected error occurred. Please try again."));
+        }
     }
 
     @PostMapping("/refresh-token")
@@ -221,7 +227,7 @@ public class AuthController {
                         .httpOnly(true)
                         .secure(true) // Set to true in production (requires HTTPS)
                         .path("/")
-                        .maxAge(60) // 1 minutes for access token
+                        .maxAge(900) // 15 minutes for access token
                         .sameSite("Strict")
                         .build();
 
@@ -294,11 +300,8 @@ public class AuthController {
         // Return user details (excluding sensitive information)
         UserResponseDTO userResponseDTO = userService.mapToUserDTO(user);
 
-
         return ResponseEntity.ok(userResponseDTO);
     }
-
-    
 
     @GetMapping("/me")
     public ResponseEntity<?> getCurrentUser(@CookieValue(value = "accessToken", required = false) String accessToken) {
@@ -318,7 +321,7 @@ public class AuthController {
             UserResponseDTO userResponseDTO = userService.mapToUserDTO(user);
 
             return ResponseEntity.ok(userResponseDTO);
-        }  catch (Exception e) {
+        } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Invalid or expired token"));
         }
     }

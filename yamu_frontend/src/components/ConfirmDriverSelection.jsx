@@ -1,6 +1,13 @@
 import React from "react";
+import PriceDisplay from "./PriceDisplay";
 
-const ConfirmDriverSelection = ({ driver, onConfirm, onCancel }) => (
+const ConfirmDriverSelection = ({
+  driver,
+  totalCost,
+  distanceKm,
+  onConfirm,
+  onCancel,
+}) => (
   <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-[1030]">
     <div className="bg-white p-8 rounded-lg shadow-2xl w-full max-w-md">
       <div className="flex flex-col items-center">
@@ -18,12 +25,22 @@ const ConfirmDriverSelection = ({ driver, onConfirm, onCancel }) => (
             <span className="text-3xl text-blue-400"> {/* user icon */} </span>
           )}
         </div>
-        <div className="text-lg font-semibold text-blue-900">
-          {driver.name}
-        </div>
-        <div className="text-sm text-gray-500 mb-1">
-          <span className="mr-2">Rating: {driver.rating}</span>
-          <span>| {driver.vehicleType}</span>
+        <div className="text-lg font-semibold text-blue-900">{driver.name}</div>
+        <div className="text-sm text-gray-500 mb-1 flex flex-col items-center text-center">
+          <div>
+            <span className="mr-2">Rating: {driver.rating}</span>
+            <span>| {driver.vehicleType}</span>
+          </div>
+          <div>
+            <span>Distance: {distanceKm.toFixed(2) || 0} km </span>
+            <span>| Total Cost: </span>
+            <PriceDisplay 
+              price={totalCost || 0} 
+              fromCurrency="LKR"
+              className="inline-block font-medium"
+              size="small"
+            />
+          </div>
         </div>
         <div className="flex gap-4 mt-4 w-full">
           <button

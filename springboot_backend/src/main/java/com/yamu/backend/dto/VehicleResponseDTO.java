@@ -1,6 +1,6 @@
 package com.yamu.backend.dto;
 
-import com.yamu.backend.model.Guide;
+
 
 import lombok.Getter;
 import lombok.Setter;

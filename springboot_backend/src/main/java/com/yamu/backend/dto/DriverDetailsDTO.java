@@ -1,11 +1,28 @@
 package com.yamu.backend.dto;
 
 import com.yamu.backend.model.Driver;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.util.Base64;
 
-public record DriverDetailsDTO(Long id, String name, String description, double rating, String photoBase64,
-                               String vehicleNumber, String vehicleType, String brand, String model, String color) {
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class DriverDetailsDTO {
+    private Long id;
+    private String name;
+    private String description;
+    private double rating;
+    private Double ratePerLng;
+    private String photoBase64;
+    private String vehicleNumber;
+    private String vehicleType;
+    private String brand;
+    private String model;
+    private String color;
+
     public static DriverDetailsDTO fromDriver(Driver d) {
         String imageStr = d.getPhoto() != null ? Base64.getEncoder().encodeToString(d.getPhoto()) : null;
         return new DriverDetailsDTO(
@@ -13,6 +30,7 @@ public record DriverDetailsDTO(Long id, String name, String description, double 
                 d.getName(),
                 d.getDescription(),
                 d.getRating(),
+                d.getRatePerLng(),
                 imageStr,
                 d.getVehicle().getVehicleNumber(),
                 d.getVehicle().getType(),

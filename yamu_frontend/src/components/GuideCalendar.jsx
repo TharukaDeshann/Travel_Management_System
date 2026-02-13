@@ -349,7 +349,7 @@ const GuideCalendar = () => {
 
   return (
     <Layout 
-      user={currentUser} 
+      user={currentUser || {}} 
       unreadCount={0} // You can pass actual unread count from your state
       onCurrencyChange={() => {}} // Add currency change handler if needed
       selectedCurrency="LKR" // Set default currency
